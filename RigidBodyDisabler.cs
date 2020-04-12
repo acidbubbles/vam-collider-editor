@@ -1,6 +1,6 @@
 using System;
 
-public class MyPlugin : MVRScript
+public class RigidBodyDisabler : MVRScript
 {
     public override void Init()
     {

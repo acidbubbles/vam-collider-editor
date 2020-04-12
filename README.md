@@ -1,11 +1,6 @@
-# Virt-A-Mate Plugin Template for VSCode
+# Virt-A-Mate RigidBody Disabler
 
-What you will need:
-
-- [Visual Studio Code](https://code.visualstudio.com/) to edit your plugins
-- [Virt-A-Mate](https://www.patreon.com/meshedvr/) to use your plugins
-
-Search in files for `Author` and `MyPlugin`.
+Disables some rigidbodies, when you don't need collisions.
 
 ## License
 

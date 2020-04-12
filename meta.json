@@ -1,15 +1,15 @@
 { 
    "licenseType" : "CC BY-SA", 
-   "creatorName" : "Author", 
-   "packageName" : "MyPlugin", 
+   "creatorName" : "AcidBubbles", 
+   "packageName" : "RigidBodyDisabler", 
    "includeVersionsInReferences" : "true", 
-   "description" : "v0.0.0 MyPlugin Description", 
+   "description" : "v0.0.0 RigidBodyDisabler Description", 
    "credits" : "", 
    "instructions" : "", 
    "promotionalLink" : "https://github.com/author/my-plugin", 
    "programVersion" : "1.19.0.5", 
    "contentList" : [ 
-      "Custom\\Scripts\\Author\\MyPlugin\\MyPlugin.cs"
+      "Custom\\Scripts\\AcidBubbles\\RigidBodyDisabler\\RigidBodyDisabler.cs"
    ], 
    "dependencies" : { 
    }
