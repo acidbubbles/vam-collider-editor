@@ -3,11 +3,11 @@
    "creatorName" : "AcidBubbles", 
    "packageName" : "RigidBodyDisabler", 
    "includeVersionsInReferences" : "true", 
-   "description" : "v0.0.0 RigidBodyDisabler Description", 
+   "description" : "v0.0.0 Disable rigidbodis on an atom", 
    "credits" : "", 
    "instructions" : "", 
-   "promotionalLink" : "https://github.com/author/my-plugin", 
-   "programVersion" : "1.19.0.5", 
+   "promotionalLink" : "https://github.com/acidbubbles/vam-rigidbody-disabler", 
+   "programVersion" : "1.19.2.0", 
    "contentList" : [ 
       "Custom\\Scripts\\AcidBubbles\\RigidBodyDisabler\\RigidBodyDisabler.cs"
    ], 
