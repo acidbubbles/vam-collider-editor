@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
@@ -10,33 +11,35 @@ using UnityEngine;
 /// </summary>
 public class RigidBodyDisabler : MVRScript
 {
-    private readonly Dictionary<string, GameObject> _rbDisplay = new Dictionary<string, GameObject>();
+    private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
+    private Atom _containingAtom;
     private JSONStorableBool _displayJSON;
 
     public override void Init()
     {
         try
         {
+            _containingAtom = containingAtom;
+
             _displayJSON = new JSONStorableBool("Display Rigidbodies", false, (bool val) =>
             {
-                if (val) CreateDisplay();
-                else DestroyDisplay();
+                if (val) CreateRigidBodiesDisplay();
+                else DestroyRigidBodiesDisplay();
             })
             { isStorable = false };
+            CreateToggle(_displayJSON, false);
 
-            foreach (var rb in containingAtom.rigidbodies)
+            foreach (var rb in GetRigidBodies().OrderBy(rb => rb.name))
             {
                 var rbJSON = new JSONStorableBool(rb.name, rb.detectCollisions, (bool val) =>
                 {
                     rb.detectCollisions = val;
                     GameObject rbDisplay;
-                    if (_rbDisplay.TryGetValue(rb.name, out rbDisplay))
+                    if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
                         rbDisplay.SetActive(val);
                 });
                 CreateToggle(rbJSON, true);
             }
-
-            OnEnable();
         }
         catch (Exception e)
         {
@@ -46,12 +49,13 @@ public class RigidBodyDisabler : MVRScript
 
     public void OnEnable()
     {
+        if (_containingAtom == null) return;
         try
         {
             InitRigidBodyCollisions();
 
-            if (_displayJSON.val && _rbDisplay.Count == 0)
-                CreateDisplay();
+            if (_displayJSON.val && _rigidBodiesDisplay.Count == 0)
+                CreateRigidBodiesDisplay();
         }
         catch (Exception e)
         {
@@ -61,9 +65,10 @@ public class RigidBodyDisabler : MVRScript
 
     public void OnDisable()
     {
+        if (_containingAtom == null) return;
         try
         {
-            DestroyDisplay();
+            DestroyRigidBodiesDisplay();
             ResetRigidBodyCollisions();
         }
         catch (Exception e)
@@ -74,9 +79,10 @@ public class RigidBodyDisabler : MVRScript
 
     public void OnDestroy()
     {
+        if (_containingAtom == null) return;
         try
         {
-            DestroyDisplay();
+            DestroyRigidBodiesDisplay();
             ResetRigidBodyCollisions();
         }
         catch (Exception e)
@@ -87,7 +93,7 @@ public class RigidBodyDisabler : MVRScript
 
     private void InitRigidBodyCollisions()
     {
-        foreach (var rb in containingAtom.rigidbodies)
+        foreach (var rb in GetRigidBodies())
         {
             rb.detectCollisions = GetBoolJSONParam(rb.name)?.val ?? true;
         }
@@ -95,55 +101,85 @@ public class RigidBodyDisabler : MVRScript
 
     private void ResetRigidBodyCollisions()
     {
-        foreach (var rb in containingAtom.rigidbodies)
+        foreach (var rb in GetRigidBodies())
         {
+            if (rb == null) throw new NullReferenceException($"{nameof(rb)} is null");
             rb.detectCollisions = true;
         }
     }
 
-    private void CreateDisplay()
+    private IEnumerable<Rigidbody> GetRigidBodies()
     {
-        DestroyDisplay();
-        foreach (var rb in containingAtom.rigidbodies)
+        foreach (var rb in _containingAtom.rigidbodies)
         {
-            var rbDisplay = VisualCuesHelper.Cross();
-            rbDisplay.transform.parent = rb.transform;
-            rbDisplay.transform.localPosition = Vector3.zero;
-            rbDisplay.transform.localRotation = Quaternion.identity;
-            rbDisplay.SetActive(rb.detectCollisions);
-            _rbDisplay.Add(rb.name, rbDisplay);
+            if (!rb.detectCollisions) continue;
+            if (rb.name == "control") continue;
+            if (rb.name == "object") continue;
+            if (rb.name.EndsWith("Control")) continue;
+            if (rb.name.StartsWith("hairTool")) continue;
+            if (rb.name.EndsWith("Trigger")) continue;
+            var rbCollider = rb.GetComponentInChildren<Collider>();
+            if (rbCollider == null) continue;
+            yield return rb;
         }
     }
 
-    private void DestroyDisplay()
+    private void CreateRigidBodiesDisplay()
     {
-        foreach (var rbDisplay in _rbDisplay)
+        DestroyRigidBodiesDisplay();
+        foreach (var rb in GetRigidBodies())
+        {
+            var rbDisplay = CreateDisplayGameObject(rb);
+            if (rbDisplay == null) continue;
+            rbDisplay.SetActive(rb.detectCollisions);
+            try
+            {
+                _rigidBodiesDisplay.Add(rb, rbDisplay);
+            }
+            catch (ArgumentException exc)
+            {
+                SuperController.LogError($"Cannot add '{rb.name}': {exc.Message}");
+            }
+        }
+    }
+
+    private void DestroyRigidBodiesDisplay()
+    {
+        foreach (var rbDisplay in _rigidBodiesDisplay)
         {
             Destroy(rbDisplay.Value);
         }
-        _rbDisplay.Clear();
+        _rigidBodiesDisplay.Clear();
     }
 
-    private static class VisualCuesHelper
+    public GameObject CreateDisplayGameObject(Rigidbody rb)
     {
-        public static GameObject Cross()
+        var rbCollider = rb.GetComponentInChildren<Collider>();
+        if (rbCollider == null) return null;
+        var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        try
         {
-            var go = new GameObject();
-            var size = 0.2f; var width = 0.005f;
-            CreatePrimitive(go.transform, PrimitiveType.Cube, Color.red).transform.localScale = new Vector3(size, width, width);
-            CreatePrimitive(go.transform, PrimitiveType.Cube, Color.green).transform.localScale = new Vector3(width, size, width);
-            CreatePrimitive(go.transform, PrimitiveType.Cube, Color.blue).transform.localScale = new Vector3(width, width, size);
-            foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
-            return go;
-        }
-
-        public static GameObject CreatePrimitive(Transform parent, PrimitiveType type, Color color)
-        {
-            var go = GameObject.CreatePrimitive(type);
-            go.GetComponent<Renderer>().material = new Material(Shader.Find("Sprites/Default")) { color = color, renderQueue = 4000 };
+            var material = new Material(Shader.Find("Standard")) { color = new Color(1, 0, 0, 0.1f) };
+            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            material.SetInt("_ZWrite", 0);
+            material.DisableKeyword("_ALPHATEST_ON");
+            material.EnableKeyword("_ALPHABLEND_ON");
+            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            material.renderQueue = 3000;
+            go.GetComponent<Renderer>().material = material;
             foreach (var c in go.GetComponents<Collider>()) { c.enabled = false; Destroy(c); }
-            go.transform.parent = parent;
-            return go;
+            // if (rbCollider == null) throw new NullReferenceException("test");
+            go.transform.parent = rbCollider.transform.parent;
+            go.transform.localPosition = rbCollider.transform.localPosition;
+            go.transform.localRotation = rbCollider.transform.localRotation;
+            go.transform.localScale = rbCollider.transform.localScale * 0.06f;
         }
+        catch (Exception)
+        {
+            Destroy(go);
+            throw;
+        }
+        return go;
     }
 }
