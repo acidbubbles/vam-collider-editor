@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SimpleJSON;
 using UnityEngine;
 
 /// <summary>
@@ -11,9 +12,12 @@ using UnityEngine;
 /// </summary>
 public class RigidBodyDisabler : MVRScript
 {
+    private readonly List<JSONStorableBool> _rigidBodiesJSONs = new List<JSONStorableBool>();
     private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
     private Atom _containingAtom;
     private JSONStorableBool _displayJSON;
+
+    #region Lifecycle
 
     public override void Init()
     {
@@ -39,6 +43,7 @@ public class RigidBodyDisabler : MVRScript
                         rbDisplay.SetActive(val);
                 });
                 CreateToggle(rbJSON, true);
+                _rigidBodiesJSONs.Add(rbJSON);
             }
         }
         catch (Exception e)
@@ -91,6 +96,57 @@ public class RigidBodyDisabler : MVRScript
         }
     }
 
+    #endregion
+
+    #region Load / Save
+
+    public override JSONClass GetJSON(bool includePhysical = true, bool includeAppearance = true, bool forceStore = false)
+    {
+        var json = base.GetJSON(includePhysical, includeAppearance, forceStore);
+
+        try
+        {
+            var disabledRigidbodies = new JSONArray();
+            foreach (var rbJSON in _rigidBodiesJSONs.Where(rbJSON => !rbJSON.val))
+                disabledRigidbodies.Add(rbJSON.name);
+            json["disabledRigidbodies"] = disabledRigidbodies;
+            needsStore = true;
+        }
+        catch (Exception exc)
+        {
+            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(GetJSON)}:  {exc}");
+        }
+
+        return json;
+    }
+
+    public override void RestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, JSONArray presetAtoms = null, bool setMissingToDefault = true)
+    {
+        base.RestoreFromJSON(jc, restorePhysical, restoreAppearance, presetAtoms, setMissingToDefault);
+
+        try
+        {
+            var disabledRigidbodies = jc["disabledRigidbodies"] as JSONArray;
+            if (disabledRigidbodies != null)
+            {
+                foreach (var rbName in disabledRigidbodies.Cast<JSONNode>())
+                {
+                    var rbJSON = _rigidBodiesJSONs.FirstOrDefault(r => r.name == rbName.Value);
+                    if (rbJSON != null)
+                        rbJSON.val = false;
+                }
+            }
+        }
+        catch (Exception exc)
+        {
+            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(RestoreFromJSON)}: {exc}");
+        }
+    }
+
+    #endregion
+
+    #region Rigidbodies
+
     private void InitRigidBodyCollisions()
     {
         foreach (var rb in GetRigidBodies())
@@ -123,6 +179,10 @@ public class RigidBodyDisabler : MVRScript
             yield return rb;
         }
     }
+
+    #endregion
+
+    #region Display
 
     private void CreateRigidBodiesDisplay()
     {
@@ -182,4 +242,6 @@ public class RigidBodyDisabler : MVRScript
         }
         return go;
     }
+
+    #endregion
 }
