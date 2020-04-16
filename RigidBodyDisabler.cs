@@ -16,6 +16,7 @@ public class RigidBodyDisabler : MVRScript
     private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
     private Atom _containingAtom;
     private JSONStorableBool _displayJSON;
+    private UIDynamicPopup _rbAdjustListUI;
 
     #region Lifecycle
 
@@ -37,8 +38,8 @@ public class RigidBodyDisabler : MVRScript
 
             CreateTextField(new JSONStorableString("Collider Adjustment Label", "Adjustments will not be saved nor restored."), false).height = 60f;
             var rbAdjustListJSON = new JSONStorableStringChooser("Collider Adjustment", rigidbodies.Select(rb => rb.name).ToList(), "", "Collider Adjustment", (string val) => ShowColliderAdjustments(val));
-            var rbAdjustListUI = CreateScrollablePopup(rbAdjustListJSON, false);
-            rbAdjustListUI.popupPanelHeight = 900f;
+            _rbAdjustListUI = CreateScrollablePopup(rbAdjustListJSON, false);
+            _rbAdjustListUI.popupPanelHeight = 900f;
 
             CreateTextField(new JSONStorableString("Collider Disabler Label", "Colliders to disable; will be saved in your scene and restored."), true).height = 60f;
             foreach (var rb in rigidbodies)
@@ -113,6 +114,10 @@ public class RigidBodyDisabler : MVRScript
                 SuperController.LogError($"Unknown collider {rb.name}/{rbCollider.name}/ type: {rbCollider}");
             }
         }
+
+        // So it shows up on top
+        _rbAdjustListUI.popup.Toggle();
+        _rbAdjustListUI.popup.Toggle();
     }
 
     public void OnEnable()
