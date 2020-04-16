@@ -74,41 +74,44 @@ public class RigidBodyDisabler : MVRScript
         var rb = containingAtom.rigidbodies.FirstOrDefault(r => r.name == name);
         if (rb == null) return;
 
-        var rbCollider = rb.GetComponent<Collider>();
-        if (rbCollider == null) return;
-        if (rbCollider is SphereCollider)
+        foreach (var rbCollider in rb.GetComponentsInChildren<Collider>())
         {
-            var sphereCollider = (SphereCollider)rbCollider;
-            var rbRadiusStorableFloat = new JSONStorableFloat($"radius", sphereCollider.radius, (float val) => sphereCollider.radius = val, 0f, 0.5f, false);
-            CreateSlider(rbRadiusStorableFloat, false);
-            _adjustmentJSONs.Add(rbRadiusStorableFloat);
-        }
-        else if (rbCollider is CapsuleCollider)
-        {
-            var capsuleCollider = (CapsuleCollider)rbCollider;
-            var rbRadiusStorableFloat = new JSONStorableFloat($"radius", capsuleCollider.radius, (float val) => capsuleCollider.radius = val, 0f, 0.5f, false);
-            CreateSlider(rbRadiusStorableFloat, false);
-            _adjustmentJSONs.Add(rbRadiusStorableFloat);
-            var rbHeightStorableFloat = new JSONStorableFloat($"height", capsuleCollider.height, (float val) => capsuleCollider.height = val, 0f, 0.5f, false);
-            CreateSlider(rbHeightStorableFloat, false);
-            _adjustmentJSONs.Add(rbHeightStorableFloat);
-        }
-        else if (rbCollider is BoxCollider)
-        {
-            var boxCollider = (BoxCollider)rbCollider;
-            var rbWidthStorableFloat = new JSONStorableFloat($"width", boxCollider.size.x, (float val) => boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z), 0f, 0.5f, false);
-            CreateSlider(rbWidthStorableFloat, false);
-            _adjustmentJSONs.Add(rbWidthStorableFloat);
-            var rbHeightStorableFloat = new JSONStorableFloat($"height", boxCollider.size.y, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z), 0f, 0.5f, false);
-            CreateSlider(rbHeightStorableFloat, false);
-            _adjustmentJSONs.Add(rbHeightStorableFloat);
-            var rbDepthStorableFloat = new JSONStorableFloat($"depth", boxCollider.size.z, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val), 0f, 0.5f, false);
-            CreateSlider(rbDepthStorableFloat, false);
-            _adjustmentJSONs.Add(rbDepthStorableFloat);
-        }
-        else
-        {
-            SuperController.LogError($"Unknown collider {rb.name} type: {rbCollider}");
+            if (rbCollider.attachedRigidbody != rb) continue;
+
+            if (rbCollider is SphereCollider)
+            {
+                var sphereCollider = (SphereCollider)rbCollider;
+                var rbRadiusStorableFloat = new JSONStorableFloat($"{rbCollider.name}/radius", sphereCollider.radius, (float val) => sphereCollider.radius = val, 0f, 0.5f, false);
+                CreateSlider(rbRadiusStorableFloat, false);
+                _adjustmentJSONs.Add(rbRadiusStorableFloat);
+            }
+            else if (rbCollider is CapsuleCollider)
+            {
+                var capsuleCollider = (CapsuleCollider)rbCollider;
+                var rbRadiusStorableFloat = new JSONStorableFloat($"{rbCollider.name}/radius", capsuleCollider.radius, (float val) => capsuleCollider.radius = val, 0f, 0.5f, false);
+                CreateSlider(rbRadiusStorableFloat, false);
+                _adjustmentJSONs.Add(rbRadiusStorableFloat);
+                var rbHeightStorableFloat = new JSONStorableFloat($"{rbCollider.name}/height", capsuleCollider.height, (float val) => capsuleCollider.height = val, 0f, 0.5f, false);
+                CreateSlider(rbHeightStorableFloat, false);
+                _adjustmentJSONs.Add(rbHeightStorableFloat);
+            }
+            else if (rbCollider is BoxCollider)
+            {
+                var boxCollider = (BoxCollider)rbCollider;
+                var rbWidthStorableFloat = new JSONStorableFloat($"{rbCollider.name}/width", boxCollider.size.x, (float val) => boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z), 0f, 0.5f, false);
+                CreateSlider(rbWidthStorableFloat, false);
+                _adjustmentJSONs.Add(rbWidthStorableFloat);
+                var rbHeightStorableFloat = new JSONStorableFloat($"{rbCollider.name}/height", boxCollider.size.y, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z), 0f, 0.5f, false);
+                CreateSlider(rbHeightStorableFloat, false);
+                _adjustmentJSONs.Add(rbHeightStorableFloat);
+                var rbDepthStorableFloat = new JSONStorableFloat($"{rbCollider.name}/depth", boxCollider.size.z, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val), 0f, 0.5f, false);
+                CreateSlider(rbDepthStorableFloat, false);
+                _adjustmentJSONs.Add(rbDepthStorableFloat);
+            }
+            else
+            {
+                SuperController.LogError($"Unknown collider {rb.name}/{rbCollider.name}/ type: {rbCollider}");
+            }
         }
     }
 
