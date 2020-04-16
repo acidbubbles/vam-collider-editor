@@ -235,6 +235,29 @@ public class RigidBodyDisabler : MVRScript
         }
     }
 
+    public override void LateRestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, bool setMissingToDefault = true)
+     => RestoreFromJSON(jc, restorePhysical, restoreAppearance, null, setMissingToDefault);
+
+    public override void PostRestore()
+    {
+        var mismatch = false;
+        foreach (var rb in _disabledRigidbodies)
+        {
+            var rbJSON = GetBoolJSONParam(rb.name);
+            if (rbJSON == null) continue;
+            if (rb.detectCollisions != rbJSON.val)
+            {
+                mismatch = true;
+                break;
+            }
+        }
+        if (mismatch)
+        {
+            ResetRigidBodyCollisions();
+            InitRigidBodyCollisions();
+        }
+    }
+
     #endregion
 
     #region Rigidbodies
