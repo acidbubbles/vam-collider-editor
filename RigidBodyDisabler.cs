@@ -14,6 +14,7 @@ public class RigidBodyDisabler : MVRScript
 {
     private readonly List<JSONStorableBool> _rigidBodiesJSONs = new List<JSONStorableBool>();
     private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
+    private readonly HashSet<Rigidbody> _disabledRigidbodies = new HashSet<Rigidbody>();
     private Atom _containingAtom;
     private JSONStorableBool _displayJSON;
     private UIDynamicPopup _rbAdjustListUI;
@@ -47,6 +48,9 @@ public class RigidBodyDisabler : MVRScript
                 var rbJSON = new JSONStorableBool(rb.name, rb.detectCollisions, (bool val) =>
                 {
                     rb.detectCollisions = val;
+                    if (!val) _disabledRigidbodies.Add(rb);
+                    else _disabledRigidbodies.Remove(rb);
+
                     GameObject rbDisplay;
                     if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
                         rbDisplay.SetActive(val);
@@ -239,24 +243,27 @@ public class RigidBodyDisabler : MVRScript
     {
         foreach (var rb in GetRigidBodies())
         {
-            rb.detectCollisions = GetBoolJSONParam(rb.name)?.val ?? true;
+            var rbJSON = GetBoolJSONParam(rb.name);
+            if (rbJSON == null) continue;
+            rb.detectCollisions = rbJSON.val;
+            if (!rbJSON.val) _disabledRigidbodies.Add(rb);
         }
     }
 
     private void ResetRigidBodyCollisions()
     {
-        foreach (var rb in GetRigidBodies())
+        foreach (var rb in _disabledRigidbodies)
         {
             if (rb == null) throw new NullReferenceException($"{nameof(rb)} is null");
             rb.detectCollisions = true;
         }
+        _disabledRigidbodies.Clear();
     }
 
     private IEnumerable<Rigidbody> GetRigidBodies()
     {
         foreach (var rb in _containingAtom.rigidbodies)
         {
-            if (!rb.detectCollisions) continue;
             if (rb.name == "control") continue;
             if (rb.name == "object") continue;
             if (rb.name.EndsWith("Control")) continue;
