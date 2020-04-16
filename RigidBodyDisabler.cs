@@ -51,7 +51,8 @@ public class RigidBodyDisabler : MVRScript
                     if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
                         rbDisplay.SetActive(val);
                 });
-                CreateToggle(rbJSON, true);
+                var rbUI = CreateToggle(rbJSON, true);
+                rbUI.label = Simplify(rb.name);
                 _rigidBodiesJSONs.Add(rbJSON);
             }
         }
@@ -59,6 +60,25 @@ public class RigidBodyDisabler : MVRScript
         {
             SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(Init)}: {e}");
         }
+    }
+
+    private readonly string[] _prefixes = new[]
+    {
+        "AutoColliderFemaleAutoColliders",
+        "AutoCollider"
+    };
+
+    private string Simplify(string name)
+    {
+        foreach (var prefix in _prefixes)
+        {
+            if (name.StartsWith(prefix))
+            {
+                name = name.Substring(prefix.Length);
+                break;
+            }
+        }
+        return name;
     }
 
     private readonly List<JSONStorableFloat> _adjustmentJSONs = new List<JSONStorableFloat>();
