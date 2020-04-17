@@ -22,6 +22,7 @@ public class ColliderTuner : MVRScript
     private UIDynamicPopup _rbAdjustListUI;
     private JSONClass _state = new JSONClass();
     private Rigidbody _currentRb;
+    private Dictionary<Rigidbody, List<Collider>> _rbCollidersMap;
 
     #region Lifecycle
 
@@ -83,6 +84,7 @@ public class ColliderTuner : MVRScript
     }
 
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
+    private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
 
     private void ShowColliderAdjustments(string name)
     {
@@ -96,6 +98,13 @@ public class ColliderTuner : MVRScript
                 SuperController.LogError($"Unknown ui type for {adjustmentJSON.name}: {adjustmentJSON.GetType()}");
         }
         _adjustmentStorables.Clear();
+
+        foreach (var adjustmentButton in _adjustmentButtons)
+        {
+            RemoveButton(adjustmentButton);
+        }
+        _adjustmentButtons.Clear();
+
         GameObject rbDisplay;
         if (_currentRb != null && _rigidBodiesDisplay.TryGetValue(_currentRb, out rbDisplay))
         {
@@ -112,6 +121,22 @@ public class ColliderTuner : MVRScript
             rbDisplay.GetComponent<Renderer>().material.color = _selectedColor;
         }
 
+        var resetButton = CreateButton("Reset", true);
+        resetButton.button.onClick.AddListener(() =>
+        {
+            foreach (var adjustmentJSON in _adjustmentStorables)
+            {
+                if (adjustmentJSON is JSONStorableFloat)
+                    ((JSONStorableFloat)adjustmentJSON).SetValToDefault();
+                else if (adjustmentJSON is JSONStorableBool)
+                    ((JSONStorableBool)adjustmentJSON).SetValToDefault();
+                else
+                    SuperController.LogError($"Unknown ui type for {adjustmentJSON.name}: {adjustmentJSON.GetType()}");
+            }
+            _state.Remove(rb.name);
+        });
+        _adjustmentButtons.Add(resetButton);
+
         CreateBoolAdjustment(null, () => _state.GetOrCreate(rb.name), "enabled", rb.detectCollisions, val =>
         {
             rb.detectCollisions = val;
@@ -120,49 +145,34 @@ public class ColliderTuner : MVRScript
                 rbDisplay.SetActive(val);
         });
 
-        var autoColliderColliders = new HashSet<Collider>();
-        var autoColliders = _containingAtom.GetComponentsInChildren<AutoCollider>().Where(c => c.jointRB == rb).ToList();
-        foreach (var autoCollider in autoColliders)
-        {
-            var autoColliderName = Simplify(autoCollider.name);
-            Func<JSONNode> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("autoColliders").GetOrCreate(autoCollider.name);
-            CreateBoolAdjustment(autoColliderName, getJsonNode, "useAutoRadius", autoCollider.useAutoRadius, val => autoCollider.useAutoRadius = val);
-            CreateFloatAdjustment(autoColliderName, getJsonNode, "autoRadiusBuffer", autoCollider.autoRadiusBuffer, val => autoCollider.autoRadiusBuffer = val, -0.01f, 0.02f);
-            CreateFloatAdjustment(autoColliderName, getJsonNode, "autoRadiusMultiplier", autoCollider.autoRadiusMultiplier, val => autoCollider.autoRadiusMultiplier = val, 0.001f, 2f);
-            CreateBoolAdjustment(autoColliderName, getJsonNode, "useAutoLength", autoCollider.useAutoLength, val => autoCollider.useAutoLength = val);
-            CreateFloatAdjustment(autoColliderName, getJsonNode, "autoLengthBuffer", autoCollider.autoLengthBuffer, val => autoCollider.autoLengthBuffer = val, -0.01f, 0.02f);
-            autoColliderColliders.Add(autoCollider.hardCollider);
-            autoColliderColliders.Add(autoCollider.jointCollider);
-        }
-
-        var colliders = rb.GetComponentsInChildren<Collider>().Where(c => c.attachedRigidbody == rb).ToList();
+        var colliders = _rbCollidersMap[rb];
         for (var colliderIndex = 0; colliderIndex < colliders.Count; colliderIndex++)
         {
             var collider = colliders[colliderIndex];
-            if (autoColliderColliders.Contains(collider)) continue;
 
             var colliderName = Simplify(collider.name);
             if (colliderName == null) throw new NullReferenceException($"Collider name of rigidbody {rb.name} is null");
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
-            Func<JSONNode> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
+            Func<string, float?> getInitial = (string prop) => _state[rb.name]?["colliders"]?[colliderUniqueName]?[prop]?.AsFloat;
+            Func<JSONClass> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
 
             if (collider is SphereCollider)
             {
                 var sphereCollider = (SphereCollider)collider;
-                CreateFloatAdjustment(colliderName, getJsonNode, "radius", sphereCollider.radius, val => sphereCollider.radius = val);
+                CreateFloatAdjustment(colliderName, getJsonNode, "radius", getInitial("radius") ?? sphereCollider.radius, val => sphereCollider.radius = val);
             }
             else if (collider is CapsuleCollider)
             {
                 var capsuleCollider = (CapsuleCollider)collider;
-                CreateFloatAdjustment(colliderName, getJsonNode, "radius", capsuleCollider.radius, val => capsuleCollider.radius = val);
-                CreateFloatAdjustment(colliderName, getJsonNode, "height", capsuleCollider.height, val => capsuleCollider.height = val);
+                CreateFloatAdjustment(colliderName, getJsonNode, "radius", getInitial("radius") ?? capsuleCollider.radius, val => capsuleCollider.radius = val);
+                CreateFloatAdjustment(colliderName, getJsonNode, "height", getInitial("height") ?? capsuleCollider.height, val => capsuleCollider.height = val);
             }
             else if (collider is BoxCollider)
             {
                 var boxCollider = (BoxCollider)collider;
-                CreateFloatAdjustment(colliderName, getJsonNode, "x", boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
-                CreateFloatAdjustment(colliderName, getJsonNode, "y", boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
-                CreateFloatAdjustment(colliderName, getJsonNode, "z", boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
+                CreateFloatAdjustment(colliderName, getJsonNode, "x", getInitial("x") ?? boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
+                CreateFloatAdjustment(colliderName, getJsonNode, "y", getInitial("y") ?? boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
+                CreateFloatAdjustment(colliderName, getJsonNode, "z", getInitial("z") ?? boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
             }
             else
             {
@@ -171,15 +181,18 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private void CreateFloatAdjustment(string parentName, Func<JSONNode> getJsonNode, string propertyName, float initial, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
+    private void CreateFloatAdjustment(string parentName, Func<JSONClass> getJsonNode, string propertyName, float initial, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
     {
         var storable = new JSONStorableFloat(
             $"{parentName}/{propertyName}",
             initial,
             (float val) =>
             {
+                var originalPropertyName = $"{propertyName}Initial";
+                var jc = getJsonNode();
+                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = val;
+                jc[propertyName].AsFloat = val;
                 setValue(val);
-                getJsonNode()[propertyName].AsFloat = val;
             },
             min,
             max,
@@ -188,15 +201,18 @@ public class ColliderTuner : MVRScript
         _adjustmentStorables.Add(storable);
     }
 
-    private void CreateBoolAdjustment(string parentName, Func<JSONNode> getJsonNode, string propertyName, bool initial, Action<bool> setValue)
+    private void CreateBoolAdjustment(string parentName, Func<JSONClass> getJsonNode, string propertyName, bool initial, Action<bool> setValue)
     {
         var storable = new JSONStorableBool(
             $"{parentName}/{propertyName}",
             initial,
             (bool val) =>
             {
+                var originalPropertyName = $"{propertyName}Initial";
+                var jc = getJsonNode();
+                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsBool = val;
+                jc[propertyName].AsBool = val;
                 setValue(val);
-                getJsonNode()[propertyName].AsBool = val;
             });
         CreateToggle(storable, true);
         _adjustmentStorables.Add(storable);
@@ -207,6 +223,8 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
+            RestoreFromState(false);
+
             if (_displayJSON.val && _rigidBodiesDisplay.Count == 0)
                 CreateRigidBodiesDisplay();
         }
@@ -221,6 +239,7 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
+            RestoreFromState(true);
             DestroyRigidBodiesDisplay();
         }
         catch (Exception e)
@@ -234,6 +253,7 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
+            RestoreFromState(true);
             DestroyRigidBodiesDisplay();
         }
         catch (Exception e)
@@ -261,7 +281,7 @@ public class ColliderTuner : MVRScript
         try
         {
             _state = jc.HasKey("rigidbodies") ? (JSONClass)jc["rigidbodies"] : new JSONClass();
-            RestoreFromState();
+            RestoreFromState(false);
         }
         catch (Exception exc)
         {
@@ -274,10 +294,11 @@ public class ColliderTuner : MVRScript
 
     public override void PostRestore()
     {
-        RestoreFromState();
+        SuperController.LogMessage("OK");
+        RestoreFromState(false);
     }
 
-    public void RestoreFromState()
+    public void RestoreFromState(bool initial)
     {
         foreach (KeyValuePair<string, JSONNode> rbEntry in _state)
         {
@@ -289,65 +310,74 @@ public class ColliderTuner : MVRScript
             }
 
             var rbJC = (JSONClass)rbEntry.Value;
-            if (rbJC.HasKey("enabled"))
-            {
-                rb.detectCollisions = rbJC["enabled"].AsBool;
-            }
-
-            var colliders = rb.GetComponentsInChildren<Collider>().Where(c => c.attachedRigidbody == rb).ToList();
-            foreach (KeyValuePair<string, JSONNode> colliderEntry in rbJC["colliders"].AsObject)
-            {
-                var colliderUniqueName = colliderEntry.Key.Split(':');
-                if (colliderUniqueName.Length != 2)
-                {
-                    SuperController.LogError($"Invalid collider unique name '{colliderEntry.Key}' of rigidbody '{rbEntry.Key}' specified in save");
-                    continue;
-                }
-                var colliderName = colliderUniqueName[0];
-                var colliderIndex = int.Parse(colliderUniqueName[1]);
-                if (colliders.Count <= colliderIndex)
-                {
-                    SuperController.LogError($"Could not find collider '{colliderName}' at index {colliderIndex} of rigidbody '{rbEntry.Key}' specified in save (not enough colliders)");
-                    continue;
-                }
-                var collider = colliders[colliderIndex];
-                if (collider.name != colliderName)
-                {
-                    SuperController.LogError($"Could not find collider '{colliderName}' at index {colliderIndex} of rigidbody '{rbEntry.Key}' specified in save (found '{collider.name}' at this index)");
-                    continue;
-                }
-
-                RestoreColliderFromState(rb, collider, (JSONClass)colliderEntry.Value);
-            }
+            RestoreRigidBodyFromState(rb, rbJC, initial);
         }
     }
 
-    private void RestoreColliderFromState(Rigidbody rb, Collider collider, JSONClass jc)
+    private void RestoreRigidBodyFromState(Rigidbody rb, JSONClass rbJC, bool initial)
     {
+        var enabledKey = "enabled" + (initial ? "" : "Initial");
+        if (rbJC.HasKey(enabledKey))
+        {
+            rb.detectCollisions = rbJC[enabledKey].AsBool;
+            // TODO
+            SuperController.LogMessage($"{rb.name}.detectCollisions = {rb.detectCollisions}");
+        }
+
+        var colliders = _rbCollidersMap[rb];
+        foreach (KeyValuePair<string, JSONNode> colliderEntry in rbJC["colliders"].AsObject)
+        {
+            var colliderUniqueName = colliderEntry.Key.Split(':');
+            if (colliderUniqueName.Length != 2)
+            {
+                SuperController.LogError($"Invalid collider unique name '{colliderEntry.Key}' of rigidbody '{rb.name}' specified in save");
+                continue;
+            }
+            var colliderName = colliderUniqueName[0];
+            var colliderIndex = int.Parse(colliderUniqueName[1]);
+            if (colliders.Count <= colliderIndex)
+            {
+                SuperController.LogError($"Could not find collider '{colliderName}' at index {colliderIndex} of rigidbody '{rb.name}' specified in save (not enough colliders)");
+                continue;
+            }
+            var collider = colliders[colliderIndex];
+            if (collider.name != colliderName)
+            {
+                SuperController.LogError($"Could not find collider '{colliderName}' at index {colliderIndex} of rigidbody '{rb.name}' specified in save (found '{collider.name}' at this index)");
+                continue;
+            }
+
+            RestoreColliderFromState(rb, collider, (JSONClass)colliderEntry.Value, initial);
+        }
+    }
+
+    private void RestoreColliderFromState(Rigidbody rb, Collider collider, JSONClass jc, bool initial)
+    {
+        var suffix = initial ? "Initial" : "";
         if (collider is SphereCollider)
         {
             var sphereCollider = (SphereCollider)collider;
-            if (jc.HasKey("radius"))
-                sphereCollider.radius = jc["radius"].AsFloat;
+            if (jc.HasKey($"radius{suffix}"))
+                sphereCollider.radius = jc[$"radius{suffix}"].AsFloat;
         }
         else if (collider is CapsuleCollider)
         {
             var capsuleCollider = (CapsuleCollider)collider;
-            if (jc.HasKey("radius"))
-                capsuleCollider.radius = jc["radius"].AsFloat;
-            if (jc.HasKey("height"))
-                capsuleCollider.height = jc["height"].AsFloat;
+            if (jc.HasKey($"radius{suffix}"))
+                capsuleCollider.radius = jc[$"radius{suffix}"].AsFloat;
+            if (jc.HasKey($"height{suffix}"))
+                capsuleCollider.height = jc[$"height{suffix}"].AsFloat;
         }
         else if (collider is BoxCollider)
         {
             var boxCollider = (BoxCollider)collider;
             var size = boxCollider.size;
-            if (jc.HasKey("x"))
-                size.x = jc["x"].AsFloat;
-            if (jc.HasKey("y"))
-                size.x = jc["y"].AsFloat;
-            if (jc.HasKey("z"))
-                size.x = jc["z"].AsFloat;
+            if (jc.HasKey($"x{suffix}"))
+                size.x = jc[$"x{suffix}"].AsFloat;
+            if (jc.HasKey($"y{suffix}"))
+                size.x = jc[$"y{suffix}"].AsFloat;
+            if (jc.HasKey($"z{suffix}"))
+                size.x = jc[$"z{suffix}"].AsFloat;
             boxCollider.size = size;
         }
         else
@@ -405,7 +435,6 @@ public class ColliderTuner : MVRScript
             material.renderQueue = 3000;
             go.GetComponent<Renderer>().material = material;
             foreach (var c in go.GetComponents<Collider>()) { c.enabled = false; Destroy(c); }
-            // if (rbCollider == null) throw new NullReferenceException("test");
             go.transform.parent = rbCollider.transform.parent;
             go.transform.localPosition = rbCollider.transform.localPosition;
             go.transform.localRotation = rbCollider.transform.localRotation;
@@ -425,17 +454,33 @@ public class ColliderTuner : MVRScript
 
     private IEnumerable<Rigidbody> GetRigidBodies()
     {
+        if (_rbCollidersMap == null)
+        {
+            _rbCollidersMap = new Dictionary<Rigidbody, List<Collider>>();
+            foreach (var collider in _containingAtom.GetComponentsInChildren<Collider>())
+            {
+                if (collider.attachedRigidbody == null) continue;
+
+                List<Collider> rbColliders;
+                if (!_rbCollidersMap.TryGetValue(collider.attachedRigidbody, out rbColliders))
+                {
+                    rbColliders = new List<Collider>();
+                    _rbCollidersMap.Add(collider.attachedRigidbody, rbColliders);
+                }
+                rbColliders.Add(collider);
+            }
+        }
+
         foreach (var rb in _containingAtom.rigidbodies)
         {
             if (rb.isKinematic) continue;
             if (rb.name == "control") continue;
             if (rb.name == "object") continue;
+            if (!_rbCollidersMap.ContainsKey(rb)) continue;
             if (rb.name.EndsWith("Control")) continue;
             if (rb.name.StartsWith("hairTool")) continue;
             if (rb.name.EndsWith("Trigger")) continue;
             if (rb.name.EndsWith("UI")) continue;
-            var rbCollider = rb.GetComponentInChildren<Collider>();
-            if (rbCollider == null) continue;
             yield return rb;
         }
     }
