@@ -12,12 +12,16 @@ using UnityEngine;
 /// </summary>
 public class ColliderTuner : MVRScript
 {
+    private static readonly Color _selectedColor = new Color(0f, 1f, 0f, 0.05f);
+    private static readonly Color _unselectedColor = new Color(1f, 0f, 0f, 0.05f);
+
     private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Atom _containingAtom;
     private JSONStorableBool _displayJSON;
     private UIDynamicPopup _rbAdjustListUI;
     private JSONClass _state = new JSONClass();
+    private Rigidbody _currentRb;
 
     #region Lifecycle
 
@@ -25,6 +29,7 @@ public class ColliderTuner : MVRScript
     {
         try
         {
+            var jc = new JSONClass();
             _containingAtom = containingAtom;
 
             _displayJSON = new JSONStorableBool("Display Rigidbodies", false, (bool val) =>
@@ -77,11 +82,11 @@ public class ColliderTuner : MVRScript
         return name;
     }
 
-    private readonly List<JSONStorableParam> _adjustmentJSONs = new List<JSONStorableParam>();
+    private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
 
     private void ShowColliderAdjustments(string name)
     {
-        foreach (var adjustmentJSON in _adjustmentJSONs)
+        foreach (var adjustmentJSON in _adjustmentStorables)
         {
             if (adjustmentJSON is JSONStorableFloat)
                 RemoveSlider((JSONStorableFloat)adjustmentJSON);
@@ -90,126 +95,111 @@ public class ColliderTuner : MVRScript
             else
                 SuperController.LogError($"Unknown ui type for {adjustmentJSON.name}: {adjustmentJSON.GetType()}");
         }
-        _adjustmentJSONs.Clear();
+        _adjustmentStorables.Clear();
+        GameObject rbDisplay;
+        if (_currentRb != null && _rigidBodiesDisplay.TryGetValue(_currentRb, out rbDisplay))
+        {
+            rbDisplay.GetComponent<Renderer>().material.color = _unselectedColor;
+        }
+        _currentRb = null;
 
         if (name == "") return;
         var rb = _rigidbodiesNameMap[name];
+        _currentRb = rb;
 
-        var rbJSON = new JSONStorableBool("Detect Collisions", rb.detectCollisions, (bool val) =>
+        if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
+        {
+            rbDisplay.GetComponent<Renderer>().material.color = _selectedColor;
+        }
+
+        CreateBoolAdjustment(null, () => _state.GetOrCreate(rb.name), "enabled", rb.detectCollisions, val =>
         {
             rb.detectCollisions = val;
-            _state[rb.name]["enabled"].AsBool = val;
 
-            GameObject rbDisplay;
-            if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
+            if (rbDisplay != null)
                 rbDisplay.SetActive(val);
         });
-        var rbUI = CreateToggle(rbJSON, true);
-        _adjustmentJSONs.Add(rbJSON);
+
+        var autoColliderColliders = new HashSet<Collider>();
+        var autoColliders = _containingAtom.GetComponentsInChildren<AutoCollider>().Where(c => c.jointRB == rb).ToList();
+        foreach (var autoCollider in autoColliders)
+        {
+            var autoColliderName = Simplify(autoCollider.name);
+            Func<JSONNode> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("autoColliders").GetOrCreate(autoCollider.name);
+            CreateBoolAdjustment(autoColliderName, getJsonNode, "useAutoRadius", autoCollider.useAutoRadius, val => autoCollider.useAutoRadius = val);
+            CreateFloatAdjustment(autoColliderName, getJsonNode, "autoRadiusBuffer", autoCollider.autoRadiusBuffer, val => autoCollider.autoRadiusBuffer = val, -0.01f, 0.02f);
+            CreateFloatAdjustment(autoColliderName, getJsonNode, "autoRadiusMultiplier", autoCollider.autoRadiusMultiplier, val => autoCollider.autoRadiusMultiplier = val, 0.001f, 2f);
+            CreateBoolAdjustment(autoColliderName, getJsonNode, "useAutoLength", autoCollider.useAutoLength, val => autoCollider.useAutoLength = val);
+            CreateFloatAdjustment(autoColliderName, getJsonNode, "autoLengthBuffer", autoCollider.autoLengthBuffer, val => autoCollider.autoLengthBuffer = val, -0.01f, 0.02f);
+            autoColliderColliders.Add(autoCollider.hardCollider);
+            autoColliderColliders.Add(autoCollider.jointCollider);
+        }
 
         var colliders = rb.GetComponentsInChildren<Collider>().Where(c => c.attachedRigidbody == rb).ToList();
         for (var colliderIndex = 0; colliderIndex < colliders.Count; colliderIndex++)
         {
             var collider = colliders[colliderIndex];
+            if (autoColliderColliders.Contains(collider)) continue;
 
             var colliderName = Simplify(collider.name);
+            if (colliderName == null) throw new NullReferenceException($"Collider name of rigidbody {rb.name} is null");
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
+            Func<JSONNode> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
 
             if (collider is SphereCollider)
             {
                 var sphereCollider = (SphereCollider)collider;
-                var rbRadiusStorableFloat = new JSONStorableFloat(
-                    $"{colliderName}/radius",
-                    sphereCollider.radius,
-                    (float val) =>
-                    {
-                        sphereCollider.radius = val;
-                        _state[rb.name]["colliders"][colliderUniqueName]["radius"].AsFloat = val;
-                    },
-                    0f,
-                    0.2f,
-                    false);
-                CreateFineSlider(rbRadiusStorableFloat, true);
-                _adjustmentJSONs.Add(rbRadiusStorableFloat);
+                CreateFloatAdjustment(colliderName, getJsonNode, "radius", sphereCollider.radius, val => sphereCollider.radius = val);
             }
             else if (collider is CapsuleCollider)
             {
                 var capsuleCollider = (CapsuleCollider)collider;
-                var rbRadiusStorableFloat = new JSONStorableFloat(
-                    $"{colliderName}/radius",
-                    capsuleCollider.radius,
-                    (float val) =>
-                    {
-                        capsuleCollider.radius = val;
-                        _state[rb.name]["colliders"][colliderUniqueName]["radius"].AsFloat = val;
-                    },
-                    0f,
-                    0.2f,
-                    false);
-                CreateFineSlider(rbRadiusStorableFloat, true);
-                _adjustmentJSONs.Add(rbRadiusStorableFloat);
-                var rbHeightStorableFloat = new JSONStorableFloat(
-                    $"{colliderName}/height",
-                    capsuleCollider.height,
-                    (float val) =>
-                    {
-                        capsuleCollider.height = val;
-                        _state[rb.name]["colliders"][colliderUniqueName]["height"].AsFloat = val;
-                    },
-                    0f,
-                    0.2f,
-                    false);
-                CreateFineSlider(rbHeightStorableFloat, true);
-                _adjustmentJSONs.Add(rbHeightStorableFloat);
+                CreateFloatAdjustment(colliderName, getJsonNode, "radius", capsuleCollider.radius, val => capsuleCollider.radius = val);
+                CreateFloatAdjustment(colliderName, getJsonNode, "height", capsuleCollider.height, val => capsuleCollider.height = val);
             }
             else if (collider is BoxCollider)
             {
                 var boxCollider = (BoxCollider)collider;
-                var rbWidthStorableFloat = new JSONStorableFloat(
-                    $"{colliderName}/width",
-                    boxCollider.size.x,
-                    (float val) =>
-                    {
-                        boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z);
-                        _state[rb.name]["colliders"][colliderUniqueName]["x"].AsFloat = val;
-                    },
-                    0f,
-                    0.2f,
-                    false);
-                CreateFineSlider(rbWidthStorableFloat, true);
-                _adjustmentJSONs.Add(rbWidthStorableFloat);
-                var rbHeightStorableFloat = new JSONStorableFloat(
-                    $"{colliderName}/height",
-                    boxCollider.size.y,
-                    (float val) =>
-                    {
-                        boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z);
-                        _state[rb.name]["colliders"][colliderUniqueName]["y"].AsFloat = val;
-                    },
-                    0f,
-                    0.2f,
-                    false);
-                CreateFineSlider(rbHeightStorableFloat, true);
-                _adjustmentJSONs.Add(rbHeightStorableFloat);
-                var rbDepthStorableFloat = new JSONStorableFloat(
-                    $"{colliderName}/depth",
-                    boxCollider.size.z,
-                    (float val) =>
-                    {
-                        boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val);
-                        _state[rb.name]["colliders"][colliderUniqueName]["z"].AsFloat = val;
-                    },
-                    0f,
-                    0.2f,
-                    false);
-                CreateFineSlider(rbDepthStorableFloat, true);
-                _adjustmentJSONs.Add(rbDepthStorableFloat);
+                CreateFloatAdjustment(colliderName, getJsonNode, "x", boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
+                CreateFloatAdjustment(colliderName, getJsonNode, "y", boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
+                CreateFloatAdjustment(colliderName, getJsonNode, "z", boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
             }
             else
             {
                 SuperController.LogError($"Unknown collider {rb.name}/{collider.name} type: {collider}");
             }
         }
+    }
+
+    private void CreateFloatAdjustment(string parentName, Func<JSONNode> getJsonNode, string propertyName, float initial, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
+    {
+        var storable = new JSONStorableFloat(
+            $"{parentName}/{propertyName}",
+            initial,
+            (float val) =>
+            {
+                setValue(val);
+                getJsonNode()[propertyName].AsFloat = val;
+            },
+            min,
+            max,
+            false);
+        CreateFineSlider(storable, true);
+        _adjustmentStorables.Add(storable);
+    }
+
+    private void CreateBoolAdjustment(string parentName, Func<JSONNode> getJsonNode, string propertyName, bool initial, Action<bool> setValue)
+    {
+        var storable = new JSONStorableBool(
+            $"{parentName}/{propertyName}",
+            initial,
+            (bool val) =>
+            {
+                setValue(val);
+                getJsonNode()[propertyName].AsBool = val;
+            });
+        CreateToggle(storable, true);
+        _adjustmentStorables.Add(storable);
     }
 
     public void OnEnable()
@@ -299,7 +289,10 @@ public class ColliderTuner : MVRScript
             }
 
             var rbJC = (JSONClass)rbEntry.Value;
-            if (rbJC.HasKey("enabled")) rb.detectCollisions = rbJC["enabled"].AsBool;
+            if (rbJC.HasKey("enabled"))
+            {
+                rb.detectCollisions = rbJC["enabled"].AsBool;
+            }
 
             var colliders = rb.GetComponentsInChildren<Collider>().Where(c => c.attachedRigidbody == rb).ToList();
             foreach (KeyValuePair<string, JSONNode> colliderEntry in rbJC["colliders"].AsObject)
@@ -402,7 +395,7 @@ public class ColliderTuner : MVRScript
         var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         try
         {
-            var material = new Material(Shader.Find("Standard")) { color = new Color(1, 0, 0, 0.1f) };
+            var material = new Material(Shader.Find("Standard")) { color = _currentRb == rb ? _selectedColor : _unselectedColor };
             material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             material.SetInt("_ZWrite", 0);
@@ -434,6 +427,7 @@ public class ColliderTuner : MVRScript
     {
         foreach (var rb in _containingAtom.rigidbodies)
         {
+            if (rb.isKinematic) continue;
             if (rb.name == "control") continue;
             if (rb.name == "object") continue;
             if (rb.name.EndsWith("Control")) continue;
@@ -454,4 +448,19 @@ public class ColliderTuner : MVRScript
     }
 
     #endregion
+}
+
+public static class JSONNodeExtensions
+{
+    public static JSONClass GetOrCreate(this JSONClass jc, string propertyName)
+    {
+        if (jc.HasKey(propertyName))
+        {
+            return (JSONClass)jc[propertyName];
+        }
+
+        var child = new JSONClass();
+        jc.Add(propertyName, child);
+        return child;
+    }
 }
