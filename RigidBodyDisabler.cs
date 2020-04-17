@@ -12,12 +12,12 @@ using UnityEngine;
 /// </summary>
 public class RigidBodyDisabler : MVRScript
 {
-    private readonly List<JSONStorableBool> _rigidBodiesJSONs = new List<JSONStorableBool>();
     private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
-    private readonly HashSet<Rigidbody> _disabledRigidbodies = new HashSet<Rigidbody>();
+    private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Atom _containingAtom;
     private JSONStorableBool _displayJSON;
     private UIDynamicPopup _rbAdjustListUI;
+    private JSONClass _state = new JSONClass();
 
     #region Lifecycle
 
@@ -35,30 +35,22 @@ public class RigidBodyDisabler : MVRScript
             { isStorable = false };
             CreateToggle(_displayJSON, false);
 
-            var rigidbodies = GetRigidBodies().OrderBy(rb => rb.name).ToList();
+            _rigidbodiesNameMap = new Dictionary<string, Rigidbody>();
+            foreach (var rb in GetRigidBodies())
+            {
+                var simplified = Simplify(rb.name);
+                var name = simplified;
+                var counter = 0;
+                while (_rigidbodiesNameMap.ContainsKey(name))
+                {
+                    name = $"{simplified} ({++counter})";
+                }
+                _rigidbodiesNameMap.Add(name, rb);
+            }
 
-            CreateTextField(new JSONStorableString("Collider Adjustment Label", "Adjustments will not be saved nor restored."), false).height = 60f;
-            var rbAdjustListJSON = new JSONStorableStringChooser("Collider Adjustment", rigidbodies.Select(rb => rb.name).ToList(), "", "Collider Adjustment", (string val) => ShowColliderAdjustments(val));
+            var rbAdjustListJSON = new JSONStorableStringChooser("Collider Adjustment", _rigidbodiesNameMap.Keys.OrderBy(k => k).ToList(), "", "Collider Adjustment", (string val) => ShowColliderAdjustments(val));
             _rbAdjustListUI = CreateScrollablePopup(rbAdjustListJSON, false);
             _rbAdjustListUI.popupPanelHeight = 900f;
-
-            CreateTextField(new JSONStorableString("Collider Disabler Label", "Colliders to disable; will be saved in your scene and restored."), true).height = 60f;
-            foreach (var rb in rigidbodies)
-            {
-                var rbJSON = new JSONStorableBool(rb.name, rb.detectCollisions, (bool val) =>
-                {
-                    rb.detectCollisions = val;
-                    if (!val) _disabledRigidbodies.Add(rb);
-                    else _disabledRigidbodies.Remove(rb);
-
-                    GameObject rbDisplay;
-                    if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
-                        rbDisplay.SetActive(val);
-                });
-                var rbUI = CreateToggle(rbJSON, true);
-                rbUI.label = Simplify(rb.name);
-                _rigidBodiesJSONs.Add(rbJSON);
-            }
         }
         catch (Exception e)
         {
@@ -85,63 +77,139 @@ public class RigidBodyDisabler : MVRScript
         return name;
     }
 
-    private readonly List<JSONStorableFloat> _adjustmentJSONs = new List<JSONStorableFloat>();
+    private readonly List<JSONStorableParam> _adjustmentJSONs = new List<JSONStorableParam>();
 
     private void ShowColliderAdjustments(string name)
     {
         foreach (var adjustmentJSON in _adjustmentJSONs)
         {
-            RemoveSlider(adjustmentJSON);
+            if (adjustmentJSON is JSONStorableFloat)
+                RemoveSlider((JSONStorableFloat)adjustmentJSON);
+            else if (adjustmentJSON is JSONStorableBool)
+                RemoveToggle((JSONStorableBool)adjustmentJSON);
+            else
+                SuperController.LogError($"Unknown ui type for {adjustmentJSON.name}: {adjustmentJSON.GetType()}");
         }
         _adjustmentJSONs.Clear();
 
         if (name == "") return;
-        var rb = containingAtom.rigidbodies.FirstOrDefault(r => r.name == name);
-        if (rb == null) return;
+        var rb = _rigidbodiesNameMap[name];
 
-        foreach (var rbCollider in rb.GetComponentsInChildren<Collider>())
+        var rbJSON = new JSONStorableBool("Detect Collisions", rb.detectCollisions, (bool val) =>
         {
-            if (rbCollider.attachedRigidbody != rb) continue;
+            rb.detectCollisions = val;
+            _state[rb.name]["enabled"].AsBool = val;
 
-            if (rbCollider is SphereCollider)
+            GameObject rbDisplay;
+            if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
+                rbDisplay.SetActive(val);
+        });
+        var rbUI = CreateToggle(rbJSON, true);
+        _adjustmentJSONs.Add(rbJSON);
+
+        var colliders = rb.GetComponentsInChildren<Collider>().Where(c => c.attachedRigidbody == rb).ToList();
+        for (var colliderIndex = 0; colliderIndex < colliders.Count; colliderIndex++)
+        {
+            var collider = colliders[colliderIndex];
+
+            var colliderName = Simplify(collider.name);
+            var colliderUniqueName = $"{collider.name}:{colliderIndex}";
+
+            if (collider is SphereCollider)
             {
-                var sphereCollider = (SphereCollider)rbCollider;
-                var rbRadiusStorableFloat = new JSONStorableFloat($"{rbCollider.name}/radius", sphereCollider.radius, (float val) => sphereCollider.radius = val, 0f, 0.5f, false);
-                CreateFineSlider(rbRadiusStorableFloat, false);
+                var sphereCollider = (SphereCollider)collider;
+                var rbRadiusStorableFloat = new JSONStorableFloat(
+                    $"{colliderName}/radius",
+                    sphereCollider.radius,
+                    (float val) =>
+                    {
+                        sphereCollider.radius = val;
+                        _state[rb.name]["colliders"][colliderUniqueName]["radius"].AsFloat = val;
+                    },
+                    0f,
+                    0.2f,
+                    false);
+                CreateFineSlider(rbRadiusStorableFloat, true);
                 _adjustmentJSONs.Add(rbRadiusStorableFloat);
             }
-            else if (rbCollider is CapsuleCollider)
+            else if (collider is CapsuleCollider)
             {
-                var capsuleCollider = (CapsuleCollider)rbCollider;
-                var rbRadiusStorableFloat = new JSONStorableFloat($"{rbCollider.name}/radius", capsuleCollider.radius, (float val) => capsuleCollider.radius = val, 0f, 0.5f, false);
-                CreateFineSlider(rbRadiusStorableFloat, false);
+                var capsuleCollider = (CapsuleCollider)collider;
+                var rbRadiusStorableFloat = new JSONStorableFloat(
+                    $"{colliderName}/radius",
+                    capsuleCollider.radius,
+                    (float val) =>
+                    {
+                        capsuleCollider.radius = val;
+                        _state[rb.name]["colliders"][colliderUniqueName]["radius"].AsFloat = val;
+                    },
+                    0f,
+                    0.2f,
+                    false);
+                CreateFineSlider(rbRadiusStorableFloat, true);
                 _adjustmentJSONs.Add(rbRadiusStorableFloat);
-                var rbHeightStorableFloat = new JSONStorableFloat($"{rbCollider.name}/height", capsuleCollider.height, (float val) => capsuleCollider.height = val, 0f, 0.5f, false);
-                CreateFineSlider(rbHeightStorableFloat, false);
+                var rbHeightStorableFloat = new JSONStorableFloat(
+                    $"{colliderName}/height",
+                    capsuleCollider.height,
+                    (float val) =>
+                    {
+                        capsuleCollider.height = val;
+                        _state[rb.name]["colliders"][colliderUniqueName]["height"].AsFloat = val;
+                    },
+                    0f,
+                    0.2f,
+                    false);
+                CreateFineSlider(rbHeightStorableFloat, true);
                 _adjustmentJSONs.Add(rbHeightStorableFloat);
             }
-            else if (rbCollider is BoxCollider)
+            else if (collider is BoxCollider)
             {
-                var boxCollider = (BoxCollider)rbCollider;
-                var rbWidthStorableFloat = new JSONStorableFloat($"{rbCollider.name}/width", boxCollider.size.x, (float val) => boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z), 0f, 0.5f, false);
-                CreateFineSlider(rbWidthStorableFloat, false);
+                var boxCollider = (BoxCollider)collider;
+                var rbWidthStorableFloat = new JSONStorableFloat(
+                    $"{colliderName}/width",
+                    boxCollider.size.x,
+                    (float val) =>
+                    {
+                        boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z);
+                        _state[rb.name]["colliders"][colliderUniqueName]["x"].AsFloat = val;
+                    },
+                    0f,
+                    0.2f,
+                    false);
+                CreateFineSlider(rbWidthStorableFloat, true);
                 _adjustmentJSONs.Add(rbWidthStorableFloat);
-                var rbHeightStorableFloat = new JSONStorableFloat($"{rbCollider.name}/height", boxCollider.size.y, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z), 0f, 0.5f, false);
-                CreateFineSlider(rbHeightStorableFloat, false);
+                var rbHeightStorableFloat = new JSONStorableFloat(
+                    $"{colliderName}/height",
+                    boxCollider.size.y,
+                    (float val) =>
+                    {
+                        boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z);
+                        _state[rb.name]["colliders"][colliderUniqueName]["y"].AsFloat = val;
+                    },
+                    0f,
+                    0.2f,
+                    false);
+                CreateFineSlider(rbHeightStorableFloat, true);
                 _adjustmentJSONs.Add(rbHeightStorableFloat);
-                var rbDepthStorableFloat = new JSONStorableFloat($"{rbCollider.name}/depth", boxCollider.size.z, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val), 0f, 0.5f, false);
-                CreateFineSlider(rbDepthStorableFloat, false);
+                var rbDepthStorableFloat = new JSONStorableFloat(
+                    $"{colliderName}/depth",
+                    boxCollider.size.z,
+                    (float val) =>
+                    {
+                        boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val);
+                        _state[rb.name]["colliders"][colliderUniqueName]["z"].AsFloat = val;
+                    },
+                    0f,
+                    0.2f,
+                    false);
+                CreateFineSlider(rbDepthStorableFloat, true);
                 _adjustmentJSONs.Add(rbDepthStorableFloat);
             }
             else
             {
-                SuperController.LogError($"Unknown collider {rb.name}/{rbCollider.name}/ type: {rbCollider}");
+                SuperController.LogError($"Unknown collider {rb.name}/{collider.name} type: {collider}");
             }
         }
-
-        // So it shows up on top
-        _rbAdjustListUI.popup.Toggle();
-        _rbAdjustListUI.popup.Toggle();
     }
 
     public void OnEnable()
@@ -149,8 +217,6 @@ public class RigidBodyDisabler : MVRScript
         if (_containingAtom == null) return;
         try
         {
-            InitRigidBodyCollisions();
-
             if (_displayJSON.val && _rigidBodiesDisplay.Count == 0)
                 CreateRigidBodiesDisplay();
         }
@@ -166,7 +232,6 @@ public class RigidBodyDisabler : MVRScript
         try
         {
             DestroyRigidBodiesDisplay();
-            ResetRigidBodyCollisions();
         }
         catch (Exception e)
         {
@@ -180,7 +245,6 @@ public class RigidBodyDisabler : MVRScript
         try
         {
             DestroyRigidBodiesDisplay();
-            ResetRigidBodyCollisions();
         }
         catch (Exception e)
         {
@@ -195,20 +259,8 @@ public class RigidBodyDisabler : MVRScript
     public override JSONClass GetJSON(bool includePhysical = true, bool includeAppearance = true, bool forceStore = false)
     {
         var json = base.GetJSON(includePhysical, includeAppearance, forceStore);
-
-        try
-        {
-            var disabledRigidbodies = new JSONArray();
-            foreach (var rbJSON in _rigidBodiesJSONs.Where(rbJSON => !rbJSON.val))
-                disabledRigidbodies.Add(rbJSON.name);
-            json["disabledRigidbodies"] = disabledRigidbodies;
-            needsStore = true;
-        }
-        catch (Exception exc)
-        {
-            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(GetJSON)}:  {exc}");
-        }
-
+        json["rigidbodies"] = _state;
+        needsStore = true;
         return json;
     }
 
@@ -218,16 +270,8 @@ public class RigidBodyDisabler : MVRScript
 
         try
         {
-            var disabledRigidbodies = jc["disabledRigidbodies"] as JSONArray;
-            if (disabledRigidbodies != null)
-            {
-                foreach (var rbName in disabledRigidbodies.Cast<JSONNode>())
-                {
-                    var rbJSON = _rigidBodiesJSONs.FirstOrDefault(r => r.name == rbName.Value);
-                    if (rbJSON != null)
-                        rbJSON.val = false;
-                }
-            }
+            _state = jc.HasKey("rigidbodies") ? (JSONClass)jc["rigidbodies"] : new JSONClass();
+            RestoreFromState();
         }
         catch (Exception exc)
         {
@@ -240,62 +284,82 @@ public class RigidBodyDisabler : MVRScript
 
     public override void PostRestore()
     {
-        var mismatch = false;
-        foreach (var rb in _disabledRigidbodies)
+        RestoreFromState();
+    }
+
+    public void RestoreFromState()
+    {
+        foreach (KeyValuePair<string, JSONNode> rbEntry in _state)
         {
-            var rbJSON = GetBoolJSONParam(rb.name);
-            if (rbJSON == null) continue;
-            if (rb.detectCollisions != rbJSON.val)
+            var rb = containingAtom.rigidbodies.FirstOrDefault(x => x.name == rbEntry.Key);
+            if (rb == null)
             {
-                mismatch = true;
-                break;
+                SuperController.LogError($"Could not find rigidbody '{rbEntry.Key}' specified in save");
+                continue;
+            }
+
+            var rbJC = (JSONClass)rbEntry.Value;
+            if (rbJC.HasKey("enabled")) rb.detectCollisions = rbJC["enabled"].AsBool;
+
+            var colliders = rb.GetComponentsInChildren<Collider>().Where(c => c.attachedRigidbody == rb).ToList();
+            foreach (KeyValuePair<string, JSONNode> colliderEntry in rbJC["colliders"].AsObject)
+            {
+                var colliderUniqueName = colliderEntry.Key.Split(':');
+                if (colliderUniqueName.Length != 2)
+                {
+                    SuperController.LogError($"Invalid collider unique name '{colliderEntry.Key}' of rigidbody '{rbEntry.Key}' specified in save");
+                    continue;
+                }
+                var colliderName = colliderUniqueName[0];
+                var colliderIndex = int.Parse(colliderUniqueName[1]);
+                if (colliders.Count <= colliderIndex)
+                {
+                    SuperController.LogError($"Could not find collider '{colliderName}' at index {colliderIndex} of rigidbody '{rbEntry.Key}' specified in save (not enough colliders)");
+                    continue;
+                }
+                var collider = colliders[colliderIndex];
+                if (collider.name != colliderName)
+                {
+                    SuperController.LogError($"Could not find collider '{colliderName}' at index {colliderIndex} of rigidbody '{rbEntry.Key}' specified in save (found '{collider.name}' at this index)");
+                    continue;
+                }
+
+                RestoreColliderFromState(rb, collider, (JSONClass)colliderEntry.Value);
             }
         }
-        if (mismatch)
-        {
-            ResetRigidBodyCollisions();
-            InitRigidBodyCollisions();
-        }
     }
 
-    #endregion
-
-    #region Rigidbodies
-
-    private void InitRigidBodyCollisions()
+    private void RestoreColliderFromState(Rigidbody rb, Collider collider, JSONClass jc)
     {
-        foreach (var rb in GetRigidBodies())
+        if (collider is SphereCollider)
         {
-            var rbJSON = GetBoolJSONParam(rb.name);
-            if (rbJSON == null) continue;
-            rb.detectCollisions = rbJSON.val;
-            if (!rbJSON.val) _disabledRigidbodies.Add(rb);
+            var sphereCollider = (SphereCollider)collider;
+            if (jc.HasKey("radius"))
+                sphereCollider.radius = jc["radius"].AsFloat;
         }
-    }
-
-    private void ResetRigidBodyCollisions()
-    {
-        foreach (var rb in _disabledRigidbodies)
+        else if (collider is CapsuleCollider)
         {
-            if (rb == null) throw new NullReferenceException($"{nameof(rb)} is null");
-            rb.detectCollisions = true;
+            var capsuleCollider = (CapsuleCollider)collider;
+            if (jc.HasKey("radius"))
+                capsuleCollider.radius = jc["radius"].AsFloat;
+            if (jc.HasKey("height"))
+                capsuleCollider.height = jc["height"].AsFloat;
         }
-        _disabledRigidbodies.Clear();
-    }
-
-    private IEnumerable<Rigidbody> GetRigidBodies()
-    {
-        foreach (var rb in _containingAtom.rigidbodies)
+        else if (collider is BoxCollider)
         {
-            if (rb.name == "control") continue;
-            if (rb.name == "object") continue;
-            if (rb.name.EndsWith("Control")) continue;
-            if (rb.name.StartsWith("hairTool")) continue;
-            if (rb.name.EndsWith("Trigger")) continue;
-            if (rb.name.EndsWith("UI")) continue;
-            var rbCollider = rb.GetComponentInChildren<Collider>();
-            if (rbCollider == null) continue;
-            yield return rb;
+            var boxCollider = (BoxCollider)collider;
+            var size = boxCollider.size;
+            if (jc.HasKey("x"))
+                size.x = jc["x"].AsFloat;
+            if (jc.HasKey("y"))
+                size.x = jc["y"].AsFloat;
+            if (jc.HasKey("z"))
+                size.x = jc["z"].AsFloat;
+            boxCollider.size = size;
+        }
+        else
+        {
+            SuperController.LogError($"Unknown collider {rb.name}/{collider.name}/ type: {collider}");
         }
     }
 
@@ -365,6 +429,22 @@ public class RigidBodyDisabler : MVRScript
     #endregion
 
     #region UI
+
+    private IEnumerable<Rigidbody> GetRigidBodies()
+    {
+        foreach (var rb in _containingAtom.rigidbodies)
+        {
+            if (rb.name == "control") continue;
+            if (rb.name == "object") continue;
+            if (rb.name.EndsWith("Control")) continue;
+            if (rb.name.StartsWith("hairTool")) continue;
+            if (rb.name.EndsWith("Trigger")) continue;
+            if (rb.name.EndsWith("UI")) continue;
+            var rbCollider = rb.GetComponentInChildren<Collider>();
+            if (rbCollider == null) continue;
+            yield return rb;
+        }
+    }
 
     public UIDynamicSlider CreateFineSlider(JSONStorableFloat jsf, bool rightSide)
     {
