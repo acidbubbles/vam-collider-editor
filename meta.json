@@ -1,15 +1,15 @@
 { 
    "licenseType" : "CC BY-SA", 
    "creatorName" : "AcidBubbles", 
-   "packageName" : "RigidBodyDisabler", 
+   "packageName" : "ColliderTuner", 
    "includeVersionsInReferences" : "true", 
    "description" : "v0.0.0 Disable rigidbodis on an atom", 
    "credits" : "", 
    "instructions" : "", 
-   "promotionalLink" : "https://github.com/acidbubbles/vam-rigidbody-disabler", 
+   "promotionalLink" : "https://github.com/acidbubbles/vam-collider-tuner", 
    "programVersion" : "1.19.2.0", 
    "contentList" : [ 
-      "Custom\\Scripts\\AcidBubbles\\RigidBodyDisabler\\RigidBodyDisabler.cs"
+      "Custom\\Scripts\\AcidBubbles\\ColliderTuner\\ColliderTuner.cs"
    ], 
    "dependencies" : { 
    }

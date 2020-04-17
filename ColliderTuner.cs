@@ -8,9 +8,9 @@ using UnityEngine;
 /// Rigid Body Disabled
 /// By Acidbubbles
 /// Disable rigidbodis on an atom
-/// Source: https://github.com/acidbubbles/vam-rigidbody-disabler
+/// Source: https://github.com/acidbubbles/vam-collider-tuner
 /// </summary>
-public class RigidBodyDisabler : MVRScript
+public class ColliderTuner : MVRScript
 {
     private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
@@ -54,7 +54,7 @@ public class RigidBodyDisabler : MVRScript
         }
         catch (Exception e)
         {
-            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(Init)}: {e}");
+            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(Init)}: {e}");
         }
     }
 
@@ -222,7 +222,7 @@ public class RigidBodyDisabler : MVRScript
         }
         catch (Exception e)
         {
-            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(OnEnable)}: {e}");
+            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(OnEnable)}: {e}");
         }
     }
 
@@ -235,7 +235,7 @@ public class RigidBodyDisabler : MVRScript
         }
         catch (Exception e)
         {
-            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(OnDisable)}: {e}");
+            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(OnDisable)}: {e}");
         }
     }
 
@@ -248,7 +248,7 @@ public class RigidBodyDisabler : MVRScript
         }
         catch (Exception e)
         {
-            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(OnDestroy)}: {e}");
+            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(OnDestroy)}: {e}");
         }
     }
 
@@ -275,7 +275,7 @@ public class RigidBodyDisabler : MVRScript
         }
         catch (Exception exc)
         {
-            SuperController.LogError($"{nameof(RigidBodyDisabler)}.{nameof(RestoreFromJSON)}: {exc}");
+            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(RestoreFromJSON)}: {exc}");
         }
     }
 

@@ -56,7 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="RigidBodyDisabler.cs" />
+    <Compile Include="ColliderTuner.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
