@@ -107,30 +107,30 @@ public class RigidBodyDisabler : MVRScript
             {
                 var sphereCollider = (SphereCollider)rbCollider;
                 var rbRadiusStorableFloat = new JSONStorableFloat($"{rbCollider.name}/radius", sphereCollider.radius, (float val) => sphereCollider.radius = val, 0f, 0.5f, false);
-                CreateSlider(rbRadiusStorableFloat, false);
+                CreateFineSlider(rbRadiusStorableFloat, false);
                 _adjustmentJSONs.Add(rbRadiusStorableFloat);
             }
             else if (rbCollider is CapsuleCollider)
             {
                 var capsuleCollider = (CapsuleCollider)rbCollider;
                 var rbRadiusStorableFloat = new JSONStorableFloat($"{rbCollider.name}/radius", capsuleCollider.radius, (float val) => capsuleCollider.radius = val, 0f, 0.5f, false);
-                CreateSlider(rbRadiusStorableFloat, false);
+                CreateFineSlider(rbRadiusStorableFloat, false);
                 _adjustmentJSONs.Add(rbRadiusStorableFloat);
                 var rbHeightStorableFloat = new JSONStorableFloat($"{rbCollider.name}/height", capsuleCollider.height, (float val) => capsuleCollider.height = val, 0f, 0.5f, false);
-                CreateSlider(rbHeightStorableFloat, false);
+                CreateFineSlider(rbHeightStorableFloat, false);
                 _adjustmentJSONs.Add(rbHeightStorableFloat);
             }
             else if (rbCollider is BoxCollider)
             {
                 var boxCollider = (BoxCollider)rbCollider;
                 var rbWidthStorableFloat = new JSONStorableFloat($"{rbCollider.name}/width", boxCollider.size.x, (float val) => boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z), 0f, 0.5f, false);
-                CreateSlider(rbWidthStorableFloat, false);
+                CreateFineSlider(rbWidthStorableFloat, false);
                 _adjustmentJSONs.Add(rbWidthStorableFloat);
                 var rbHeightStorableFloat = new JSONStorableFloat($"{rbCollider.name}/height", boxCollider.size.y, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z), 0f, 0.5f, false);
-                CreateSlider(rbHeightStorableFloat, false);
+                CreateFineSlider(rbHeightStorableFloat, false);
                 _adjustmentJSONs.Add(rbHeightStorableFloat);
                 var rbDepthStorableFloat = new JSONStorableFloat($"{rbCollider.name}/depth", boxCollider.size.z, (float val) => boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val), 0f, 0.5f, false);
-                CreateSlider(rbDepthStorableFloat, false);
+                CreateFineSlider(rbDepthStorableFloat, false);
                 _adjustmentJSONs.Add(rbDepthStorableFloat);
             }
             else
@@ -360,6 +360,17 @@ public class RigidBodyDisabler : MVRScript
             throw;
         }
         return go;
+    }
+
+    #endregion
+
+    #region UI
+
+    public UIDynamicSlider CreateFineSlider(JSONStorableFloat jsf, bool rightSide)
+    {
+        var slider = CreateSlider(jsf, rightSide);
+        slider.valueFormat = "F5";
+        return slider;
     }
 
     #endregion
