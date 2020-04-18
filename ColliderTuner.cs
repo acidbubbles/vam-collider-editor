@@ -282,7 +282,8 @@ public class ColliderTuner : MVRScript
                 if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = defaultVal;
                 jc[propertyName].AsFloat = val;
                 setValue(val);
-                AdjustDisplayFromCollider(collider, _collidersDisplayMap[collider]);
+                if (_collidersDisplayMap != null)
+                    AdjustDisplayFromCollider(collider, _collidersDisplayMap[collider]);
             },
             min,
             max,
