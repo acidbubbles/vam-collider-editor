@@ -13,6 +13,7 @@ using UnityEngine;
 /// </summary>
 public class ColliderTuner : MVRScript
 {
+    private const string _saveExt = "collidersprofile";
     private Dictionary<Collider, GameObject> _collidersDisplayMap;
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
@@ -22,6 +23,7 @@ public class ColliderTuner : MVRScript
     private Rigidbody _selectedRigidbody;
     private JSONStorableBool _displayJSON;
     private JSONClass _state = new JSONClass();
+    private string _lastBrowseDir;
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
 
@@ -44,6 +46,8 @@ public class ColliderTuner : MVRScript
             })
             { isStorable = false };
             CreateToggle(_displayJSON, false);
+
+            CreateSpacer().height = 30f;
 
             _rigidbodiesNameMap = new Dictionary<string, Rigidbody>();
             foreach (var rb in GetRigidBodies())
@@ -68,6 +72,63 @@ public class ColliderTuner : MVRScript
 
             var rbListUI = CreateScrollablePopup(rbListJSON, false);
             rbGroupListUI.popupPanelHeight = 900f;
+
+            CreateSpacer().height = 30f;
+
+            var reapplyUI = CreateButton("Reapply", false);
+            reapplyUI.button.onClick.AddListener(() =>
+            {
+                RestoreFromState(false);
+                if (_collidersDisplayMap != null)
+                {
+                    DestroyColliderDisplays();
+                    CreateColliderDisplays();
+                }
+            });
+
+            var resetAllUI = CreateButton("Reset All", false);
+            resetAllUI.button.onClick.AddListener(() =>
+            {
+                rbListJSON.val = "";
+                rbGroupListJSON.val = "";
+                RestoreFromState(true);
+                if (_collidersDisplayMap != null)
+                {
+                    DestroyColliderDisplays();
+                    CreateColliderDisplays();
+                }
+            });
+
+            CreateSpacer().height = 30f;
+
+            var loadPresetUI = CreateButton("Load Preset", false);
+            loadPresetUI.button.onClick.AddListener(() =>
+            {
+                if (_lastBrowseDir != null) SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
+                SuperController.singleton.GetMediaPathDialog((string path) =>
+                {
+                    HandleLoadPreset(path);
+                    rbListJSON.val = "";
+                    rbGroupListJSON.val = "";
+                    if (_collidersDisplayMap != null)
+                    {
+                        DestroyColliderDisplays();
+                        CreateColliderDisplays();
+                    }
+                }, _saveExt);
+            });
+
+            var savePresetUI = CreateButton("Save Preset", false);
+            savePresetUI.button.onClick.AddListener(() =>
+            {
+                SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
+                SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt);
+
+                var browser = SuperController.singleton.mediaFileBrowserUI;
+                browser.SetTextEntry(true);
+                browser.fileEntryField.text = string.Format("{0}.{1}", ((int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds).ToString(), _saveExt);
+                browser.ActivateFileNameField();
+            });
         }
         catch (Exception e)
         {
@@ -76,9 +137,10 @@ public class ColliderTuner : MVRScript
     }
 
     private readonly Regex _handNameRegex = new Regex(@"^(l|r)(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+
     private string GroupOf(string name)
     {
-        if(name.StartsWith("tongue")) return "Tongue";
+        if (name.StartsWith("tongue")) return "Tongue";
         if (_handNameRegex.IsMatch(name))
             return name.StartsWith("r") ? "Right Hand" : "Left Hand";
 
@@ -172,7 +234,7 @@ public class ColliderTuner : MVRScript
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
             Func<string, float?> getInitial = (string prop) =>
             {
-                var val = _state[rb.name]["colliders"][colliderUniqueName][prop].AsFloat;
+                var val = _state.GetIfExists(rb.name)?.GetIfExists("colliders")?.GetIfExists(colliderUniqueName)?.GetIfExists(prop)?.AsFloat;
                 if (val == 0) return null;
                 return val;
             };
@@ -407,6 +469,29 @@ public class ColliderTuner : MVRScript
         }
     }
 
+    void HandleLoadPreset(string aPath)
+    {
+        if (string.IsNullOrEmpty(aPath))
+            return;
+        _lastBrowseDir = aPath.Substring(0, aPath.LastIndexOfAny(new char[] { '/', '\\' })) + @"\";
+        RestoreFromState(true);
+        _state = (JSONClass)LoadJSON(aPath);
+        RestoreFromState(false);
+    }
+
+    void HandleSavePreset(string aPath)
+    {
+        if (string.IsNullOrEmpty(aPath))
+            return;
+        _lastBrowseDir = aPath.Substring(0, aPath.LastIndexOfAny(new char[] { '/', '\\' })) + @"\";
+
+        if (!aPath.ToLower().EndsWith($".{_saveExt}"))
+        {
+            aPath += $".{_saveExt}";
+        }
+        SaveJSON(_state, aPath);
+    }
+
     #endregion
 
     #region Display
@@ -565,5 +650,15 @@ public static class JSONNodeExtensions
         var child = new JSONClass();
         jc.Add(propertyName, child);
         return child;
+    }
+
+    public static JSONClass GetIfExists(this JSONClass jc, string propertyName)
+    {
+        if (jc.HasKey(propertyName))
+        {
+            return null;
+        }
+
+        return (JSONClass)jc[propertyName];
     }
 }
