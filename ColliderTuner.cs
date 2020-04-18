@@ -12,7 +12,7 @@ using UnityEngine;
 /// </summary>
 public class ColliderTuner : MVRScript
 {
-    private readonly Dictionary<Collider, GameObject> _collidersDisplayMap = new Dictionary<Collider, GameObject>();
+    private Dictionary<Collider, GameObject> _collidersDisplayMap;
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
     private Atom _containingAtom;
@@ -20,7 +20,6 @@ public class ColliderTuner : MVRScript
     private Material _deselectMaterial;
     private Rigidbody _selectedRigidbody;
     private JSONStorableBool _displayJSON;
-    private UIDynamicPopup _rbAdjustListUI;
     private JSONClass _state = new JSONClass();
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
@@ -39,8 +38,8 @@ public class ColliderTuner : MVRScript
 
             _displayJSON = new JSONStorableBool("Display Rigidbodies", false, (bool val) =>
             {
-                if (val) CreateRigidBodiesDisplay();
-                else DestroyRigidBodiesDisplay();
+                if (val) CreateColliderDisplays();
+                else DestroyColliderDisplays();
             })
             { isStorable = false };
             CreateToggle(_displayJSON, false);
@@ -58,14 +57,26 @@ public class ColliderTuner : MVRScript
                 _rigidbodiesNameMap.Add(name, rb);
             }
 
-            var rbAdjustListJSON = new JSONStorableStringChooser("Collider Adjustment", _rigidbodiesNameMap.Keys.OrderBy(k => k).ToList(), "", "Collider Adjustment", (string val) => ShowColliderAdjustments(val));
-            _rbAdjustListUI = CreateScrollablePopup(rbAdjustListJSON, false);
-            _rbAdjustListUI.popupPanelHeight = 900f;
+            var groups = _rigidbodiesNameMap.Keys.GroupBy(k => GroupOf(k)).ToDictionary(g => g.Key, g => g.OrderBy(n => n).ToList());
+            groups.Add("", new List<string>());
+            var rbListJSON = new JSONStorableStringChooser("Collider", new List<string>(), "", "Collider", (string val) => ShowColliderAdjustments(val));
+            var rbGroupListJSON = new JSONStorableStringChooser("Colliders Groups", groups.Keys.OrderBy(k => k).ToList(), "", "Collider Groups", (string val) => { rbListJSON.choices = groups[val]; rbListJSON.val = ""; });
+
+            var rbGroupListUI = CreateScrollablePopup(rbGroupListJSON, false);
+            rbGroupListUI.popupPanelHeight = 900f;
+
+            var rbListUI = CreateScrollablePopup(rbListJSON, false);
+            rbGroupListUI.popupPanelHeight = 900f;
         }
         catch (Exception e)
         {
             SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(Init)}: {e}");
         }
+    }
+
+    private string GroupOf(string name)
+    {
+        return "Other";
     }
 
     private readonly string[] _prefixes = new[]
@@ -106,7 +117,7 @@ public class ColliderTuner : MVRScript
         }
         _adjustmentButtons.Clear();
 
-        if (_selectedRigidbody != null)
+        if (_selectedRigidbody != null && _collidersDisplayMap != null)
         {
             foreach (var collider in _rigidbodyCollidersMap[_selectedRigidbody])
                 _collidersDisplayMap[collider].GetComponent<Renderer>().material = _deselectMaterial;
@@ -133,12 +144,15 @@ public class ColliderTuner : MVRScript
         });
         _adjustmentButtons.Add(resetButton);
 
-        CreateBoolAdjustment(null, () => _state.GetOrCreate(rb.name), "enabled", _state[rb.name].AsObject.HasKey("enabled") ? _state[rb.name]["enabled"].AsBool : rb.detectCollisions, val =>
+        CreateBoolAdjustment(() => _state.GetOrCreate(rb.name), "enabled", _state[rb.name].AsObject.HasKey("enabled") ? _state[rb.name]["enabled"].AsBool : rb.detectCollisions, val =>
         {
             rb.detectCollisions = val;
 
-            foreach (var collider in _rigidbodyCollidersMap[_selectedRigidbody])
-                _collidersDisplayMap[collider].SetActive(val);
+            if (_collidersDisplayMap != null)
+            {
+                foreach (var collider in _rigidbodyCollidersMap[_selectedRigidbody])
+                    _collidersDisplayMap[collider].SetActive(val);
+            }
         });
 
         var colliders = _rigidbodyCollidersMap[rb];
@@ -146,7 +160,8 @@ public class ColliderTuner : MVRScript
         {
             var collider = colliders[colliderIndex];
 
-            _collidersDisplayMap[collider].GetComponent<Renderer>().material = _selectedMaterial;
+            if (_collidersDisplayMap != null)
+                _collidersDisplayMap[collider].GetComponent<Renderer>().material = _selectedMaterial;
 
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
             Func<string, float?> getInitial = (string prop) =>
@@ -204,10 +219,10 @@ public class ColliderTuner : MVRScript
         _adjustmentStorables.Add(storable);
     }
 
-    private void CreateBoolAdjustment(string parentName, Func<JSONClass> getJsonNode, string propertyName, bool initial, Action<bool> setValue)
+    private void CreateBoolAdjustment(Func<JSONClass> getJsonNode, string propertyName, bool initial, Action<bool> setValue)
     {
         var storable = new JSONStorableBool(
-            $"{parentName}/{propertyName}",
+            $"{propertyName}",
             initial,
             (bool val) =>
             {
@@ -228,8 +243,8 @@ public class ColliderTuner : MVRScript
         {
             RestoreFromState(false);
 
-            if (_displayJSON.val && _collidersDisplayMap.Count == 0)
-                CreateRigidBodiesDisplay();
+            if (_displayJSON.val && _collidersDisplayMap == null)
+                CreateColliderDisplays();
         }
         catch (Exception e)
         {
@@ -242,7 +257,7 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
-            DestroyRigidBodiesDisplay();
+            DestroyColliderDisplays();
             RestoreFromState(true);
         }
         catch (Exception e)
@@ -256,7 +271,7 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
-            DestroyRigidBodiesDisplay();
+            DestroyColliderDisplays();
             RestoreFromState(true);
         }
         catch (Exception e)
@@ -403,9 +418,10 @@ public class ColliderTuner : MVRScript
         return material;
     }
 
-    private void CreateRigidBodiesDisplay()
+    private void CreateColliderDisplays()
     {
-        DestroyRigidBodiesDisplay();
+        DestroyColliderDisplays();
+        _collidersDisplayMap = new Dictionary<Collider, GameObject>();
         foreach (var rb in GetRigidBodies())
         {
             foreach (var collider in _rigidbodyCollidersMap[rb])
@@ -424,13 +440,14 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private void DestroyRigidBodiesDisplay()
+    private void DestroyColliderDisplays()
     {
+        if (_collidersDisplayMap == null) return;
         foreach (var rbDisplay in _collidersDisplayMap)
         {
             Destroy(rbDisplay.Value);
         }
-        _collidersDisplayMap.Clear();
+        _collidersDisplayMap = null;
     }
 
     public GameObject CreateDisplayGameObject(Collider collider, bool selected)
