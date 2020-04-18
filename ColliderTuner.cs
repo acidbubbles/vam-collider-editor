@@ -12,7 +12,7 @@ using UnityEngine;
 /// </summary>
 public class ColliderTuner : MVRScript
 {
-    private readonly Dictionary<Collider, GameObject> _rigidBodiesDisplay = new Dictionary<Collider, GameObject>();
+    private readonly Dictionary<Collider, GameObject> _collidersDisplay = new Dictionary<Collider, GameObject>();
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Atom _containingAtom;
     private Material _selectedMaterial;
@@ -123,7 +123,7 @@ public class ColliderTuner : MVRScript
         if (_currentRb != null)
         {
             foreach (var collider in _rbCollidersMap[_currentRb])
-                _rigidBodiesDisplay[collider].GetComponent<Renderer>().material = _deselectMaterial;
+                _collidersDisplay[collider].GetComponent<Renderer>().material = _deselectMaterial;
         }
         _currentRb = null;
 
@@ -152,7 +152,7 @@ public class ColliderTuner : MVRScript
             rb.detectCollisions = val;
 
             foreach (var collider in _rbCollidersMap[_currentRb])
-                _rigidBodiesDisplay[collider].SetActive(false);
+                _collidersDisplay[collider].SetActive(false);
         });
 
         var colliders = _rbCollidersMap[rb];
@@ -160,10 +160,8 @@ public class ColliderTuner : MVRScript
         {
             var collider = colliders[colliderIndex];
 
-            _rigidBodiesDisplay[collider].GetComponent<Renderer>().material = _selectedMaterial;
+            _collidersDisplay[collider].GetComponent<Renderer>().material = _selectedMaterial;
 
-            var colliderName = Simplify(collider.name);
-            if (colliderName == null) throw new NullReferenceException($"Collider name of rigidbody {rb.name} is null");
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
             Func<string, float?> getInitial = (string prop) => _state[rb.name]?["colliders"]?[colliderUniqueName]?[prop]?.AsFloat;
             Func<JSONClass> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
@@ -171,20 +169,20 @@ public class ColliderTuner : MVRScript
             if (collider is SphereCollider)
             {
                 var sphereCollider = (SphereCollider)collider;
-                CreateFloatAdjustment(colliderName, getJsonNode, "radius", getInitial("radius") ?? sphereCollider.radius, val => sphereCollider.radius = val);
+                CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius") ?? sphereCollider.radius, val => sphereCollider.radius = val);
             }
             else if (collider is CapsuleCollider)
             {
                 var capsuleCollider = (CapsuleCollider)collider;
-                CreateFloatAdjustment(colliderName, getJsonNode, "radius", getInitial("radius") ?? capsuleCollider.radius, val => capsuleCollider.radius = val);
-                CreateFloatAdjustment(colliderName, getJsonNode, "height", getInitial("height") ?? capsuleCollider.height, val => capsuleCollider.height = val);
+                CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius") ?? capsuleCollider.radius, val => capsuleCollider.radius = val);
+                CreateFloatAdjustment(collider, getJsonNode, "height", getInitial("height") ?? capsuleCollider.height, val => capsuleCollider.height = val);
             }
             else if (collider is BoxCollider)
             {
                 var boxCollider = (BoxCollider)collider;
-                CreateFloatAdjustment(colliderName, getJsonNode, "x", getInitial("x") ?? boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
-                CreateFloatAdjustment(colliderName, getJsonNode, "y", getInitial("y") ?? boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
-                CreateFloatAdjustment(colliderName, getJsonNode, "z", getInitial("z") ?? boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
+                CreateFloatAdjustment(collider, getJsonNode, "x", getInitial("x") ?? boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
+                CreateFloatAdjustment(collider, getJsonNode, "y", getInitial("y") ?? boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
+                CreateFloatAdjustment(collider, getJsonNode, "z", getInitial("z") ?? boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
             }
             else
             {
@@ -193,10 +191,11 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private void CreateFloatAdjustment(string parentName, Func<JSONClass> getJsonNode, string propertyName, float initial, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
+    private void CreateFloatAdjustment(Collider collider, Func<JSONClass> getJsonNode, string propertyName, float initial, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
     {
+        var colliderName = Simplify(collider.name);
         var storable = new JSONStorableFloat(
-            $"{parentName}/{propertyName}",
+            $"{colliderName}/{propertyName}",
             initial,
             (float val) =>
             {
@@ -205,6 +204,7 @@ public class ColliderTuner : MVRScript
                 if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = val;
                 jc[propertyName].AsFloat = val;
                 setValue(val);
+                AdjustDisplayFromCollider(collider, _collidersDisplay[collider]);
             },
             min,
             max,
@@ -237,7 +237,7 @@ public class ColliderTuner : MVRScript
         {
             RestoreFromState(false);
 
-            if (_displayJSON.val && _rigidBodiesDisplay.Count == 0)
+            if (_displayJSON.val && _collidersDisplay.Count == 0)
                 CreateRigidBodiesDisplay();
         }
         catch (Exception e)
@@ -251,8 +251,8 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
-            RestoreFromState(true);
             DestroyRigidBodiesDisplay();
+            RestoreFromState(true);
         }
         catch (Exception e)
         {
@@ -265,8 +265,8 @@ public class ColliderTuner : MVRScript
         if (_containingAtom == null) return;
         try
         {
-            RestoreFromState(true);
             DestroyRigidBodiesDisplay();
+            RestoreFromState(true);
         }
         catch (Exception e)
         {
@@ -314,7 +314,7 @@ public class ColliderTuner : MVRScript
     {
         foreach (KeyValuePair<string, JSONNode> rbEntry in _state)
         {
-            var rb = containingAtom.rigidbodies.FirstOrDefault(x => x.name == rbEntry.Key);
+            var rb = _containingAtom.rigidbodies.FirstOrDefault(x => x.name == rbEntry.Key);
             if (rb == null)
             {
                 SuperController.LogError($"Could not find rigidbody '{rbEntry.Key}' specified in save");
@@ -413,7 +413,7 @@ public class ColliderTuner : MVRScript
                 rbDisplay.SetActive(rb.detectCollisions);
                 try
                 {
-                    _rigidBodiesDisplay.Add(collider, rbDisplay);
+                    _collidersDisplay.Add(collider, rbDisplay);
                 }
                 catch (ArgumentException exc)
                 {
@@ -425,11 +425,11 @@ public class ColliderTuner : MVRScript
 
     private void DestroyRigidBodiesDisplay()
     {
-        foreach (var rbDisplay in _rigidBodiesDisplay)
+        foreach (var rbDisplay in _collidersDisplay)
         {
             Destroy(rbDisplay.Value);
         }
-        _rigidBodiesDisplay.Clear();
+        _collidersDisplay.Clear();
     }
 
     public GameObject CreateDisplayGameObject(Collider collider, bool selected)
@@ -440,44 +440,7 @@ public class ColliderTuner : MVRScript
             go.GetComponent<Renderer>().material = selected ? _selectedMaterial : _deselectMaterial;
             foreach (var c in go.GetComponents<Collider>()) { c.enabled = false; Destroy(c); }
             go.transform.SetParent(collider.transform, false);
-            if (collider is SphereCollider)
-            {
-                var sphereCollider = (SphereCollider)collider;
-
-                SuperController.LogMessage(sphereCollider.center.ToString());
-                go.transform.Translate(sphereCollider.center);
-                go.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
-            }
-            else if (collider is CapsuleCollider)
-            {
-                var capsuleCollider = (CapsuleCollider)collider;
-                float size = capsuleCollider.radius * 2;
-                float height = capsuleCollider.height / 2;
-                go.transform.localScale = new Vector3(size, height, size);
-                switch (capsuleCollider.direction)
-                {
-                    case 0:
-                        go.transform.Rotate(Vector3.forward, 90);
-                        break;
-                    case 1:
-                        break;
-                    case 2:
-                        go.transform.Rotate(Vector3.right, 90);
-                        break;
-                }
-                go.transform.Translate(capsuleCollider.center);
-                SuperController.LogMessage(capsuleCollider.direction.ToString());
-            }
-            else if (collider is BoxCollider)
-            {
-                var boxCollider = (BoxCollider)collider;
-                go.transform.localScale = boxCollider.size;
-                go.transform.Translate(boxCollider.center);
-            }
-            else
-            {
-                SuperController.LogError($"Unknown collider {collider.name} type: {collider}");
-            }
+            AdjustDisplayFromCollider(collider, go);
         }
         catch (Exception)
         {
@@ -485,6 +448,48 @@ public class ColliderTuner : MVRScript
             throw;
         }
         return go;
+    }
+
+    private static void AdjustDisplayFromCollider(Collider collider, GameObject go)
+    {
+        if (collider is SphereCollider)
+        {
+            var sphereCollider = (SphereCollider)collider;
+
+            SuperController.LogMessage(sphereCollider.center.ToString());
+            go.transform.Translate(sphereCollider.center);
+            go.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
+        }
+        else if (collider is CapsuleCollider)
+        {
+            var capsuleCollider = (CapsuleCollider)collider;
+            float size = capsuleCollider.radius * 2;
+            float height = capsuleCollider.height / 2;
+            go.transform.localScale = new Vector3(size, height, size);
+            switch (capsuleCollider.direction)
+            {
+                case 0:
+                    go.transform.Rotate(Vector3.forward, 90);
+                    break;
+                case 1:
+                    break;
+                case 2:
+                    go.transform.Rotate(Vector3.right, 90);
+                    break;
+            }
+            go.transform.Translate(capsuleCollider.center);
+            SuperController.LogMessage(capsuleCollider.direction.ToString());
+        }
+        else if (collider is BoxCollider)
+        {
+            var boxCollider = (BoxCollider)collider;
+            go.transform.localScale = boxCollider.size;
+            go.transform.Translate(boxCollider.center);
+        }
+        else
+        {
+            SuperController.LogError($"Unknown collider {collider.name} type: {collider}");
+        }
     }
 
     #endregion
