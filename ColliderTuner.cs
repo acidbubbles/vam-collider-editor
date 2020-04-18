@@ -192,7 +192,7 @@ public class ColliderTuner : MVRScript
             {
                 var originalPropertyName = $"{propertyName}Initial";
                 var jc = getJsonNode();
-                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = val;
+                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = initial;
                 jc[propertyName].AsFloat = val;
                 setValue(val);
                 AdjustDisplayFromCollider(collider, _collidersDisplayMap[collider]);
@@ -213,7 +213,7 @@ public class ColliderTuner : MVRScript
             {
                 var originalPropertyName = $"{propertyName}Initial";
                 var jc = getJsonNode();
-                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsBool = val;
+                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsBool = initial;
                 jc[propertyName].AsBool = val;
                 setValue(val);
             });
