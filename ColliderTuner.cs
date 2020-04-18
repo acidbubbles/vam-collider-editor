@@ -212,7 +212,7 @@ public class ColliderTuner : MVRScript
         });
         _adjustmentButtons.Add(resetButton);
 
-        CreateBoolAdjustment(() => _state.GetOrCreate(rb.name), "enabled", _state[rb.name].AsObject.HasKey("enabled") ? _state[rb.name]["enabled"].AsBool : rb.detectCollisions, val =>
+        CreateBoolAdjustment(() => _state.GetOrCreate(rb.name), "enabled", (_state.HasKey(rb.name) && _state[rb.name].AsObject.HasKey("enabled")) ? (bool?)_state[rb.name]["enabled"].AsBool : null, rb.detectCollisions, val =>
         {
             rb.detectCollisions = val;
 
@@ -234,8 +234,11 @@ public class ColliderTuner : MVRScript
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
             Func<string, float?> getInitial = (string prop) =>
             {
-                var val = _state.GetIfExists(rb.name)?.GetIfExists("colliders")?.GetIfExists(colliderUniqueName)?.GetIfExists(prop)?.AsFloat;
-                if (val == 0) return null;
+                // TODO: Default does not work here.
+                var jc = _state.GetIfExists(rb.name)?.GetIfExists("colliders")?.GetIfExists(colliderUniqueName);
+                if (jc == null) return null;
+                if (!jc.HasKey($"{prop}Initial")) return null;
+                var val = jc[$"{prop}Initial"].AsFloat;
                 return val;
             };
             Func<JSONClass> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
@@ -243,20 +246,20 @@ public class ColliderTuner : MVRScript
             if (collider is SphereCollider)
             {
                 var sphereCollider = (SphereCollider)collider;
-                CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius") ?? sphereCollider.radius, val => sphereCollider.radius = val);
+                CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius"), sphereCollider.radius, val => sphereCollider.radius = val);
             }
             else if (collider is CapsuleCollider)
             {
                 var capsuleCollider = (CapsuleCollider)collider;
-                CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius") ?? capsuleCollider.radius, val => capsuleCollider.radius = val);
-                CreateFloatAdjustment(collider, getJsonNode, "height", getInitial("height") ?? capsuleCollider.height, val => capsuleCollider.height = val);
+                CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius"), capsuleCollider.radius, val => capsuleCollider.radius = val);
+                CreateFloatAdjustment(collider, getJsonNode, "height", getInitial("height"), capsuleCollider.height, val => capsuleCollider.height = val);
             }
             else if (collider is BoxCollider)
             {
                 var boxCollider = (BoxCollider)collider;
-                CreateFloatAdjustment(collider, getJsonNode, "x", getInitial("x") ?? boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
-                CreateFloatAdjustment(collider, getJsonNode, "y", getInitial("y") ?? boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
-                CreateFloatAdjustment(collider, getJsonNode, "z", getInitial("z") ?? boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
+                CreateFloatAdjustment(collider, getJsonNode, "x", getInitial("x"), boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
+                CreateFloatAdjustment(collider, getJsonNode, "y", getInitial("y"), boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
+                CreateFloatAdjustment(collider, getJsonNode, "z", getInitial("z"), boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
             }
             else
             {
@@ -265,41 +268,49 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private void CreateFloatAdjustment(Collider collider, Func<JSONClass> getJsonNode, string propertyName, float initial, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
+    private void CreateFloatAdjustment(Collider collider, Func<JSONClass> getJsonNode, string propertyName, float? initial, float current, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
     {
         var colliderName = Simplify(collider.name);
+        var defaultVal = initial ?? current;
         var storable = new JSONStorableFloat(
             $"{colliderName}/{propertyName}",
-            initial,
+            defaultVal,
             (float val) =>
             {
                 var originalPropertyName = $"{propertyName}Initial";
                 var jc = getJsonNode();
-                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = initial;
+                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = defaultVal;
                 jc[propertyName].AsFloat = val;
                 setValue(val);
                 AdjustDisplayFromCollider(collider, _collidersDisplayMap[collider]);
             },
             min,
             max,
-            false);
+            false)
+        {
+            valNoCallback = current
+        };
         CreateFineSlider(storable, true);
         _adjustmentStorables.Add(storable);
     }
 
-    private void CreateBoolAdjustment(Func<JSONClass> getJsonNode, string propertyName, bool initial, Action<bool> setValue)
+    private void CreateBoolAdjustment(Func<JSONClass> getJsonNode, string propertyName, bool? initial, bool current, Action<bool> setValue)
     {
+        var defaultVal = initial ?? current;
         var storable = new JSONStorableBool(
             $"{propertyName}",
-            initial,
+            defaultVal,
             (bool val) =>
             {
                 var originalPropertyName = $"{propertyName}Initial";
                 var jc = getJsonNode();
-                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsBool = initial;
+                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsBool = defaultVal;
                 jc[propertyName].AsBool = val;
                 setValue(val);
-            });
+            })
+        {
+            valNoCallback = current
+        };
         CreateToggle(storable, true);
         _adjustmentStorables.Add(storable);
     }
@@ -643,9 +654,7 @@ public static class JSONNodeExtensions
     public static JSONClass GetOrCreate(this JSONClass jc, string propertyName)
     {
         if (jc.HasKey(propertyName))
-        {
             return (JSONClass)jc[propertyName];
-        }
 
         var child = new JSONClass();
         jc.Add(propertyName, child);
@@ -654,10 +663,8 @@ public static class JSONNodeExtensions
 
     public static JSONClass GetIfExists(this JSONClass jc, string propertyName)
     {
-        if (jc.HasKey(propertyName))
-        {
+        if (!jc.HasKey(propertyName))
             return null;
-        }
 
         return (JSONClass)jc[propertyName];
     }
