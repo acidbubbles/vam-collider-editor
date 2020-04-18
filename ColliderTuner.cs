@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using SimpleJSON;
 using UnityEngine;
 
@@ -74,8 +75,13 @@ public class ColliderTuner : MVRScript
         }
     }
 
+    private readonly Regex _handNameRegex = new Regex(@"^(l|r)(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
     private string GroupOf(string name)
     {
+        if(name.StartsWith("tongue")) return "Tongue";
+        if (_handNameRegex.IsMatch(name))
+            return name.StartsWith("r") ? "Right Hand" : "Left Hand";
+
         return "Other";
     }
 
