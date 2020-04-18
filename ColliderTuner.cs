@@ -12,16 +12,18 @@ using UnityEngine;
 /// </summary>
 public class ColliderTuner : MVRScript
 {
-    private readonly Dictionary<Collider, GameObject> _collidersDisplay = new Dictionary<Collider, GameObject>();
+    private readonly Dictionary<Collider, GameObject> _collidersDisplayMap = new Dictionary<Collider, GameObject>();
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
+    private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
     private Atom _containingAtom;
     private Material _selectedMaterial;
     private Material _deselectMaterial;
+    private Rigidbody _selectedRigidbody;
     private JSONStorableBool _displayJSON;
     private UIDynamicPopup _rbAdjustListUI;
     private JSONClass _state = new JSONClass();
-    private Rigidbody _currentRb;
-    private Dictionary<Rigidbody, List<Collider>> _rbCollidersMap;
+    private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
+    private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
 
     #region Lifecycle
 
@@ -66,19 +68,6 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private static Material CreateMaterial(Color color)
-    {
-        var material = new Material(Shader.Find("Standard")) { color = color };
-        material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        material.SetInt("_ZWrite", 0);
-        material.DisableKeyword("_ALPHATEST_ON");
-        material.EnableKeyword("_ALPHABLEND_ON");
-        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        material.renderQueue = 3000;
-        return material;
-    }
-
     private readonly string[] _prefixes = new[]
     {
         "AutoColliderFemaleAutoColliders",
@@ -97,9 +86,6 @@ public class ColliderTuner : MVRScript
         }
         return name;
     }
-
-    private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
-    private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
 
     private void ShowColliderAdjustments(string name)
     {
@@ -120,16 +106,16 @@ public class ColliderTuner : MVRScript
         }
         _adjustmentButtons.Clear();
 
-        if (_currentRb != null)
+        if (_selectedRigidbody != null)
         {
-            foreach (var collider in _rbCollidersMap[_currentRb])
-                _collidersDisplay[collider].GetComponent<Renderer>().material = _deselectMaterial;
+            foreach (var collider in _rigidbodyCollidersMap[_selectedRigidbody])
+                _collidersDisplayMap[collider].GetComponent<Renderer>().material = _deselectMaterial;
         }
-        _currentRb = null;
+        _selectedRigidbody = null;
 
         if (name == "") return;
         var rb = _rigidbodiesNameMap[name];
-        _currentRb = rb;
+        _selectedRigidbody = rb;
 
         var resetButton = CreateButton("Reset", true);
         resetButton.button.onClick.AddListener(() =>
@@ -147,23 +133,28 @@ public class ColliderTuner : MVRScript
         });
         _adjustmentButtons.Add(resetButton);
 
-        CreateBoolAdjustment(null, () => _state.GetOrCreate(rb.name), "enabled", rb.detectCollisions, val =>
+        CreateBoolAdjustment(null, () => _state.GetOrCreate(rb.name), "enabled", _state[rb.name].AsObject.HasKey("enabled") ? _state[rb.name]["enabled"].AsBool : rb.detectCollisions, val =>
         {
             rb.detectCollisions = val;
 
-            foreach (var collider in _rbCollidersMap[_currentRb])
-                _collidersDisplay[collider].SetActive(false);
+            foreach (var collider in _rigidbodyCollidersMap[_selectedRigidbody])
+                _collidersDisplayMap[collider].SetActive(val);
         });
 
-        var colliders = _rbCollidersMap[rb];
+        var colliders = _rigidbodyCollidersMap[rb];
         for (var colliderIndex = 0; colliderIndex < colliders.Count; colliderIndex++)
         {
             var collider = colliders[colliderIndex];
 
-            _collidersDisplay[collider].GetComponent<Renderer>().material = _selectedMaterial;
+            _collidersDisplayMap[collider].GetComponent<Renderer>().material = _selectedMaterial;
 
             var colliderUniqueName = $"{collider.name}:{colliderIndex}";
-            Func<string, float?> getInitial = (string prop) => _state[rb.name]?["colliders"]?[colliderUniqueName]?[prop]?.AsFloat;
+            Func<string, float?> getInitial = (string prop) =>
+            {
+                var val = _state[rb.name]["colliders"][colliderUniqueName][prop].AsFloat;
+                if (val == 0) return null;
+                return val;
+            };
             Func<JSONClass> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
 
             if (collider is SphereCollider)
@@ -204,7 +195,7 @@ public class ColliderTuner : MVRScript
                 if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = val;
                 jc[propertyName].AsFloat = val;
                 setValue(val);
-                AdjustDisplayFromCollider(collider, _collidersDisplay[collider]);
+                AdjustDisplayFromCollider(collider, _collidersDisplayMap[collider]);
             },
             min,
             max,
@@ -237,7 +228,7 @@ public class ColliderTuner : MVRScript
         {
             RestoreFromState(false);
 
-            if (_displayJSON.val && _collidersDisplay.Count == 0)
+            if (_displayJSON.val && _collidersDisplayMap.Count == 0)
                 CreateRigidBodiesDisplay();
         }
         catch (Exception e)
@@ -333,7 +324,7 @@ public class ColliderTuner : MVRScript
             rb.detectCollisions = rbJC[enabledKey].AsBool;
         }
 
-        var colliders = _rbCollidersMap[rb];
+        var colliders = _rigidbodyCollidersMap[rb];
         foreach (KeyValuePair<string, JSONNode> colliderEntry in rbJC["colliders"].AsObject)
         {
             var colliderUniqueName = colliderEntry.Key.Split(':');
@@ -399,18 +390,31 @@ public class ColliderTuner : MVRScript
 
     #region Display
 
+    private static Material CreateMaterial(Color color)
+    {
+        var material = new Material(Shader.Find("Standard")) { color = color };
+        material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        material.SetInt("_ZWrite", 0);
+        material.DisableKeyword("_ALPHATEST_ON");
+        material.EnableKeyword("_ALPHABLEND_ON");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.renderQueue = 3000;
+        return material;
+    }
+
     private void CreateRigidBodiesDisplay()
     {
         DestroyRigidBodiesDisplay();
         foreach (var rb in GetRigidBodies())
         {
-            foreach (var collider in _rbCollidersMap[rb])
+            foreach (var collider in _rigidbodyCollidersMap[rb])
             {
-                var rbDisplay = CreateDisplayGameObject(collider, rb == _currentRb);
+                var rbDisplay = CreateDisplayGameObject(collider, rb == _selectedRigidbody);
                 rbDisplay.SetActive(rb.detectCollisions);
                 try
                 {
-                    _collidersDisplay.Add(collider, rbDisplay);
+                    _collidersDisplayMap.Add(collider, rbDisplay);
                 }
                 catch (ArgumentException exc)
                 {
@@ -422,11 +426,11 @@ public class ColliderTuner : MVRScript
 
     private void DestroyRigidBodiesDisplay()
     {
-        foreach (var rbDisplay in _collidersDisplay)
+        foreach (var rbDisplay in _collidersDisplayMap)
         {
             Destroy(rbDisplay.Value);
         }
-        _collidersDisplay.Clear();
+        _collidersDisplayMap.Clear();
     }
 
     public GameObject CreateDisplayGameObject(Collider collider, bool selected)
@@ -485,18 +489,18 @@ public class ColliderTuner : MVRScript
 
     private IEnumerable<Rigidbody> GetRigidBodies()
     {
-        if (_rbCollidersMap == null)
+        if (_rigidbodyCollidersMap == null)
         {
-            _rbCollidersMap = new Dictionary<Rigidbody, List<Collider>>();
+            _rigidbodyCollidersMap = new Dictionary<Rigidbody, List<Collider>>();
             foreach (var collider in _containingAtom.GetComponentsInChildren<Collider>())
             {
                 if (collider.attachedRigidbody == null) continue;
 
                 List<Collider> rbColliders;
-                if (!_rbCollidersMap.TryGetValue(collider.attachedRigidbody, out rbColliders))
+                if (!_rigidbodyCollidersMap.TryGetValue(collider.attachedRigidbody, out rbColliders))
                 {
                     rbColliders = new List<Collider>();
-                    _rbCollidersMap.Add(collider.attachedRigidbody, rbColliders);
+                    _rigidbodyCollidersMap.Add(collider.attachedRigidbody, rbColliders);
                 }
                 rbColliders.Add(collider);
             }
@@ -507,7 +511,7 @@ public class ColliderTuner : MVRScript
             if (rb.isKinematic) continue;
             if (rb.name == "control") continue;
             if (rb.name == "object") continue;
-            if (!_rbCollidersMap.ContainsKey(rb)) continue;
+            if (!_rigidbodyCollidersMap.ContainsKey(rb)) continue;
             if (rb.name.EndsWith("Control")) continue;
             if (rb.name.StartsWith("hairTool")) continue;
             if (rb.name.EndsWith("Trigger")) continue;
