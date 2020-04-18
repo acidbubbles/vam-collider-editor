@@ -452,9 +452,8 @@ public class ColliderTuner : MVRScript
         if (collider is SphereCollider)
         {
             var sphereCollider = (SphereCollider)collider;
-
-            go.transform.Translate(sphereCollider.center);
             go.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
+            go.transform.localPosition = sphereCollider.center;
         }
         else if (collider is CapsuleCollider)
         {
@@ -462,24 +461,17 @@ public class ColliderTuner : MVRScript
             float size = capsuleCollider.radius * 2;
             float height = capsuleCollider.height / 2;
             go.transform.localScale = new Vector3(size, height, size);
-            switch (capsuleCollider.direction)
-            {
-                case 0:
-                    go.transform.Rotate(Vector3.forward, 90);
-                    break;
-                case 1:
-                    break;
-                case 2:
-                    go.transform.Rotate(Vector3.right, 90);
-                    break;
-            }
-            go.transform.Translate(capsuleCollider.center);
+            if (capsuleCollider.direction == 0)
+                go.transform.localRotation = Quaternion.AngleAxis(90, Vector3.forward);
+            else if (capsuleCollider.direction == 2)
+                go.transform.localRotation = Quaternion.AngleAxis(90, Vector3.right);
+            go.transform.localPosition = capsuleCollider.center;
         }
         else if (collider is BoxCollider)
         {
             var boxCollider = (BoxCollider)collider;
             go.transform.localScale = boxCollider.size;
-            go.transform.Translate(boxCollider.center);
+            go.transform.localPosition = boxCollider.center;
         }
         else
         {
