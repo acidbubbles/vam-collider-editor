@@ -5,9 +5,9 @@ using SimpleJSON;
 using UnityEngine;
 
 /// <summary>
-/// Rigid Body Disabled
+/// Collider Tuner
 /// By Acidbubbles
-/// Disable rigidbodis on an atom
+/// Disables colliders or adjust them to your liking
 /// Source: https://github.com/acidbubbles/vam-collider-tuner
 /// </summary>
 public class ColliderTuner : MVRScript
