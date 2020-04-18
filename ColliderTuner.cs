@@ -12,12 +12,11 @@ using UnityEngine;
 /// </summary>
 public class ColliderTuner : MVRScript
 {
-    private static readonly Color _selectedColor = new Color(0f, 1f, 0f, 0.05f);
-    private static readonly Color _unselectedColor = new Color(1f, 0f, 0f, 0.05f);
-
-    private readonly Dictionary<Rigidbody, GameObject> _rigidBodiesDisplay = new Dictionary<Rigidbody, GameObject>();
+    private readonly Dictionary<Collider, GameObject> _rigidBodiesDisplay = new Dictionary<Collider, GameObject>();
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Atom _containingAtom;
+    private Material _selectedMaterial;
+    private Material _deselectMaterial;
     private JSONStorableBool _displayJSON;
     private UIDynamicPopup _rbAdjustListUI;
     private JSONClass _state = new JSONClass();
@@ -32,6 +31,9 @@ public class ColliderTuner : MVRScript
         {
             var jc = new JSONClass();
             _containingAtom = containingAtom;
+
+            _selectedMaterial = CreateMaterial(new Color(0f, 1f, 0f, 0.05f));
+            _deselectMaterial = CreateMaterial(new Color(1f, 0f, 0f, 0.05f));
 
             _displayJSON = new JSONStorableBool("Display Rigidbodies", false, (bool val) =>
             {
@@ -62,6 +64,19 @@ public class ColliderTuner : MVRScript
         {
             SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(Init)}: {e}");
         }
+    }
+
+    private static Material CreateMaterial(Color color)
+    {
+        var material = new Material(Shader.Find("Standard")) { color = color };
+        material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        material.SetInt("_ZWrite", 0);
+        material.DisableKeyword("_ALPHATEST_ON");
+        material.EnableKeyword("_ALPHABLEND_ON");
+        material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        material.renderQueue = 3000;
+        return material;
     }
 
     private readonly string[] _prefixes = new[]
@@ -105,21 +120,16 @@ public class ColliderTuner : MVRScript
         }
         _adjustmentButtons.Clear();
 
-        GameObject rbDisplay;
-        if (_currentRb != null && _rigidBodiesDisplay.TryGetValue(_currentRb, out rbDisplay))
+        if (_currentRb != null)
         {
-            rbDisplay.GetComponent<Renderer>().material.color = _unselectedColor;
+            foreach (var collider in _rbCollidersMap[_currentRb])
+                _rigidBodiesDisplay[collider].GetComponent<Renderer>().material = _deselectMaterial;
         }
         _currentRb = null;
 
         if (name == "") return;
         var rb = _rigidbodiesNameMap[name];
         _currentRb = rb;
-
-        if (_rigidBodiesDisplay.TryGetValue(rb, out rbDisplay))
-        {
-            rbDisplay.GetComponent<Renderer>().material.color = _selectedColor;
-        }
 
         var resetButton = CreateButton("Reset", true);
         resetButton.button.onClick.AddListener(() =>
@@ -141,14 +151,16 @@ public class ColliderTuner : MVRScript
         {
             rb.detectCollisions = val;
 
-            if (rbDisplay != null)
-                rbDisplay.SetActive(val);
+            foreach (var collider in _rbCollidersMap[_currentRb])
+                _rigidBodiesDisplay[collider].SetActive(false);
         });
 
         var colliders = _rbCollidersMap[rb];
         for (var colliderIndex = 0; colliderIndex < colliders.Count; colliderIndex++)
         {
             var collider = colliders[colliderIndex];
+
+            _rigidBodiesDisplay[collider].GetComponent<Renderer>().material = _selectedMaterial;
 
             var colliderName = Simplify(collider.name);
             if (colliderName == null) throw new NullReferenceException($"Collider name of rigidbody {rb.name} is null");
@@ -395,16 +407,18 @@ public class ColliderTuner : MVRScript
         DestroyRigidBodiesDisplay();
         foreach (var rb in GetRigidBodies())
         {
-            var rbDisplay = CreateDisplayGameObject(rb);
-            if (rbDisplay == null) continue;
-            rbDisplay.SetActive(rb.detectCollisions);
-            try
+            foreach (var collider in _rbCollidersMap[rb])
             {
-                _rigidBodiesDisplay.Add(rb, rbDisplay);
-            }
-            catch (ArgumentException exc)
-            {
-                SuperController.LogError($"Cannot add '{rb.name}': {exc.Message}");
+                var rbDisplay = CreateDisplayGameObject(collider, rb == _currentRb);
+                rbDisplay.SetActive(rb.detectCollisions);
+                try
+                {
+                    _rigidBodiesDisplay.Add(collider, rbDisplay);
+                }
+                catch (ArgumentException exc)
+                {
+                    SuperController.LogError($"Cannot add '{rb.name}': {exc.Message}");
+                }
             }
         }
     }
@@ -418,27 +432,52 @@ public class ColliderTuner : MVRScript
         _rigidBodiesDisplay.Clear();
     }
 
-    public GameObject CreateDisplayGameObject(Rigidbody rb)
+    public GameObject CreateDisplayGameObject(Collider collider, bool selected)
     {
-        var rbCollider = rb.GetComponentInChildren<Collider>();
-        if (rbCollider == null) return null;
-        var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         try
         {
-            var material = new Material(Shader.Find("Standard")) { color = _currentRb == rb ? _selectedColor : _unselectedColor };
-            material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            material.SetInt("_ZWrite", 0);
-            material.DisableKeyword("_ALPHATEST_ON");
-            material.EnableKeyword("_ALPHABLEND_ON");
-            material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            material.renderQueue = 3000;
-            go.GetComponent<Renderer>().material = material;
+            go.GetComponent<Renderer>().material = selected ? _selectedMaterial : _deselectMaterial;
             foreach (var c in go.GetComponents<Collider>()) { c.enabled = false; Destroy(c); }
-            go.transform.parent = rbCollider.transform.parent;
-            go.transform.localPosition = rbCollider.transform.localPosition;
-            go.transform.localRotation = rbCollider.transform.localRotation;
-            go.transform.localScale = rbCollider.transform.localScale * 0.06f;
+            go.transform.SetParent(collider.transform, false);
+            if (collider is SphereCollider)
+            {
+                var sphereCollider = (SphereCollider)collider;
+
+                SuperController.LogMessage(sphereCollider.center.ToString());
+                go.transform.Translate(sphereCollider.center);
+                go.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
+            }
+            else if (collider is CapsuleCollider)
+            {
+                var capsuleCollider = (CapsuleCollider)collider;
+                float size = capsuleCollider.radius * 2;
+                float height = capsuleCollider.height / 2;
+                go.transform.localScale = new Vector3(size, height, size);
+                switch (capsuleCollider.direction)
+                {
+                    case 0:
+                        go.transform.Rotate(Vector3.forward, 90);
+                        break;
+                    case 1:
+                        break;
+                    case 2:
+                        go.transform.Rotate(Vector3.right, 90);
+                        break;
+                }
+                go.transform.Translate(capsuleCollider.center);
+                SuperController.LogMessage(capsuleCollider.direction.ToString());
+            }
+            else if (collider is BoxCollider)
+            {
+                var boxCollider = (BoxCollider)collider;
+                go.transform.localScale = boxCollider.size;
+                go.transform.Translate(boxCollider.center);
+            }
+            else
+            {
+                SuperController.LogError($"Unknown collider {collider.name} type: {collider}");
+            }
         }
         catch (Exception)
         {
