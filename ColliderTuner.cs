@@ -306,7 +306,6 @@ public class ColliderTuner : MVRScript
 
     public override void PostRestore()
     {
-        SuperController.LogMessage("OK");
         RestoreFromState(false);
     }
 
@@ -332,8 +331,6 @@ public class ColliderTuner : MVRScript
         if (rbJC.HasKey(enabledKey))
         {
             rb.detectCollisions = rbJC[enabledKey].AsBool;
-            // TODO
-            SuperController.LogMessage($"{rb.name}.detectCollisions = {rb.detectCollisions}");
         }
 
         var colliders = _rbCollidersMap[rb];
@@ -456,7 +453,6 @@ public class ColliderTuner : MVRScript
         {
             var sphereCollider = (SphereCollider)collider;
 
-            SuperController.LogMessage(sphereCollider.center.ToString());
             go.transform.Translate(sphereCollider.center);
             go.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
         }
@@ -478,7 +474,6 @@ public class ColliderTuner : MVRScript
                     break;
             }
             go.transform.Translate(capsuleCollider.center);
-            SuperController.LogMessage(capsuleCollider.direction.ToString());
         }
         else if (collider is BoxCollider)
         {
