@@ -125,14 +125,14 @@ public class ColliderTuner : MVRScript
                         DestroyColliderDisplays();
                         CreateColliderDisplays();
                     }
-                }, _saveExt, null, true, true, false, null, false, null, false, false);
+                }, _saveExt);
             });
 
             var savePresetUI = CreateButton("Save Preset", false);
             savePresetUI.button.onClick.AddListener(() =>
             {
                 SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-                SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt, null, true, true, false, null, false, null, false, false);
+                SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt);
 
                 var browser = SuperController.singleton.mediaFileBrowserUI;
                 browser.SetTextEntry(true);
