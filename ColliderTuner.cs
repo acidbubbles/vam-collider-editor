@@ -57,7 +57,7 @@ public class ColliderTuner : MVRScript
             { isStorable = false };
             CreateSlider(_displayJSON, false);
 
-            CreateSpacer().height = 30f;
+            CreateSpacer().height = 10f;
 
             _rigidbodiesNameMap = new Dictionary<string, Rigidbody>();
             foreach (var rb in GetRigidBodies())
@@ -81,9 +81,9 @@ public class ColliderTuner : MVRScript
             rbGroupListUI.popupPanelHeight = 900f;
 
             var rbListUI = CreateScrollablePopup(rbListJSON, false);
-            rbGroupListUI.popupPanelHeight = 900f;
+            rbListUI.popupPanelHeight = 820f;
 
-            CreateSpacer().height = 30f;
+            CreateSpacer().height = 10f;
 
             var reapplyUI = CreateButton("Reapply", false);
             reapplyUI.button.onClick.AddListener(() =>
@@ -109,7 +109,7 @@ public class ColliderTuner : MVRScript
                 }
             });
 
-            CreateSpacer().height = 30f;
+            CreateSpacer().height = 10f;
 
             var loadPresetUI = CreateButton("Load Preset", false);
             loadPresetUI.button.onClick.AddListener(() =>
