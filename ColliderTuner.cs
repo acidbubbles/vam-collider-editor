@@ -42,11 +42,12 @@ public class ColliderTuner : MVRScript
         GroupDefinition("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
         GroupDefinition("Anus", @"^_JointA[rl]"),
         GroupDefinition("Vagina", @"^_Joint(Gr|Gl|B)"),
+        GroupDefinition("Penis", @"^(Gen[1-3])|Testes"),
         GroupDefinition("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
         GroupDefinition("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
         GroupDefinition("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
-        GroupDefinition("Left foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
-        GroupDefinition("Penis", @"^(Gen[1-3])|Testes")
+        GroupDefinition("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
+        GroupDefinition("Other", @"^.*$"),
     };
 
     private static KeyValuePair<string, Regex> GroupDefinition(string label, string value)
