@@ -26,7 +26,7 @@ public class ColliderTuner : MVRScript
     private JSONClass _state = new JSONClass();
     private string _lastBrowseDir = SuperController.singleton.savesDir;
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
-    private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
+    private readonly List<UIDynamic> _adjustmentUIs = new List<UIDynamic>();
 
     #region Lifecycle
 
@@ -189,11 +189,14 @@ public class ColliderTuner : MVRScript
         }
         _adjustmentStorables.Clear();
 
-        foreach (var adjustmentButton in _adjustmentButtons)
+        foreach (var adjustmentUI in _adjustmentUIs)
         {
-            RemoveButton(adjustmentButton);
+            if (adjustmentUI is UIDynamicButton)
+                RemoveButton((UIDynamicButton)adjustmentUI);
+            else
+                RemoveSpacer(adjustmentUI);
         }
-        _adjustmentButtons.Clear();
+        _adjustmentUIs.Clear();
 
         if (_selectedRigidbody != null && _collidersDisplayMap != null)
         {
@@ -220,7 +223,7 @@ public class ColliderTuner : MVRScript
             }
             _state.Remove(rb.name);
         });
-        _adjustmentButtons.Add(resetButton);
+        _adjustmentUIs.Add(resetButton);
 
         CreateBoolAdjustment(() => _state.GetOrCreate(rb.name), "enabled", (_state.HasKey(rb.name) && _state[rb.name].AsObject.HasKey("enabled")) ? (bool?)_state[rb.name]["enabled"].AsBool : null, rb.detectCollisions, val =>
         {
@@ -253,23 +256,39 @@ public class ColliderTuner : MVRScript
             };
             Func<JSONClass> getJsonNode = () => _state.GetOrCreate(rb.name).GetOrCreate("colliders").GetOrCreate(colliderUniqueName);
 
+            if (colliderIndex > 0)
+            {
+                var spacer = CreateSpacer(true);
+                spacer.height = 20f;
+                _adjustmentUIs.Add(spacer);
+            }
+
             if (collider is SphereCollider)
             {
                 var sphereCollider = (SphereCollider)collider;
                 CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius"), sphereCollider.radius, val => sphereCollider.radius = val);
+                CreateFloatAdjustment(collider, getJsonNode, "center.x", getInitial("center.x"), sphereCollider.center.x, val => sphereCollider.center = new Vector3(val, sphereCollider.center.y, sphereCollider.center.z), -0.05f, 0.05f);
+                CreateFloatAdjustment(collider, getJsonNode, "center.y", getInitial("center.y"), sphereCollider.center.y, val => sphereCollider.center = new Vector3(sphereCollider.center.x, val, sphereCollider.center.z), -0.05f, 0.05f);
+                CreateFloatAdjustment(collider, getJsonNode, "center.z", getInitial("center.z"), sphereCollider.center.z, val => sphereCollider.center = new Vector3(sphereCollider.center.x, sphereCollider.center.y, val), -0.05f, 0.05f);
             }
             else if (collider is CapsuleCollider)
             {
                 var capsuleCollider = (CapsuleCollider)collider;
                 CreateFloatAdjustment(collider, getJsonNode, "radius", getInitial("radius"), capsuleCollider.radius, val => capsuleCollider.radius = val);
                 CreateFloatAdjustment(collider, getJsonNode, "height", getInitial("height"), capsuleCollider.height, val => capsuleCollider.height = val);
+                CreateFloatAdjustment(collider, getJsonNode, "center.x", getInitial("center.x"), capsuleCollider.center.x, val => capsuleCollider.center = new Vector3(val, capsuleCollider.center.y, capsuleCollider.center.z), -0.05f, 0.05f);
+                CreateFloatAdjustment(collider, getJsonNode, "center.y", getInitial("center.y"), capsuleCollider.center.y, val => capsuleCollider.center = new Vector3(capsuleCollider.center.x, val, capsuleCollider.center.z), -0.05f, 0.05f);
+                CreateFloatAdjustment(collider, getJsonNode, "center.z", getInitial("center.z"), capsuleCollider.center.z, val => capsuleCollider.center = new Vector3(capsuleCollider.center.x, capsuleCollider.center.y, val), -0.05f, 0.05f);
             }
             else if (collider is BoxCollider)
             {
                 var boxCollider = (BoxCollider)collider;
-                CreateFloatAdjustment(collider, getJsonNode, "x", getInitial("x"), boxCollider.size.x, val => new Vector3(val, boxCollider.size.y, boxCollider.size.z));
-                CreateFloatAdjustment(collider, getJsonNode, "y", getInitial("y"), boxCollider.size.y, val => new Vector3(boxCollider.size.x, val, boxCollider.size.z));
-                CreateFloatAdjustment(collider, getJsonNode, "z", getInitial("z"), boxCollider.size.z, val => new Vector3(boxCollider.size.x, boxCollider.size.y, val));
+                CreateFloatAdjustment(collider, getJsonNode, "size.x", getInitial("size.x"), boxCollider.size.x, val => boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z));
+                CreateFloatAdjustment(collider, getJsonNode, "size.y", getInitial("size.y"), boxCollider.size.y, val => boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z));
+                CreateFloatAdjustment(collider, getJsonNode, "size.z", getInitial("size.z"), boxCollider.size.z, val => boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val));
+                CreateFloatAdjustment(collider, getJsonNode, "center.x", getInitial("center.x"), boxCollider.center.x, val => boxCollider.center = new Vector3(val, boxCollider.center.y, boxCollider.center.z), -0.05f, 0.05f);
+                CreateFloatAdjustment(collider, getJsonNode, "center.y", getInitial("center.y"), boxCollider.center.y, val => boxCollider.center = new Vector3(boxCollider.center.x, val, boxCollider.center.z), -0.05f, 0.05f);
+                CreateFloatAdjustment(collider, getJsonNode, "center.z", getInitial("center.z"), boxCollider.center.z, val => boxCollider.center = new Vector3(boxCollider.center.x, boxCollider.center.y, val), -0.05f, 0.05f);
             }
             else
             {
@@ -278,7 +297,7 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private void CreateFloatAdjustment(Collider collider, Func<JSONClass> getJsonNode, string propertyName, float? initial, float current, Action<float> setValue, float min = 0.00001f, float max = 0.2f)
+    private void CreateFloatAdjustment(Collider collider, Func<JSONClass> getJsonNode, string propertyName, float? initial, float current, Action<float> setValue, float min = 0.00001f, float? max = null)
     {
         var colliderName = Simplify(collider.name);
         var defaultVal = initial ?? current;
@@ -296,7 +315,7 @@ public class ColliderTuner : MVRScript
                     AdjustDisplayFromCollider(collider, _collidersDisplayMap[collider]);
             },
             min,
-            max,
+            max ?? (defaultVal * 2f),
             false)
         {
             valNoCallback = current
