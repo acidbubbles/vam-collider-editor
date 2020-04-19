@@ -51,8 +51,9 @@ public class ColliderTuner : MVRScript
                 if (_collidersDisplayMap == null)
                     CreateColliderDisplays();
 
-                _deselectMaterial.color = new Color(_deselectMaterial.color.r, _deselectMaterial.color.g, _deselectMaterial.color.b, val);
-                _selectedMaterial.color = new Color(_selectedMaterial.color.r, _selectedMaterial.color.g, _selectedMaterial.color.b, val);
+                var alpha = ExponentialScale(val, 0.2f, 1f);
+                _deselectMaterial.color = new Color(_deselectMaterial.color.r, _deselectMaterial.color.g, _deselectMaterial.color.b, alpha);
+                _selectedMaterial.color = new Color(_selectedMaterial.color.r, _selectedMaterial.color.g, _selectedMaterial.color.b, alpha);
             }, 0f, 1f, true)
             { isStorable = false };
             CreateSlider(_displayJSON, false);
@@ -674,6 +675,19 @@ public class ColliderTuner : MVRScript
         var slider = CreateSlider(jsf, rightSide);
         slider.valueFormat = "F5";
         return slider;
+    }
+
+    #endregion
+
+    #region Math
+
+    private float ExponentialScale(float inputValue, float midValue, float maxValue)
+    {
+        var m = maxValue / midValue;
+        var c = Mathf.Log(Mathf.Pow(m - 1, 2));
+        var b = maxValue / (Mathf.Exp(c) - 1);
+        var a = -1 * b;
+        return a + b * Mathf.Exp(c * inputValue);
     }
 
     #endregion
