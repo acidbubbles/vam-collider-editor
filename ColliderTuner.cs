@@ -89,7 +89,7 @@ public class ColliderTuner : MVRScript
             _rigidbodiesNameMap = new Dictionary<string, Rigidbody>();
             foreach (var rb in GetRigidBodies())
             {
-                var simplified = Simplify(rb.name);
+                var simplified = SimplifyName(rb.name);
                 var name = simplified;
                 var counter = 0;
                 while (_rigidbodiesNameMap.ContainsKey(name))
@@ -186,19 +186,21 @@ public class ColliderTuner : MVRScript
     private readonly string[] _prefixes = new[]
     {
         "AutoColliderFemaleAutoColliders",
-        "AutoCollider"
+        "AutoColliderAutoColliders",
+        "AutoCollider",
+        "_Collider"
     };
 
-    private string Simplify(string name)
+    private string SimplifyName(string name)
     {
-        // foreach (var prefix in _prefixes)
-        // {
-        //     if (name.StartsWith(prefix))
-        //     {
-        //         name = name.Substring(prefix.Length);
-        //         break;
-        //     }
-        // }
+        foreach (var prefix in _prefixes)
+        {
+            if (name.StartsWith(prefix))
+            {
+                name = name.Substring(prefix.Length);
+                break;
+            }
+        }
         return name;
     }
 
@@ -325,7 +327,7 @@ public class ColliderTuner : MVRScript
 
     private void CreateFloatAdjustment(Collider collider, Func<JSONClass> getJsonNode, string propertyName, float? initial, float current, Action<float> setValue, float min = 0.00001f, float? max = null)
     {
-        var colliderName = Simplify(collider.name);
+        var colliderName = SimplifyName(collider.name);
         var defaultVal = initial ?? current;
         var storable = new JSONStorableFloat(
             $"{colliderName}/{propertyName}",
