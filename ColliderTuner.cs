@@ -27,6 +27,32 @@ public class ColliderTuner : MVRScript
     private string _lastBrowseDir = SuperController.singleton.savesDir;
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _adjustmentUIs = new List<UIDynamic>();
+    private static readonly List<KeyValuePair<string, Regex>> _rbGroupDefinitions = new List<KeyValuePair<string, Regex>>
+    {
+        GroupDefinition("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
+        GroupDefinition("Left arm", @"^l(Shldr|ForeArm)"),
+        GroupDefinition("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+        GroupDefinition("Right arm", @"^r(Shldr|ForeArm)"),
+        GroupDefinition("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+        GroupDefinition("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
+        GroupDefinition("Left breast", @"l((Pectoral)|Nipple)"),
+        GroupDefinition("Right breast", @"r((Pectoral)|Nipple)"),
+        GroupDefinition("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
+        GroupDefinition("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
+        GroupDefinition("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
+        GroupDefinition("Anus", @"^_JointA[rl]"),
+        GroupDefinition("Vagina", @"^_Joint(Gr|Gl|B)"),
+        GroupDefinition("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
+        GroupDefinition("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
+        GroupDefinition("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
+        GroupDefinition("Left foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
+        GroupDefinition("Penis", @"^(Gen[1-3])|Testes")
+    };
+
+    private static KeyValuePair<string, Regex> GroupDefinition(string label, string value)
+    {
+        return new KeyValuePair<string, Regex>(label, new Regex(value, RegexOptions.Compiled | RegexOptions.ExplicitCapture));
+    }
 
     #region Lifecycle
 
@@ -74,9 +100,8 @@ public class ColliderTuner : MVRScript
             }
 
             var groups = _rigidbodiesNameMap.Keys.GroupBy(k => GroupOf(k)).ToDictionary(g => g.Key, g => g.OrderBy(n => n).ToList());
-            groups.Add("", new List<string>());
-            var rbListJSON = new JSONStorableStringChooser("Collider", new List<string>(), "", "Collider", (string val) => ShowColliderAdjustments(val));
-            var rbGroupListJSON = new JSONStorableStringChooser("Colliders Groups", groups.Keys.OrderBy(k => k).ToList(), "", "Collider Groups", (string val) => { rbListJSON.choices = groups[val]; rbListJSON.val = ""; });
+            var rbListJSON = new JSONStorableStringChooser("Rigidbody", new List<string>(), "", "Rigidbody", (string val) => ShowColliderAdjustments(val));
+            var rbGroupListJSON = new JSONStorableStringChooser("Rigidbody Groups", _rbGroupDefinitions.Where(g => groups.ContainsKey(g.Key)).Select(g => g.Key).ToList(), "", "Rigidbody Groups", (string val) => { rbListJSON.choices = groups[val]; rbListJSON.val = ""; });
 
             var rbGroupListUI = CreateScrollablePopup(rbGroupListJSON, false);
             rbGroupListUI.popupPanelHeight = 900f;
@@ -147,13 +172,13 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private readonly Regex _handNameRegex = new Regex(@"^(l|r)(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$", RegexOptions.Compiled | RegexOptions.ExplicitCapture);
-
     private string GroupOf(string name)
     {
-        if (name.StartsWith("tongue")) return "Tongue";
-        if (_handNameRegex.IsMatch(name))
-            return name.StartsWith("r") ? "Right Hand" : "Left Hand";
+        foreach (var g in _rbGroupDefinitions)
+        {
+            if (g.Value.IsMatch(name))
+                return g.Key;
+        }
 
         return "Other";
     }
@@ -166,14 +191,14 @@ public class ColliderTuner : MVRScript
 
     private string Simplify(string name)
     {
-        foreach (var prefix in _prefixes)
-        {
-            if (name.StartsWith(prefix))
-            {
-                name = name.Substring(prefix.Length);
-                break;
-            }
-        }
+        // foreach (var prefix in _prefixes)
+        // {
+        //     if (name.StartsWith(prefix))
+        //     {
+        //         name = name.Substring(prefix.Length);
+        //         break;
+        //     }
+        // }
         return name;
     }
 
