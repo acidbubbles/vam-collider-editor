@@ -14,6 +14,7 @@ using UnityEngine;
 public class ColliderTuner : MVRScript
 {
     private const string _saveExt = "collidersprofile";
+    private const float _minDisplayAlpha = 0.01f;
     private Dictionary<Collider, GameObject> _collidersDisplayMap;
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
@@ -21,7 +22,7 @@ public class ColliderTuner : MVRScript
     private Material _selectedMaterial;
     private Material _deselectMaterial;
     private Rigidbody _selectedRigidbody;
-    private JSONStorableBool _displayJSON;
+    private JSONStorableFloat _displayJSON;
     private JSONClass _state = new JSONClass();
     private string _lastBrowseDir;
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
@@ -39,13 +40,22 @@ public class ColliderTuner : MVRScript
             _selectedMaterial = CreateMaterial(new Color(0f, 1f, 0f, 0.05f));
             _deselectMaterial = CreateMaterial(new Color(1f, 0f, 0f, 0.05f));
 
-            _displayJSON = new JSONStorableBool("Display Rigidbodies", false, (bool val) =>
+            _displayJSON = new JSONStorableFloat("Display Rigidbodies", 0f, (float val) =>
             {
-                if (val) CreateColliderDisplays();
-                else DestroyColliderDisplays();
-            })
+                if (val < _minDisplayAlpha)
+                {
+                    _displayJSON.valNoCallback = 0f;
+                    DestroyColliderDisplays();
+                    return;
+                }
+                if (_collidersDisplayMap == null)
+                    CreateColliderDisplays();
+
+                _deselectMaterial.color = new Color(_deselectMaterial.color.r, _deselectMaterial.color.g, _deselectMaterial.color.b, val);
+                _selectedMaterial.color = new Color(_selectedMaterial.color.r, _selectedMaterial.color.g, _selectedMaterial.color.b, val);
+            }, 0f, 1f, true)
             { isStorable = false };
-            CreateToggle(_displayJSON, false);
+            CreateSlider(_displayJSON, false);
 
             CreateSpacer().height = 30f;
 
@@ -323,7 +333,7 @@ public class ColliderTuner : MVRScript
         {
             RestoreFromState(false);
 
-            if (_displayJSON.val && _collidersDisplayMap == null)
+            if (_displayJSON.val >= _minDisplayAlpha && _collidersDisplayMap == null)
                 CreateColliderDisplays();
         }
         catch (Exception e)
