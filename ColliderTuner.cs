@@ -24,7 +24,7 @@ public class ColliderTuner : MVRScript
     private Rigidbody _selectedRigidbody;
     private JSONStorableFloat _displayJSON;
     private JSONClass _state = new JSONClass();
-    private string _lastBrowseDir;
+    private string _lastBrowseDir = SuperController.singleton.savesDir;
     private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamicButton> _adjustmentButtons = new List<UIDynamicButton>();
 
@@ -125,14 +125,14 @@ public class ColliderTuner : MVRScript
                         DestroyColliderDisplays();
                         CreateColliderDisplays();
                     }
-                }, _saveExt);
+                }, _saveExt, null, true, true, false, null, false, null, false, false);
             });
 
             var savePresetUI = CreateButton("Save Preset", false);
             savePresetUI.button.onClick.AddListener(() =>
             {
                 SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-                SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt);
+                SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt, null, true, true, false, null, false, null, false, false);
 
                 var browser = SuperController.singleton.mediaFileBrowserUI;
                 browser.SetTextEntry(true);
