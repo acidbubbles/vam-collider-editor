@@ -489,7 +489,10 @@ public class ColliderTuner : MVRScript
             rb.detectCollisions = rbJC[enabledKey].AsBool;
         }
 
-        var colliders = _rigidbodyCollidersMap[rb];
+        List<Collider> colliders;
+        if (!_rigidbodyCollidersMap.TryGetValue(rb, out colliders))
+            return;
+
         foreach (KeyValuePair<string, JSONNode> colliderEntry in rbJC["colliders"].AsObject)
         {
             var colliderUniqueName = colliderEntry.Key.Split(':');
