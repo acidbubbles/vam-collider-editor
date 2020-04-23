@@ -40,7 +40,6 @@ public class ColliderTuner : MVRScript
     private Dictionary<Collider, GameObject> _collidersDisplayMap;
     private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
     private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
-    private List<Collider> _detachedColliders;
     private Atom _containingAtom;
     private Material _selectedMaterial;
     private Material _deselectMaterial;
@@ -478,7 +477,7 @@ public class ColliderTuner : MVRScript
 
     private void RestoreRigidBodyFromState(Rigidbody rb, JSONClass rbJC, bool initial)
     {
-        var enabledKey = "enabled" + (initial ? "" : "Initial");
+        var enabledKey = "enabled" + (initial ? "Initial" : "");
         if (rbJC.HasKey(enabledKey))
         {
             rb.detectCollisions = rbJC[enabledKey].AsBool;
