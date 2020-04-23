@@ -102,7 +102,12 @@ public class ColliderTuner : MVRScript
 
             var groups = _rigidbodiesNameMap.Keys.GroupBy(k => GroupOf(k)).ToDictionary(g => g.Key, g => g.OrderBy(n => n).ToList());
             var rbListJSON = new JSONStorableStringChooser("Rigidbody", new List<string>(), "", "Rigidbody", (string val) => ShowColliderAdjustments(val));
-            var rbGroupListJSON = new JSONStorableStringChooser("Rigidbody Groups", _rbGroupDefinitions.Where(g => groups.ContainsKey(g.Key)).Select(g => g.Key).ToList(), "", "Rigidbody Groups", (string val) => { rbListJSON.choices = groups[val]; rbListJSON.val = ""; });
+            var rbGroupListJSON = new JSONStorableStringChooser("Rigidbody Groups", _rbGroupDefinitions.Where(g => groups.ContainsKey(g.Key)).Select(g => g.Key).ToList(), "", "Rigidbody Groups", (string val) =>
+            {
+                List<string> choices;
+                rbListJSON.choices = groups.TryGetValue(val, out choices) ? choices : new List<string>();
+                rbListJSON.val = "";
+            });
 
             var rbGroupListUI = CreateScrollablePopup(rbGroupListJSON, false);
             rbGroupListUI.popupPanelHeight = 900f;
@@ -134,6 +139,7 @@ public class ColliderTuner : MVRScript
                     DestroyColliderDisplays();
                     CreateColliderDisplays();
                 }
+                _state = new JSONClass();
             });
 
             CreateSpacer().height = 10f;
