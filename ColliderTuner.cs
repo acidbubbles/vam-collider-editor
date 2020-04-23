@@ -15,18 +15,6 @@ public class ColliderTuner : MVRScript
 {
     private const string _saveExt = "collidersprofile";
     private const float _minDisplayAlpha = 0.01f;
-    private Dictionary<Collider, GameObject> _collidersDisplayMap;
-    private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
-    private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
-    private Atom _containingAtom;
-    private Material _selectedMaterial;
-    private Material _deselectMaterial;
-    private Rigidbody _selectedRigidbody;
-    private JSONStorableFloat _displayJSON;
-    private JSONClass _state = new JSONClass();
-    private string _lastBrowseDir = SuperController.singleton.savesDir;
-    private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
-    private readonly List<UIDynamic> _adjustmentUIs = new List<UIDynamic>();
     private static readonly List<KeyValuePair<string, Regex>> _rbGroupDefinitions = new List<KeyValuePair<string, Regex>>
     {
         GroupDefinition("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
@@ -49,6 +37,19 @@ public class ColliderTuner : MVRScript
         GroupDefinition("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
         GroupDefinition("Other", @"^.*$"),
     };
+    private Dictionary<Collider, GameObject> _collidersDisplayMap;
+    private Dictionary<string, Rigidbody> _rigidbodiesNameMap;
+    private Dictionary<Rigidbody, List<Collider>> _rigidbodyCollidersMap;
+    private List<Collider> _detachedColliders;
+    private Atom _containingAtom;
+    private Material _selectedMaterial;
+    private Material _deselectMaterial;
+    private Rigidbody _selectedRigidbody;
+    private JSONStorableFloat _displayJSON;
+    private JSONClass _state = new JSONClass();
+    private string _lastBrowseDir = SuperController.singleton.savesDir;
+    private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
+    private readonly List<UIDynamic> _adjustmentUIs = new List<UIDynamic>();
 
     private static KeyValuePair<string, Regex> GroupDefinition(string label, string value)
     {
@@ -336,7 +337,7 @@ public class ColliderTuner : MVRScript
             defaultVal,
             (float val) =>
             {
-                if(!allowSmallerThanMinimum && val < min)
+                if (!allowSmallerThanMinimum && val < min)
                 {
                     val = min;
                     storable.valNoCallback = min;
@@ -678,8 +679,6 @@ public class ColliderTuner : MVRScript
             _rigidbodyCollidersMap = new Dictionary<Rigidbody, List<Collider>>();
             foreach (var collider in _containingAtom.GetComponentsInChildren<Collider>(true))
             {
-                if (collider.name.Contains("lPectoral5Joint"))
-                    SuperController.LogMessage("null?" + collider.attachedRigidbody);
                 if (collider.attachedRigidbody == null) continue;
 
                 List<Collider> rbColliders;
