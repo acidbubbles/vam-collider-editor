@@ -535,6 +535,15 @@ public class ColliderTuner : MVRScript
                 capsuleCollider.radius = jc[$"radius{suffix}"].AsFloat;
             if (jc.HasKey($"height{suffix}"))
                 capsuleCollider.height = jc[$"height{suffix}"].AsFloat;
+
+            var center = capsuleCollider.center;
+            if (jc.HasKey($"center.x{suffix}"))
+                center.x = jc[$"center.x{suffix}"].AsFloat;
+            if (jc.HasKey($"center.y{suffix}"))
+                center.y = jc[$"center.y{suffix}"].AsFloat;
+            if (jc.HasKey($"center.z{suffix}"))
+                center.z = jc[$"center.z{suffix}"].AsFloat;
+            capsuleCollider.center = center;
         }
         else if (collider is BoxCollider)
         {
@@ -543,9 +552,9 @@ public class ColliderTuner : MVRScript
             if (jc.HasKey($"x{suffix}"))
                 size.x = jc[$"x{suffix}"].AsFloat;
             if (jc.HasKey($"y{suffix}"))
-                size.x = jc[$"y{suffix}"].AsFloat;
+                size.y = jc[$"y{suffix}"].AsFloat;
             if (jc.HasKey($"z{suffix}"))
-                size.x = jc[$"z{suffix}"].AsFloat;
+                size.z = jc[$"z{suffix}"].AsFloat;
             boxCollider.size = size;
         }
         else
