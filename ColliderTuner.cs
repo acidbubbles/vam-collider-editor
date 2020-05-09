@@ -1,32 +1,32 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-
 using System.Linq;
-
 using System.Text.RegularExpressions;
 using SimpleJSON;
 using UnityEngine;
 
+using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
+
 public class ColliderTuner : MVRScript
 {
     private const string _saveExt = "colliders";
-
-    private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
     private Dictionary<string, ColliderModel> _colliders;
-    private Dictionary<string, RigidbodyModel> _rigidbodies;
+    private JSONStorableStringChooser _collidersJson;
 
     private string _lastBrowseDir = SuperController.singleton.savesDir;
+    private ColliderModel _lastSelectedCollider;
+    private RigidbodyModel _lastSelectedRigidbody;
+    private Dictionary<string, RigidbodyModel> _rigidbodies;
+    private JSONStorableStringChooser _rigidbodiesJson;
+
+    private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
+
+    private JSONStorableStringChooser _rigidbodyGroupsJson;
+    private ColliderModel _selectedCollider;
 
     private RigidbodyGroupModel _selectedGroup;
     private RigidbodyModel _selectedRigidbody;
-    private RigidbodyModel _lastSelectedRigidbody;
-    private ColliderModel _selectedCollider;
-    private ColliderModel _lastSelectedCollider;
-
-    private JSONStorableStringChooser _rigidbodyGroupsJson;
-    private JSONStorableStringChooser _rigidbodiesJson;
-    private JSONStorableStringChooser _collidersJson;
 
     public override void Init()
     {
@@ -40,7 +40,7 @@ public class ColliderTuner : MVRScript
                 return;
             }
 
-            BuildModels();
+            BuildModels(includeAutoColliders: true);
             BuildUI();
         }
         catch (Exception e)
@@ -51,8 +51,7 @@ public class ColliderTuner : MVRScript
 
     private void BuildUI()
     {
-
-        var showPreviews = new JSONStorableBool("showPreviews", false, (bool value) =>
+        var showPreviews = new JSONStorableBool("showPreviews", false, value =>
         {
             foreach (var colliderPair in _colliders)
                 colliderPair.Value.ShowPreview = value;
@@ -60,18 +59,20 @@ public class ColliderTuner : MVRScript
 
         var showPreviewsToggle = CreateToggle(showPreviews);
         showPreviewsToggle.label = "Show Previews";
-        
-        CreateSlider(new JSONStorableFloat("previewOpacity", 0.001f, (float value) => {
+
+        CreateSlider(new JSONStorableFloat("previewOpacity", 0.001f, value =>
+        {
             var alpha = ExponentialScale(value, 0.2f, 1f);
             foreach (var colliderPair in _colliders)
                 colliderPair.Value.PreviewOpacity = alpha;
-        }, 0f, 1f, true)).label = "Preview Opacity";
+        }, 0f, 1f)).label = "Preview Opacity";
 
-        CreateSlider(new JSONStorableFloat("selectedPreviewOpacity", 0.3f, (float value) => {
+        CreateSlider(new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
+        {
             var alpha = ExponentialScale(value, 0.2f, 1f);
             foreach (var colliderPair in _colliders)
                 colliderPair.Value.SelectedPreviewOpacity = alpha;
-        }, 0f, 1f, true)).label = "Selected Preview Opacity";
+        }, 0f, 1f)).label = "Selected Preview Opacity";
 
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
@@ -88,7 +89,7 @@ public class ColliderTuner : MVRScript
 
             var browser = SuperController.singleton.mediaFileBrowserUI;
             browser.SetTextEntry(true);
-            browser.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
+            browser.fileEntryField.text = (int) (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
             browser.ActivateFileNameField();
         });
 
@@ -100,34 +101,34 @@ public class ColliderTuner : MVRScript
         });
 
         _rigidbodyGroupsJson = new JSONStorableStringChooser(
-            paramName: "Rigidbody Groups",
-            choicesList: _rigidbodyGroups.Keys.ToList(),
-            displayChoicesList: _rigidbodyGroups.Select(x => x.Value.Name).ToList(),
-            startingValue: "All",
-            displayName: "Rigidbody Groups");
+            "Rigidbody Groups",
+            _rigidbodyGroups.Keys.ToList(),
+            _rigidbodyGroups.Select(x => x.Value.Name).ToList(),
+            "All",
+            "Rigidbody Groups");
 
         UIDynamicPopup rbGroupListUI = CreateScrollablePopup(_rigidbodyGroupsJson);
-        rbGroupListUI.popupPanelHeight = 900f;
+        rbGroupListUI.popupPanelHeight = 400f;
 
         _rigidbodiesJson = new JSONStorableStringChooser(
-            paramName: "Rigidbodies",
-            choicesList: _rigidbodies.Keys.ToList(),
-            displayChoicesList: _rigidbodies.Select(x => x.Value.Label).ToList(),
-            startingValue: "All",
-            displayName: "Rigidbodies");
+            "Rigidbodies",
+            _rigidbodies.Keys.ToList(),
+            _rigidbodies.Select(x => x.Value.Label).ToList(),
+            "All",
+            "Rigidbodies");
 
         UIDynamicPopup ridigBodyList = CreateScrollablePopup(_rigidbodiesJson);
-        ridigBodyList.popupPanelHeight = 900f;
+        ridigBodyList.popupPanelHeight = 400f;
 
         _collidersJson = new JSONStorableStringChooser(
-            paramName: "Colliders",
-            choicesList: _colliders.Keys.ToList(),
-            displayChoicesList: _colliders.Select(x => x.Value.Label).ToList(),
-            startingValue: "All",
-            displayName: "Colliders");
+            "Colliders",
+            _colliders.Keys.ToList(),
+            _colliders.Select(x => x.Value.Label).ToList(),
+            "All",
+            "Colliders");
 
-        UIDynamicPopup rbListUI = CreateScrollablePopup(_collidersJson, rightSide: true);
-        rbListUI.popupPanelHeight = 900f;
+        UIDynamicPopup rbListUI = CreateScrollablePopup(_collidersJson, true);
+        rbListUI.popupPanelHeight = 400f;
 
         _rigidbodyGroupsJson.setCallbackFunction = groupId =>
         {
@@ -147,11 +148,11 @@ public class ColliderTuner : MVRScript
             _selectedCollider = _colliders.ContainsKey(colliderId) ? _colliders[colliderId] : null;
             UpdateFilter();
         };
-        
+
         UpdateFilter();
     }
 
-    private void BuildModels()
+    private void BuildModels(bool includeAutoColliders)
     {
         var rigidbodyGroups = new List<RigidbodyGroupModel>
         {
@@ -182,7 +183,8 @@ public class ColliderTuner : MVRScript
         _rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
             .Where(rigidbody => !rigidbody.isKinematic && rigidbody.name != "control" && rigidbody.name != "object" &&
                                 !rigidbody.name.EndsWith("Control") && !rigidbody.name.StartsWith("hairTool") && !rigidbody.name.EndsWith("Trigger") &&
-                                !rigidbody.name.EndsWith("UI") && !rigidbody.name.Contains("AutoCollider") && !rigidbody.name.Contains("PhysicsMesh") &&
+                                !rigidbody.name.EndsWith("UI") &&
+                                (includeAutoColliders || (!rigidbody.name.Contains("AutoCollider") && !rigidbody.name.Contains("PhysicsMesh"))) &&
                                 !rigidbody.name.Contains("Ponytail")
             )
             .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, rigidbodyGroups))
@@ -193,7 +195,8 @@ public class ColliderTuner : MVRScript
         var colliderQuery = containingAtom.GetComponentsInChildren<Collider>(true)
             .Where(collider => collider.name != "control" && collider.name != "object" && !collider.name.Contains("Tool") &&
                                !collider.name.EndsWith("Control") && !collider.name.EndsWith("Link") && !collider.name.EndsWith("Trigger") &&
-                               !collider.name.EndsWith("UI") && !collider.name.Contains("AutoCollider") && !collider.name.Contains("PhysicsMesh") &&
+                               !collider.name.EndsWith("UI") &&
+                                (includeAutoColliders || (!collider.name.Contains("AutoCollider") && !collider.name.Contains("PhysicsMesh"))) &&
                                !collider.name.Contains("Ponytail")
             );
 
@@ -209,8 +212,6 @@ public class ColliderTuner : MVRScript
                 SuperController.LogError($"Duplicate collider Id {model.Id}");
                 continue;
             }
-
-            model.CreatePreview();
 
             _colliders.Add(model.Id, model);
         }
@@ -235,13 +236,15 @@ public class ColliderTuner : MVRScript
                 rigidbodies = _rigidbodies.Values;
                 colliders = _colliders.Values;
             }
-            
-            _rigidbodiesJson.choices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Id)).ToList();
-            _rigidbodiesJson.displayChoices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Label)).ToList();
-            
+
+            _rigidbodiesJson.choices = new[] {"All"}.Concat(rigidbodies.Select(x => x.Id)).ToList();
+            _rigidbodiesJson.displayChoices = new[] {"All"}.Concat(rigidbodies.Select(x => x.Label)).ToList();
+
 
             if (_selectedRigidbody != null && _rigidbodiesJson.choices.Contains(_selectedRigidbody.Id))
+            {
                 _rigidbodiesJson.valNoCallback = _selectedRigidbody.Id;
+            }
             else
             {
                 _rigidbodiesJson.valNoCallback = "All";
@@ -250,16 +253,15 @@ public class ColliderTuner : MVRScript
 
             // Collider filtering
 
-            if (_selectedRigidbody != null)
-            {
-                colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody == _selectedRigidbody);
-            }
+            if (_selectedRigidbody != null) colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody == _selectedRigidbody);
 
             _collidersJson.choices = colliders.Select(x => x.Id).ToList();
             _collidersJson.displayChoices = colliders.Select(x => x.Label).ToList();
 
             if (_selectedCollider != null && _collidersJson.choices.Contains(_selectedCollider.Id))
+            {
                 _collidersJson.valNoCallback = _selectedCollider.Id;
+            }
             else
             {
                 var firstAvailableId = _collidersJson.choices.FirstOrDefault();
@@ -272,7 +274,6 @@ public class ColliderTuner : MVRScript
 
             UpdateSelectedRigidbody();
             UpdateSelectedCollider();
-
         }
         catch (Exception e)
         {
@@ -310,32 +311,24 @@ public class ColliderTuner : MVRScript
     {
         if (string.IsNullOrEmpty(path))
             return;
-        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
+        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] {'/', '\\'})) + @"\";
 
-        LoadFromJson((JSONClass)LoadJSON(path));
+        LoadFromJson((JSONClass) LoadJSON(path));
     }
 
     private void LoadFromJson(JSONClass jsonClass)
     {
         var collidersJsonClass = jsonClass["colliders"].AsObject;
         foreach (string colliderId in collidersJsonClass.Keys)
-        {
             if (_colliders.ContainsKey(colliderId))
-            {
                 _colliders[colliderId]
                     .LoadJson(collidersJsonClass[colliderId].AsObject);
-            }
-        }
 
         var rigidbodiesJsonClass = jsonClass["rigidbodies"].AsObject;
         foreach (string rigidbodyId in rigidbodiesJsonClass.Keys)
-        {
             if (_rigidbodies.ContainsKey(rigidbodyId))
-            {
                 _rigidbodies[rigidbodyId]
                     .LoadJson(rigidbodiesJsonClass[rigidbodyId].AsObject);
-            }
-        }
     }
 
     private void HandleSavePreset(string path)
@@ -343,7 +336,7 @@ public class ColliderTuner : MVRScript
         if (string.IsNullOrEmpty(path))
             return;
 
-        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
+        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] {'/', '\\'})) + @"\";
 
         if (!path.ToLower().EndsWith($".{_saveExt}"))
             path += $".{_saveExt}";
@@ -374,7 +367,7 @@ public class ColliderTuner : MVRScript
         needsStore = true;
 
         AppendJson(jsonClass);
-        
+
         return jsonClass;
     }
 
@@ -398,6 +391,15 @@ public class ColliderTuner : MVRScript
         var b = maxValue / (Mathf.Exp(c) - 1);
         var a = -1 * b;
         return a + b * Mathf.Exp(c * inputValue);
+    }
+
+    private void FixedUpdate()
+    {
+        foreach (var colliderPair in _colliders)
+        {
+            colliderPair.Value.UpdateControls();
+            colliderPair.Value.UpdatePreview();
+        }
     }
 
     public override void RestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, JSONArray presetAtoms = null, bool setMissingToDefault = true)
@@ -429,6 +431,7 @@ public static class ColorExtensions
 public static class MaterialHelper
 {
     private static Queue<Material> _materials;
+
     public static Material GetNextMaterial()
     {
         if (_materials == null)
@@ -549,17 +552,17 @@ public static class MaterialHelper
             materials.Add(CreateMaterial("#FFE4E1".ToColor()));
             materials.Add(CreateMaterial("#FFF0F5".ToColor()));
 
-            _materials = new Queue<Material>(materials.OrderBy(x => UnityEngine.Random.Range(-1, 2)));
+            _materials = new Queue<Material>(materials.OrderBy(x => Random.Range(-1, 2)));
         }
 
         Material current;
-        _materials.Enqueue((current = _materials.Dequeue()));
+        _materials.Enqueue(current = _materials.Dequeue());
         return current;
     }
 
     private static Material CreateMaterial(Color color)
     {
-        var material = new Material(Shader.Find("Battlehub/RTGizmos/Handles")) { color = color };
+        var material = new Material(Shader.Find("Battlehub/RTGizmos/Handles")) {color = color};
 
         material.SetFloat("_Offset", 1f);
         material.SetFloat("_MinAlpha", 1f);
@@ -586,104 +589,35 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
         foreach (var c in preview.GetComponents<Collider>())
         {
             c.enabled = false;
-            UnityEngine.Object.Destroy(c);
+            Object.Destroy(c);
         }
 
         preview.transform.SetParent(Collider.transform, false);
 
         Preview = preview;
 
-        UpdatePreview();
+        DoUpdatePreview();
         SetSelected(Selected);
     }
 }
 
 public abstract class ColliderModel
 {
+    private float _previewOpacity;
+
+    private bool _selected;
+
+    private float _selectedPreviewOpacity;
+
+    private bool _showPreview;
     protected MVRScript Parent { get; }
-
-    public static ColliderModel CreateTyped(MVRScript parent, Collider collider, Dictionary<string, RigidbodyModel> rigidbodies)
-    {
-        ColliderModel typed;
-
-        if (collider is SphereCollider)
-            typed = new SphereColliderModel(parent, (SphereCollider)collider);
-        else if (collider is BoxCollider)
-            typed = new BoxColliderModel(parent, (BoxCollider)collider);
-        else if (collider is CapsuleCollider)
-            typed = new CapsuleColliderModel(parent, (CapsuleCollider)collider);
-        else
-            throw new ArgumentOutOfRangeException($"Unsupported collider type");
-
-        if (collider.attachedRigidbody != null)
-        {
-            var rigidbodyModel = rigidbodies[collider.attachedRigidbody.Uuid()];
-            typed.Rididbody = rigidbodyModel;
-            if (rigidbodyModel.Colliders == null)
-                rigidbodyModel.Colliders = new List<ColliderModel> { typed };
-            else
-                rigidbodyModel.Colliders.Add(typed);
-        }
-
-        return typed;
-    }
 
     public string Id { get; }
     public string Label { get; }
     public RigidbodyModel Rididbody { get; set; }
-    
+
     public GameObject Preview { get; protected set; }
     public List<UIDynamic> Controls { get; private set; }
-
-    protected ColliderModel(MVRScript parent, string id, string label)
-    {
-        Parent = parent;
-
-        Id = id;
-        Label = label;
-    }
-
-    public void CreateControls()
-    {
-        DestroyControls();
-
-        var controls = new List<UIDynamic>();
-
-        var resetUi = Parent.CreateButton("Reset Collider", rightSide: true);
-        resetUi.button.onClick.AddListener(ResetToInitial);
-
-        controls.Add(resetUi);
-        controls.AddRange(DoCreateControls());
-
-        Controls = controls;
-    }
-
-    public abstract IEnumerable<UIDynamic> DoCreateControls();
-
-    public virtual void DestroyControls()
-    {
-        if (Controls == null)
-            return;
-
-        foreach (var adjustmentJson in Controls)
-            UnityEngine.Object.Destroy(adjustmentJson.gameObject);
-
-        Controls.Clear();
-    }
-
-    public abstract void CreatePreview();
-
-    public virtual void DestroyPreview()
-    {
-        if (Preview != null)
-            UnityEngine.Object.Destroy(Preview);
-    }
-
-    protected abstract GameObject DoCreatePreview();
-
-    public abstract void UpdatePreview();
-
-    private bool _selected;
 
     public bool Selected
     {
@@ -698,28 +632,6 @@ public abstract class ColliderModel
         }
     }
 
-    protected virtual void SetSelected(bool value)
-    {
-        var previewRenderer = Preview.GetComponent<Renderer>();
-        var color = previewRenderer.material.color;
-
-        if (value)
-        {
-            color.a = _selectedPreviewOpacity;
-            CreateControls();
-        }
-        else
-        {
-            color.a = _previewOpacity;
-            DestroyControls();
-        }
-
-        previewRenderer.material.color = color;
-    }
-
-    private float _selectedPreviewOpacity;
-    private float _previewOpacity;
-
     public float SelectedPreviewOpacity
     {
         get { return _selectedPreviewOpacity; }
@@ -727,10 +639,10 @@ public abstract class ColliderModel
         {
             if (Mathf.Approximately(value, _selectedPreviewOpacity))
                 return;
-            
+
             _selectedPreviewOpacity = value;
 
-            if (_selected)
+            if (Preview != null && _selected)
             {
                 var previewRenderer = Preview.GetComponent<Renderer>();
                 var color = previewRenderer.material.color;
@@ -750,7 +662,7 @@ public abstract class ColliderModel
 
             _previewOpacity = value;
 
-            if (!_selected)
+            if (Preview != null && !_selected)
             {
                 var previewRenderer = Preview.GetComponent<Renderer>();
                 var color = previewRenderer.material.color;
@@ -760,7 +672,6 @@ public abstract class ColliderModel
         }
     }
 
-    private bool _showPreview;
     public bool ShowPreview
     {
         get { return _showPreview; }
@@ -775,6 +686,112 @@ public abstract class ColliderModel
         }
     }
 
+    protected ColliderModel(MVRScript parent, string id, string label)
+    {
+        Parent = parent;
+
+        Id = id;
+        Label = label;
+    }
+
+    public static ColliderModel CreateTyped(MVRScript parent, Collider collider, Dictionary<string, RigidbodyModel> rigidbodies)
+    {
+        ColliderModel typed;
+
+        if (collider is SphereCollider)
+            typed = new SphereColliderModel(parent, (SphereCollider) collider);
+        else if (collider is BoxCollider)
+            typed = new BoxColliderModel(parent, (BoxCollider) collider);
+        else if (collider is CapsuleCollider)
+            typed = new CapsuleColliderModel(parent, (CapsuleCollider) collider);
+        else
+            throw new ArgumentOutOfRangeException("Unsupported collider type");
+
+        if (collider.attachedRigidbody != null)
+        {
+            var rigidbodyModel = rigidbodies[collider.attachedRigidbody.Uuid()];
+            typed.Rididbody = rigidbodyModel;
+            if (rigidbodyModel.Colliders == null)
+                rigidbodyModel.Colliders = new List<ColliderModel> {typed};
+            else
+                rigidbodyModel.Colliders.Add(typed);
+        }
+
+        return typed;
+    }
+
+    public void CreateControls()
+    {
+        DestroyControls();
+
+        var controls = new List<UIDynamic>();
+
+        var resetUi = Parent.CreateButton("Reset Collider", true);
+        resetUi.button.onClick.AddListener(ResetToInitial);
+
+        controls.Add(resetUi);
+        controls.AddRange(DoCreateControls());
+
+        Controls = controls;
+    }
+
+    public abstract IEnumerable<UIDynamic> DoCreateControls();
+
+    public virtual void DestroyControls()
+    {
+        if (Controls == null)
+            return;
+
+        foreach (var adjustmentJson in Controls)
+            Object.Destroy(adjustmentJson.gameObject);
+
+        Controls.Clear();
+    }
+
+    public virtual void DestroyPreview()
+    {
+        if (Preview != null)
+        {
+            Object.Destroy(Preview);
+            Preview = null;
+        }
+    }
+
+    public abstract void CreatePreview();
+
+    protected abstract GameObject DoCreatePreview();
+
+    public void UpdatePreview()
+    {
+        if (_showPreview)
+            DoUpdatePreview();
+    }
+
+    protected abstract void DoUpdatePreview();
+
+    public void UpdateControls()
+    {
+        DoUpdateControls();
+    }
+
+    protected abstract void DoUpdateControls();
+
+    protected virtual void SetSelected(bool value)
+    {
+        if (Preview != null)
+        {
+            var previewRenderer = Preview.GetComponent<Renderer>();
+            var color = previewRenderer.material.color;
+            color.a = value ? _selectedPreviewOpacity : _previewOpacity;
+            previewRenderer.material.color = color;
+        }
+
+        if (value)
+            CreateControls();
+        else
+            DestroyControls();
+    }
+
     public void AppendJson(JSONClass parent)
     {
         if (DeviatesFromInitial())
@@ -784,7 +801,7 @@ public abstract class ColliderModel
     public void LoadJson(JSONClass jsonClass)
     {
         DoLoadJson(jsonClass);
-        UpdatePreview();
+        DoUpdatePreview();
 
         if (Selected)
         {
@@ -800,7 +817,7 @@ public abstract class ColliderModel
     public void ResetToInitial()
     {
         DoResetToInitial();
-        UpdatePreview();
+        DoUpdatePreview();
 
         if (Selected)
         {
@@ -818,43 +835,20 @@ public abstract class ColliderModel
 
 public class RigidbodyModel
 {
-    public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<RigidbodyGroupModel> groups)
-    {
-        var model = new RigidbodyModel(script, rigidbody, rigidbody.name);
-        model.Groups = groups
-            .Where(category => category.Pattern.IsMatch(rigidbody.name))
-            .ToList();
-        return model;
-    }
-
-    private readonly MVRScript _script;
+    private readonly bool _initialEnabled;
     private readonly Rigidbody _rigidbody;
 
+    private readonly MVRScript _script;
+
     private List<UIDynamic> _controls;
+
+    private bool _selected;
 
     public string Id { get; set; }
     public string Name { get; set; }
     public string Label { get; set; }
     public List<RigidbodyGroupModel> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; }
-
-    private readonly bool _initialEnabled;
-
-    public RigidbodyModel(MVRScript script, Rigidbody rigidbody, string label)
-    {
-        _script = script;
-        _rigidbody = rigidbody;
-
-        Id = rigidbody.Uuid();
-        Name = rigidbody.name;
-        Label = label;
-
-        _initialEnabled = rigidbody.detectCollisions;
-    }
-
-    public override string ToString() => $"{Id}_{Name}";
-
-    private bool _selected;
 
     public bool Selected
     {
@@ -868,6 +862,29 @@ public class RigidbodyModel
             }
         }
     }
+
+    public RigidbodyModel(MVRScript script, Rigidbody rigidbody, string label)
+    {
+        _script = script;
+        _rigidbody = rigidbody;
+
+        Id = rigidbody.Uuid();
+        Name = rigidbody.name;
+        Label = label;
+
+        _initialEnabled = rigidbody.detectCollisions;
+    }
+
+    public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<RigidbodyGroupModel> groups)
+    {
+        var model = new RigidbodyModel(script, rigidbody, rigidbody.name);
+        model.Groups = groups
+            .Where(category => category.Pattern.IsMatch(rigidbody.name))
+            .ToList();
+        return model;
+    }
+
+    public override string ToString() => $"{Id}_{Name}";
 
     private void SetSelected(bool value)
     {
@@ -883,26 +900,26 @@ public class RigidbodyModel
 
         var controls = new List<UIDynamic>();
 
-        var resetUi = _script.CreateButton("Reset Rigidbody", rightSide: false);
+        var resetUi = _script.CreateButton("Reset Rigidbody");
         resetUi.button.onClick.AddListener(ResetToInitial);
 
-        var enabledToggleJsf = new JSONStorableBool("enabled", _rigidbody.detectCollisions, (bool value) => { _rigidbody.detectCollisions = value; });
-        var enabledToggle = _script.CreateToggle(enabledToggleJsf, rightSide: false);
+        var enabledToggleJsf = new JSONStorableBool("enabled", _rigidbody.detectCollisions, value => { _rigidbody.detectCollisions = value; });
+        var enabledToggle = _script.CreateToggle(enabledToggleJsf);
         enabledToggle.label = "Detect Collisions";
 
         controls.Add(resetUi);
         controls.Add(enabledToggle);
-        
+
         _controls = controls;
     }
-    
+
     public virtual void DestroyControls()
     {
         if (_controls == null)
             return;
 
         foreach (var control in _controls)
-            UnityEngine.Object.Destroy(control.gameObject);
+            Object.Destroy(control.gameObject);
 
         _controls.Clear();
     }
@@ -952,10 +969,7 @@ public class RigidbodyModel
         _rigidbody.detectCollisions = _initialEnabled;
     }
 
-    protected bool DeviatesFromInitial()
-    {
-        return _rigidbody.detectCollisions != _initialEnabled;
-    }
+    protected bool DeviatesFromInitial() => _rigidbody.detectCollisions != _initialEnabled;
 }
 
 public class RigidbodyGroupModel
@@ -974,6 +988,12 @@ public class RigidbodyGroupModel
 
 public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 {
+    private JSONStorableFloat _centerXStorableFloat;
+    private JSONStorableFloat _centerYStorableFloat;
+    private JSONStorableFloat _centerZStorableFloat;
+    private JSONStorableFloat _heightStorableFloat;
+    private JSONStorableFloat _radiusStorableFloat;
+
     public float InitialRadius { get; set; }
     public float InitialHeight { get; set; }
     public Vector3 InitialCenter { get; set; }
@@ -988,40 +1008,40 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     public override IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("radius", Collider.radius, (float value) =>
+        yield return Parent.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
         {
             Collider.radius = value;
-            UpdatePreview();
+            DoUpdatePreview();
         }, 0f, 0.2f), "Radius");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("height", Collider.height, (float value) =>
+        yield return Parent.CreateFloatSlider(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
         {
             Collider.height = value;
-            UpdatePreview();
+            DoUpdatePreview();
         }, 0f, 0.2f), "Height");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerX", Collider.center.x, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.X");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerY", Collider.center.y, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.Y");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerZ", Collider.center.z, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.Z");
     }
 
@@ -1055,16 +1075,14 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.center = InitialCenter;
     }
 
-    protected override bool DeviatesFromInitial()
-    {
-        return !Mathf.Approximately(InitialRadius, Collider.radius) ||
-               !Mathf.Approximately(InitialHeight, Collider.height) ||
-               InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
-    }
+    protected override bool DeviatesFromInitial() =>
+        !Mathf.Approximately(InitialRadius, Collider.radius) ||
+        !Mathf.Approximately(InitialHeight, Collider.height) ||
+        InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Capsule);
 
-    public override void UpdatePreview()
+    protected override void DoUpdatePreview()
     {
         float size = Collider.radius * 2;
         float height = Collider.height / 2;
@@ -1075,10 +1093,29 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             Preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.right);
         Preview.transform.localPosition = Collider.center;
     }
+
+    protected override void DoUpdateControls()
+    {
+        if (_radiusStorableFloat != null)
+            _radiusStorableFloat.valNoCallback = Collider.radius;
+        if (_heightStorableFloat != null)
+            _heightStorableFloat.valNoCallback = Collider.height;
+        if (_centerXStorableFloat != null)
+            _centerXStorableFloat.valNoCallback = Collider.center.x;
+        if (_centerYStorableFloat != null)
+            _centerYStorableFloat.valNoCallback = Collider.center.y;
+        if (_centerZStorableFloat != null)
+            _centerZStorableFloat.valNoCallback = Collider.center.z;
+    }
 }
 
 public class SphereColliderModel : ColliderModel<SphereCollider>
 {
+    private JSONStorableFloat _centerXStorableFloat;
+    private JSONStorableFloat _centerYStorableFloat;
+    private JSONStorableFloat _centerZStorableFloat;
+    private JSONStorableFloat _radiusStorableFloat;
+
     public float InitialRadius { get; set; }
     public Vector3 InitialCenter { get; set; }
 
@@ -1091,7 +1128,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-    public override void UpdatePreview()
+    protected override void DoUpdatePreview()
     {
         if (Preview == null)
             Preview = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -1100,10 +1137,22 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
         Preview.transform.localPosition = Collider.center;
     }
 
+    protected override void DoUpdateControls()
+    {
+        if (_radiusStorableFloat != null)
+            _radiusStorableFloat.valNoCallback = Collider.radius;
+        if (_centerXStorableFloat != null)
+            _centerXStorableFloat.valNoCallback = Collider.center.x;
+        if (_centerYStorableFloat != null)
+            _centerYStorableFloat.valNoCallback = Collider.center.y;
+        if (_centerZStorableFloat != null)
+            _centerZStorableFloat.valNoCallback = Collider.center.z;
+    }
+
     protected override void DoLoadJson(JSONClass jsonClass)
     {
         Collider.radius = jsonClass["radius"].AsFloat;
-        
+
         var center = Collider.center;
         center.x = jsonClass["centerX"].AsFloat;
         center.y = jsonClass["centerY"].AsFloat;
@@ -1132,46 +1181,51 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     public override IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("radius", Collider.radius, (float value) =>
+        yield return Parent.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
         {
             Collider.radius = value;
-            UpdatePreview();
+            DoUpdatePreview();
         }, 0f, 0.2f), "Radius");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerX", Collider.center.x, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.X");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerY", Collider.center.y, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.Y");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerZ", Collider.center.z, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.Z");
     }
 
-    protected override bool DeviatesFromInitial()
-    {
-        return !Mathf.Approximately(InitialRadius, Collider.radius) ||
-             InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
-    }
+    protected override bool DeviatesFromInitial() =>
+        !Mathf.Approximately(InitialRadius, Collider.radius) ||
+        InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 }
 
 public class BoxColliderModel : ColliderModel<BoxCollider>
 {
+    private JSONStorableFloat _centerXStorableFloat;
+    private JSONStorableFloat _centerYStorableFloat;
+    private JSONStorableFloat _centerZStorableFloat;
+    private JSONStorableFloat _sizeXStorableFloat;
+    private JSONStorableFloat _sizeYStorableFloat;
+    private JSONStorableFloat _sizeZStorableFloat;
+
     public Vector3 InitialSize { get; set; }
     public Vector3 InitialCenter { get; set; }
 
@@ -1184,10 +1238,26 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-    public override void UpdatePreview()
+    protected override void DoUpdatePreview()
     {
         Preview.transform.localScale = Collider.size;
         Preview.transform.localPosition = Collider.center;
+    }
+
+    protected override void DoUpdateControls()
+    {
+        if (_sizeXStorableFloat != null)
+            _sizeXStorableFloat.valNoCallback = Collider.size.x;
+        if (_sizeYStorableFloat != null)
+            _sizeYStorableFloat.valNoCallback = Collider.size.y;
+        if (_sizeZStorableFloat != null)
+            _sizeZStorableFloat.valNoCallback = Collider.size.z;
+        if (_centerXStorableFloat != null)
+            _centerXStorableFloat.valNoCallback = Collider.center.x;
+        if (_centerYStorableFloat != null)
+            _centerYStorableFloat.valNoCallback = Collider.center.y;
+        if (_centerZStorableFloat != null)
+            _centerZStorableFloat.valNoCallback = Collider.center.z;
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
@@ -1197,14 +1267,14 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
         size.y = jsonClass["sizeY"].AsFloat;
         size.z = jsonClass["sizeZ"].AsFloat;
         Collider.size = size;
-        
+
         var center = Collider.center;
         center.x = jsonClass["centerX"].AsFloat;
         center.y = jsonClass["centerY"].AsFloat;
         center.z = jsonClass["centerZ"].AsFloat;
         Collider.center = center;
     }
-    
+
     public override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
@@ -1228,59 +1298,56 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     public override IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("sizeX", Collider.size.x, (float value) =>
+        yield return Parent.CreateFloatSlider(_sizeXStorableFloat = new JSONStorableFloat("sizeX", Collider.size.x, value =>
         {
             var size = Collider.size;
             size.x = value;
             Collider.size = size;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Size.X");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("sizeY", Collider.size.y, (float value) =>
+        yield return Parent.CreateFloatSlider(_sizeYStorableFloat = new JSONStorableFloat("sizeY", Collider.size.y, value =>
         {
             var size = Collider.size;
             size.y = value;
             Collider.size = size;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Size.Y");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("sizeZ", Collider.size.z, (float value) =>
+        yield return Parent.CreateFloatSlider(_sizeZStorableFloat = new JSONStorableFloat("sizeZ", Collider.size.z, value =>
         {
             var size = Collider.size;
             size.z = value;
             Collider.size = size;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Size.Z");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerX", Collider.center.x, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.X");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerY", Collider.center.y, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.Y");
 
-        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerZ", Collider.center.z, (float value) =>
+        yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
-            UpdatePreview();
+            DoUpdatePreview();
         }, -0.05f, 0.05f), "Center.Z");
     }
 
-    protected override bool DeviatesFromInitial()
-    {
-        return InitialSize != Collider.size || InitialCenter != Collider.center;  // Vector3 has built in epsilon equality checks
-    }
+    protected override bool DeviatesFromInitial() => InitialSize != Collider.size || InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 }
 
 public static class ComponentExtensions
@@ -1289,8 +1356,8 @@ public static class ComponentExtensions
     {
         var siblings = component.GetComponents<Component>().ToList();
         int siblingIndex = siblings.IndexOf(component);
-        
-        var paths = new Stack<string>(new [] {$"{component.name}[{siblingIndex}]"});
+
+        var paths = new Stack<string>(new[] {$"{component.name}[{siblingIndex}]"});
         var current = component.gameObject.transform;
 
         while (current != null && !current.name.Equals("geometry", StringComparison.InvariantCultureIgnoreCase)
@@ -1304,7 +1371,7 @@ public static class ComponentExtensions
         return string.Join(".", paths.ToArray());
     }
 
-    public static UIDynamic CreateFloatSlider(this MVRScript script, JSONStorableFloat jsf, string label, bool rightSide = true, string valueFormat = "F5" )
+    public static UIDynamic CreateFloatSlider(this MVRScript script, JSONStorableFloat jsf, string label, bool rightSide = true, string valueFormat = "F5")
     {
         var control = script.CreateSlider(jsf, rightSide);
         control.valueFormat = valueFormat;
