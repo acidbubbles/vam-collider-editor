@@ -885,8 +885,7 @@ public abstract class ColliderModel
 
     public void AppendJson(JSONClass parent)
     {
-        if (DeviatesFromInitial())
-            parent.Add(Id, DoGetJson());
+        parent.Add(Id, DoGetJson());
     }
 
     public void LoadJson(JSONClass jsonClass)
@@ -1017,8 +1016,7 @@ public class RigidbodyModel
 
     public void AppendJson(JSONClass parent)
     {
-        if (DeviatesFromInitial())
-            parent.Add(Id, DoGetJson());
+        parent.Add(Id, DoGetJson());
     }
 
     public void LoadJson(JSONClass jsonClass)
@@ -1465,7 +1463,7 @@ public static class ComponentExtensions
         return string.Join(".", paths.ToArray());
     }
 
-    public static UIDynamic CreateFloatSlider(this MVRScript script, JSONStorableFloat jsf, string label, bool rightSide = true, string valueFormat = "F5")
+    public static UIDynamic CreateFloatSlider(this MVRScript script, JSONStorableFloat jsf, string label, bool rightSide = true, string valueFormat = "F8")
     {
         var control = script.CreateSlider(jsf, rightSide);
         control.valueFormat = valueFormat;
