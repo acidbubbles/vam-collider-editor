@@ -8,7 +8,15 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
-public class ColliderTuner : MVRScript
+
+/// <summary>
+///     Collider Editor
+///     Disables colliders or adjust them to your liking
+///     This is a rewrite with permission from acidbubbles of his plugin 'ColliderTuner', the original plugin was written from the perspective of
+///     manipulating RigidBodies. After a discussion on VaM Discord it turns out that Colliders should be the focus and the plugin was re-written
+///     based on this. This fixed a host of issues around the identification of specific colliders so they can be saved and restored.
+/// </summary>
+public class ColliderEditor : MVRScript
 {
     private const string _saveExt = "colliders";
     private Dictionary<string, ColliderModel> _colliders;
@@ -32,7 +40,7 @@ public class ColliderTuner : MVRScript
     {
         try
         {
-            pluginLabelJSON.val = "Collider Tuner v2.1.0(alpha)";
+            pluginLabelJSON.val = "Collider Editor v1.0.0";
 
             if (containingAtom.type != "Person")
             {
@@ -45,7 +53,7 @@ public class ColliderTuner : MVRScript
         }
         catch (Exception e)
         {
-            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(Init)}: {e}");
+            SuperController.LogError($"{nameof(ColliderEditor)}.{nameof(Init)}: {e}");
         }
     }
 
@@ -356,7 +364,7 @@ public class ColliderTuner : MVRScript
         }
         catch (Exception e)
         {
-            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(OnDestroy)}: {e}");
+            LogError(nameof(OnDestroy), e.ToString());
         }
     }
 
