@@ -1,72 +1,38 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+
 using System.Linq;
+
 using System.Text.RegularExpressions;
 using SimpleJSON;
 using UnityEngine;
-using Random = System.Random;
 
-/// <summary>
-///     Collider Tuner
-///     By Acidbubbles
-///     Disables colliders or adjust them to your liking
-///     Source: https://github.com/acidbubbles/vam-collider-tuner
-/// </summary>
 public class ColliderTuner : MVRScript
 {
-    private const string _saveExt = "collidersprofile";
+    private const string _saveExt = "colliders";
 
-    private static readonly List<KeyValuePair<string, Regex>> _rbGroupDefinitions = new List<KeyValuePair<string, Regex>>
-    {
-        GroupDefinition("All", @"^.+$"),
-        GroupDefinition("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
-        GroupDefinition("Left arm", @"^l(Shldr|ForeArm)"),
-        GroupDefinition("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-        GroupDefinition("Right arm", @"^r(Shldr|ForeArm)"),
-        GroupDefinition("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-        GroupDefinition("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
-        GroupDefinition("Left breast", @"l((Pectoral)|Nipple)"),
-        GroupDefinition("Right breast", @"r((Pectoral)|Nipple)"),
-        GroupDefinition("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
-        GroupDefinition("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
-        GroupDefinition("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
-        GroupDefinition("Anus", @"^_JointA[rl]"),
-        GroupDefinition("Vagina", @"^_Joint(Gr|Gl|B)"),
-        GroupDefinition("Penis", @"^(Gen[1-3])|Testes"),
-        GroupDefinition("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
-        GroupDefinition("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
-        GroupDefinition("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
-        GroupDefinition("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
-        GroupDefinition("Other", @"^(?!.*).*$")
-    };
+    private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
+    private Dictionary<string, ColliderModel> _colliders;
+    private Dictionary<string, RigidbodyModel> _rigidbodies;
 
-    private readonly List<JSONStorableParam> _adjustmentStorables = new List<JSONStorableParam>();
-    private readonly Dictionary<string, Collider> _colliders = new Dictionary<string, Collider>();
-    private readonly Dictionary<string, Rigidbody> _rigidBodies = new Dictionary<string, Rigidbody>();
-    private readonly Dictionary<string, List<string>> _rigidBodyColliderMap = new Dictionary<string, List<string>>();
-    private readonly Dictionary<Rigidbody, string> _rigidBodyNameMap = new Dictionary<Rigidbody, string>();
-    private Dictionary<string, GameObject> _colliderPreviews = new Dictionary<string, GameObject>();
-    private JSONStorableStringChooser _collidersJson;
-    private Atom _containingAtom;
-    //private Material _deselectMaterial;
-    private bool _filterStale;
     private string _lastBrowseDir = SuperController.singleton.savesDir;
-    private JSONStorableStringChooser _rigidbodiesJson;
-    private Dictionary<string, List<string>> _rigidBodyCategories;
-    private JSONStorableStringChooser _rigidbodyGroupsJson;
-    private string _selectedColliderName;
-    private string _selectedRigidBodyName;
-    private string _selectedRigidCategory;
-    private JSONClass _state = new JSONClass();
 
-    private static KeyValuePair<string, Regex> GroupDefinition(string label, string value) => new KeyValuePair<string, Regex>(label, new Regex(value, RegexOptions.Compiled | RegexOptions.ExplicitCapture));
+    private RigidbodyGroupModel _selectedGroup;
+    private RigidbodyModel _selectedRigidbody;
+    private RigidbodyModel _lastSelectedRigidbody;
+    private ColliderModel _selectedCollider;
+    private ColliderModel _lastSelectedCollider;
+
+    private JSONStorableStringChooser _rigidbodyGroupsJson;
+    private JSONStorableStringChooser _rigidbodiesJson;
+    private JSONStorableStringChooser _collidersJson;
 
     public override void Init()
     {
         try
         {
-            pluginLabelJSON.val = "Collider Tuner v2.0.0(alpha)";
+            pluginLabelJSON.val = "Collider Tuner v2.1.0(alpha)";
 
             if (containingAtom.type != "Person")
             {
@@ -74,35 +40,8 @@ public class ColliderTuner : MVRScript
                 return;
             }
 
-            _containingAtom = containingAtom;
-
-            BuildLookups();
-
-            var loadPresetUI = CreateButton("Load Preset");
-            loadPresetUI.button.onClick.AddListener(() =>
-            {
-                if (_lastBrowseDir != null) SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-                SuperController.singleton.GetMediaPathDialog(path =>
-                {
-                    HandleLoadPreset(path);
-                    _filterStale = true;
-                }, _saveExt);
-            });
-
-            var savePresetUI = CreateButton("Save Preset");
-            savePresetUI.button.onClick.AddListener(() =>
-            {
-                SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-                SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt);
-
-                var browser = SuperController.singleton.mediaFileBrowserUI;
-                browser.SetTextEntry(true);
-                browser.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
-                browser.ActivateFileNameField();
-            });
-
-            CreateRigidBodyDisplays();
-            CreateColliderDisplays();
+            BuildModels();
+            BuildUI();
         }
         catch (Exception e)
         {
@@ -110,595 +49,295 @@ public class ColliderTuner : MVRScript
         }
     }
 
-    private void HandleLoadPreset(string aPath)
+    private void BuildUI()
     {
-        if (string.IsNullOrEmpty(aPath))
-            return;
-        _lastBrowseDir = aPath.Substring(0, aPath.LastIndexOfAny(new[] {'/', '\\'})) + @"\";
-        _state = (JSONClass) LoadJSON(aPath);
-        RestoreFromState(false);
-    }
-
-    public void RestoreFromState(bool initial)
-    {
-        var colliders = _state.GetIfExists("colliders");
-        if (colliders != null)
+        var loadPresetUI = CreateButton("Load Preset");
+        loadPresetUI.button.onClick.AddListener(() =>
         {
-            foreach (KeyValuePair<string, JSONNode> colliderEntry in colliders)
-                if (_colliders.ContainsKey(colliderEntry.Key))
-                {
-                    RestoreColliderFromState(_colliders[colliderEntry.Key], (JSONClass) colliderEntry.Value, initial);
-                    AdjustDisplayFromCollider(colliderEntry.Key);
-                }
-        }
+            if (_lastBrowseDir != null) SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
+            SuperController.singleton.GetMediaPathDialog(path => { HandleLoadPreset(path); }, _saveExt);
+        });
 
-        var rigidbodies = _state.GetIfExists("rigidbodies");
-        if (rigidbodies != null)
+        var savePresetUI = CreateButton("Save Preset");
+        savePresetUI.button.onClick.AddListener(() =>
         {
-            foreach (KeyValuePair<string, JSONNode> rbEntry in rigidbodies)
-                if (_rigidBodies.ContainsKey(rbEntry.Key))
-                    RestoreRigidBodyFromState(_rigidBodies[rbEntry.Key], (JSONClass) rbEntry.Value, initial);
-        }
-    }
+            SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
+            SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt);
 
-    private void RestoreRigidBodyFromState(Rigidbody rigidBody, JSONClass rbEntryValue, bool initial)
-    {
-        var enabledKey = "enabled" + (initial ? "Initial" : "");
-        if (rbEntryValue.HasKey(enabledKey)) rigidBody.detectCollisions = rbEntryValue[enabledKey].AsBool;
-    }
+            var browser = SuperController.singleton.mediaFileBrowserUI;
+            browser.SetTextEntry(true);
+            browser.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
+            browser.ActivateFileNameField();
+        });
 
-    private void RestoreColliderFromState(Collider collider, JSONClass colliderEntry, bool initial)
-    {
-        var suffix = initial ? "Initial" : "";
-        if (collider is SphereCollider)
+        var resetAllUI = CreateButton("Reset All");
+        resetAllUI.button.onClick.AddListener(() =>
         {
-            var sphereCollider = (SphereCollider) collider;
-            if (colliderEntry.HasKey($"radius{suffix}"))
-                sphereCollider.radius = colliderEntry[$"radius{suffix}"].AsFloat;
+            foreach (var colliderPair in _colliders)
+                colliderPair.Value.ResetToInitial();
+        });
 
-            var center = sphereCollider.center;
-            if (colliderEntry.HasKey($"center.x{suffix}"))
-                center.x = colliderEntry[$"center.x{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"center.y{suffix}"))
-                center.y = colliderEntry[$"center.y{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"center.z{suffix}"))
-                center.z = colliderEntry[$"center.z{suffix}"].AsFloat;
-            sphereCollider.center = center;
-        }
-        else if (collider is CapsuleCollider)
-        {
-            var capsuleCollider = (CapsuleCollider) collider;
-            if (colliderEntry.HasKey($"radius{suffix}"))
-                capsuleCollider.radius = colliderEntry[$"radius{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"height{suffix}"))
-                capsuleCollider.height = colliderEntry[$"height{suffix}"].AsFloat;
-
-            var center = capsuleCollider.center;
-            if (colliderEntry.HasKey($"center.x{suffix}"))
-                center.x = colliderEntry[$"center.x{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"center.y{suffix}"))
-                center.y = colliderEntry[$"center.y{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"center.z{suffix}"))
-                center.z = colliderEntry[$"center.z{suffix}"].AsFloat;
-            capsuleCollider.center = center;
-        }
-        else if (collider is BoxCollider)
-        {
-            var boxCollider = (BoxCollider) collider;
-            var size = boxCollider.size;
-            if (colliderEntry.HasKey($"x{suffix}"))
-                size.x = colliderEntry[$"x{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"y{suffix}"))
-                size.y = colliderEntry[$"y{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"z{suffix}"))
-                size.z = colliderEntry[$"z{suffix}"].AsFloat;
-            boxCollider.size = size;
-
-            var center = boxCollider.center;
-            if (colliderEntry.HasKey($"center.x{suffix}"))
-                center.x = colliderEntry[$"center.x{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"center.y{suffix}"))
-                center.y = colliderEntry[$"center.y{suffix}"].AsFloat;
-            if (colliderEntry.HasKey($"center.z{suffix}"))
-                center.z = colliderEntry[$"center.z{suffix}"].AsFloat;
-            boxCollider.center = center;
-        }
-        else
-        {
-            SuperController.LogError($"Unknown collider {collider.name} type: {collider}");
-        }
-    }
-
-    private void HandleSavePreset(string aPath)
-    {
-        if (string.IsNullOrEmpty(aPath))
-            return;
-        _lastBrowseDir = aPath.Substring(0, aPath.LastIndexOfAny(new[] {'/', '\\'})) + @"\";
-
-        if (!aPath.ToLower().EndsWith($".{_saveExt}")) aPath += $".{_saveExt}";
-        SaveJSON(_state, aPath);
-    }
-
-    private void CreateColliderDisplays()
-    {
-        _colliderPreviews = new Dictionary<string, GameObject>();
-        foreach (KeyValuePair<string, Collider> keyValuePair in _colliders)
-            _colliderPreviews.Add(keyValuePair.Key, CreateDisplayGameObject(keyValuePair.Value));
-    }
-
-    [SuppressMessage("ReSharper", "AccessToModifiedClosure")]
-    private void CreateRigidBodyDisplays()
-    {
-        _rigidbodyGroupsJson = new JSONStorableStringChooser("Rigidbody Groups", _rigidBodyCategories.Keys.ToList(), "All", "Rigidbody Groups");
+        _rigidbodyGroupsJson = new JSONStorableStringChooser(
+            paramName: "Rigidbody Groups",
+            choicesList: _rigidbodyGroups.Keys.ToList(),
+            displayChoicesList: _rigidbodyGroups.Select(x => x.Value.Name).ToList(),
+            startingValue: "All",
+            displayName: "Rigidbody Groups");
 
         UIDynamicPopup rbGroupListUI = CreateScrollablePopup(_rigidbodyGroupsJson);
         rbGroupListUI.popupPanelHeight = 900f;
 
-        _rigidbodiesJson = new JSONStorableStringChooser("Rigidbodies", new List<string>(), "All", "Rigidbodies");
+        _rigidbodiesJson = new JSONStorableStringChooser(
+            paramName: "Rigidbodies",
+            choicesList: _rigidbodies.Keys.ToList(),
+            displayChoicesList: _rigidbodies.Select(x => x.Value.Label).ToList(),
+            startingValue: "All",
+            displayName: "Rigidbodies");
+
         UIDynamicPopup ridigBodyList = CreateScrollablePopup(_rigidbodiesJson);
         ridigBodyList.popupPanelHeight = 900f;
 
-        _collidersJson = new JSONStorableStringChooser("Collider", new List<string>(), "", "Collider");
+        _collidersJson = new JSONStorableStringChooser(
+            paramName: "Colliders",
+            choicesList: _colliders.Keys.ToList(),
+            displayChoicesList: _colliders.Select(x => x.Value.Label).ToList(),
+            startingValue: "All",
+            displayName: "Colliders");
 
-        UIDynamicPopup rbListUI = CreateScrollablePopup(_collidersJson);
+        UIDynamicPopup rbListUI = CreateScrollablePopup(_collidersJson, rightSide: true);
         rbListUI.popupPanelHeight = 900f;
 
-        _filterStale = true;
-
-        _rigidbodyGroupsJson.setCallbackFunction = category =>
+        _rigidbodyGroupsJson.setCallbackFunction = groupId =>
         {
-            _selectedRigidCategory = category;
-            _filterStale = true;
+            _selectedGroup = _rigidbodyGroups.ContainsKey(groupId) ? _rigidbodyGroups[groupId] : null;
+            UpdateFilter();
         };
 
-        _rigidbodiesJson.setCallbackFunction = rigidbodyName =>
+        _rigidbodiesJson.setCallbackFunction = rigidbodyId =>
         {
-            _selectedRigidBodyName = rigidbodyName;
-            _filterStale = true;
+            _selectedRigidbody?.DestroyControls();
+            _selectedRigidbody = _rigidbodies.ContainsKey(rigidbodyId) ? _rigidbodies[rigidbodyId] : null;
+            UpdateFilter();
         };
 
-        _collidersJson.setCallbackFunction = colliderName =>
+        _collidersJson.setCallbackFunction = colliderId =>
         {
-            _selectedColliderName = colliderName;
-            _filterStale = true;
+            _selectedCollider = _colliders.ContainsKey(colliderId) ? _colliders[colliderId] : null;
+            UpdateFilter();
         };
+        
+        UpdateFilter();
     }
 
-    private void ApplyRigidBodyFilter()
+    private void BuildModels()
     {
-        try
+        var rigidbodyGroups = new List<RigidbodyGroupModel>
         {
-            foreach (var adjustmentJson in _adjustmentStorables)
-            {
-                if (adjustmentJson is JSONStorableFloat)
-                    RemoveSlider((JSONStorableFloat) adjustmentJson);
-                else if (adjustmentJson is JSONStorableBool)
-                    RemoveToggle((JSONStorableBool) adjustmentJson);
-                else
-                    SuperController.LogError($"Unknown ui type for {adjustmentJson.name}: {adjustmentJson.GetType()}");
-            }
+            new RigidbodyGroupModel("All", @"^.+$"),
+            new RigidbodyGroupModel("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
+            new RigidbodyGroupModel("Left arm", @"^l(Shldr|ForeArm)"),
+            new RigidbodyGroupModel("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+            new RigidbodyGroupModel("Right arm", @"^r(Shldr|ForeArm)"),
+            new RigidbodyGroupModel("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+            new RigidbodyGroupModel("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
+            new RigidbodyGroupModel("Left breast", @"l((Pectoral)|Nipple)"),
+            new RigidbodyGroupModel("Right breast", @"r((Pectoral)|Nipple)"),
+            new RigidbodyGroupModel("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
+            new RigidbodyGroupModel("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
+            new RigidbodyGroupModel("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
+            new RigidbodyGroupModel("Anus", @"^_JointA[rl]"),
+            new RigidbodyGroupModel("Vagina", @"^_Joint(Gr|Gl|B)"),
+            new RigidbodyGroupModel("Penis", @"^(Gen[1-3])|Testes"),
+            new RigidbodyGroupModel("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
+            new RigidbodyGroupModel("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
+            new RigidbodyGroupModel("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
+            new RigidbodyGroupModel("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
+            new RigidbodyGroupModel("Other", @"^(?!.*).*$")
+        };
 
-            _adjustmentStorables.Clear();
+        _rigidbodyGroups = rigidbodyGroups.ToDictionary(x => x.Id);
 
-            IEnumerable<string> rigidBodyNames;
-            IEnumerable<string> colliderNames = new List<string>();
-
-            bool filterByRigidbodyCategory = !string.IsNullOrEmpty(_selectedRigidCategory) && !_selectedRigidCategory.Equals("All", StringComparison.CurrentCultureIgnoreCase);
-            bool filterByRigidBody = !string.IsNullOrEmpty(_selectedRigidBodyName) && !_selectedRigidBodyName.Equals("All", StringComparison.CurrentCultureIgnoreCase);
-
-            // Rigidbody filtering
-
-            if (filterByRigidbodyCategory)
-                rigidBodyNames = new[] {"All"}.Concat(_rigidBodyCategories[_selectedRigidCategory]);
-            else
-                rigidBodyNames = new[] {"All"}.Concat(_rigidBodyCategories.SelectMany(x => x.Value));
-
-            // Collider filtering
-
-            if (filterByRigidBody)
-            {
-                if (_rigidBodyColliderMap.ContainsKey(_selectedRigidBodyName))
-                {
-                    colliderNames = _colliders.Keys
-                        .Where(_rigidBodyColliderMap[_selectedRigidBodyName].Contains);
-                }
-
-                if (_rigidBodies.ContainsKey(_selectedRigidBodyName))
-                {
-                    CreateSpacer().height = 24f;
-                    ShowRigidbodyAdjustments(_selectedRigidBodyName);
-                }
-                else
-                {
-                    SuperController.LogError($"Selected Rigidbody {_selectedRigidBodyName} not found in _rigidbodiesDictionary!");
-                }
-            }
-            else if (filterByRigidbodyCategory)
-            {
-                colliderNames = _colliders.Keys
-                    .Where(colliderName => rigidBodyNames
-                        .Any(rb => _rigidBodyColliderMap.ContainsKey(rb)
-                                   && _rigidBodyColliderMap[rb].Contains(colliderName)));
-            }
-            else
-            {
-                colliderNames = _colliders.Keys;
-            }
-
-            _rigidbodiesJson.choices = rigidBodyNames.Distinct().ToList();
-            _rigidbodiesJson.val = !_rigidbodiesJson.choices.Contains(_selectedRigidBodyName) ? "All" : _selectedRigidBodyName;
-
-            _collidersJson.choices = colliderNames.Distinct().ToList();
-            _collidersJson.val = !_collidersJson.choices.Contains(_selectedColliderName)
-                ? _collidersJson.choices.FirstOrDefault() ?? string.Empty : _selectedColliderName;
-
-            if (_lastSelected != null)
-            {
-                var lastSelectedRenderer = _lastSelected.GetComponent<Renderer>();
-                var color = lastSelectedRenderer.material.color;
-                color.a = 0.005f;
-                lastSelectedRenderer.material.color = color;
-            }
-
-            if (!string.IsNullOrEmpty(_selectedColliderName) && colliderNames.Contains(_selectedColliderName) && _colliderPreviews.ContainsKey(_selectedColliderName))
-            {
-                var preview = _colliderPreviews[_selectedColliderName];
-                var previewRenderer = preview.GetComponent<Renderer>();
-                var color = previewRenderer.material.color;
-                color.a = 0.3f;
-                previewRenderer.material.color = color;
-                _lastSelected = preview;
-            }
-
-            if (!string.IsNullOrEmpty(_selectedColliderName))
-                ShowColliderAdjustments(_selectedColliderName);
-        }
-        catch (Exception e)
-        {
-            SuperController.LogError($"{nameof(ColliderTuner)}: {e}");
-        }
-        finally
-        {
-            _filterStale = false;
-        }
-    }
-
-    private GameObject _lastSelected;
-
-    private IEnumerable<KeyValuePair<string, KeyValuePair<string,  Rigidbody>>> MemberOfGroup(KeyValuePair<string, Rigidbody> rigidbody)
-    {
-        bool matched = false;
-
-        foreach (var g in _rbGroupDefinitions
-            .Where(g => g.Value.IsMatch(rigidbody.Value.name)))
-        {
-            matched = true;
-            yield return new KeyValuePair<string, KeyValuePair<string, Rigidbody>>(g.Key, rigidbody);
-        }
-
-        if (!matched)
-            yield return new KeyValuePair<string, KeyValuePair<string, Rigidbody>>("Unknown", rigidbody);
-
-        yield return new KeyValuePair<string, KeyValuePair<string, Rigidbody>>("All", rigidbody);
-    }
-
-    private void BuildLookups()
-    {
-        // Rigid Bodies
-
-        var rigidBodyGroups = _containingAtom.rigidbodies
-            .Where(rb => !rb.isKinematic &&
-                         rb.name != "control" &&
-                         rb.name != "object" &&
-                         !rb.name.EndsWith("Control") &&
-                         !rb.name.StartsWith("hairTool") &&
-                         !rb.name.EndsWith("Trigger") &&
-                         !rb.name.EndsWith("UI"))
-            .GroupBy(x => x.name);
-
-        foreach (var rigidBodyGroup in rigidBodyGroups)
-        {
-            var rbGroupMember = rigidBodyGroup.ToList();
-            foreach (Rigidbody rigidBody in rbGroupMember)
-            {
-                string rigidBodyUniqueName = rbGroupMember.Count > 1
-                    ? $"{rigidBody.name}_{rbGroupMember.IndexOf(rigidBody)}"
-                    : rigidBody.name;
-
-                _rigidBodies.Add(rigidBodyUniqueName, rigidBody);
-                _rigidBodyNameMap.Add(rigidBody, rigidBodyUniqueName);
-            }
-        }
-
-        _rigidBodyCategories = _rigidBodies.ToList()
-            .SelectMany(MemberOfGroup)
-            .GroupBy(x => x.Key)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(x => x.Value.Key)
-                    .OrderBy(n => n)
-                    .ToList()
-            );
+        _rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
+            .Where(rigidbody => !rigidbody.isKinematic && rigidbody.name != "control" && rigidbody.name != "object" &&
+                                !rigidbody.name.EndsWith("Control") && !rigidbody.name.StartsWith("hairTool") && !rigidbody.name.EndsWith("Trigger") &&
+                                !rigidbody.name.EndsWith("UI") && !rigidbody.name.Contains("AutoCollider") && !rigidbody.name.Contains("PhysicsMesh") &&
+                                !rigidbody.name.Contains("Ponytail")
+            )
+            .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, rigidbodyGroups))
+            .ToDictionary(x => x.Id);
 
         // Colliders
 
-        var colliderGroups = _containingAtom.GetComponentsInChildren<Collider>(true)
-            .Where(collider => collider.name != "control" &&
-                               collider.name != "object" &&
-                               !collider.name.Contains("Tool") &&
-                               !collider.name.EndsWith("Control") &&
-                               !collider.name.EndsWith("Link") &&
-                               !collider.name.EndsWith("Trigger") &&
-                               !collider.name.EndsWith("UI"))
-            .GroupBy(x => x.name);
+        var colliderQuery = containingAtom.GetComponentsInChildren<Collider>(true)
+            .Where(collider => collider.name != "control" && collider.name != "object" && !collider.name.Contains("Tool") &&
+                               !collider.name.EndsWith("Control") && !collider.name.EndsWith("Link") && !collider.name.EndsWith("Trigger") &&
+                               !collider.name.EndsWith("UI") && !collider.name.Contains("AutoCollider") && !collider.name.Contains("PhysicsMesh") &&
+                               !collider.name.Contains("Ponytail")
+            );
 
-        foreach (var cGroup in colliderGroups)
+
+        _colliders = new Dictionary<string, ColliderModel>();
+
+        foreach (Collider collider in colliderQuery)
         {
-            var cGroupMembers = cGroup.ToList();
-            foreach (Collider collider in cGroupMembers)
+            var model = ColliderModel.CreateTyped(this, collider, _rigidbodies);
+
+            if (_colliders.ContainsKey(model.Id))
             {
-                string colliderUniqueName = cGroupMembers.Count > 1
-                    ? $"{collider.name}_{cGroupMembers.IndexOf(collider)}"
-                    : collider.name;
+                SuperController.LogError($"Duplicate collider Id {model.Id}");
+                continue;
+            }
 
-                _colliders.Add(colliderUniqueName, collider);
+            model.CreatePreview();
 
-                if (collider.attachedRigidbody != null
-                    && _rigidBodyNameMap.ContainsKey(collider.attachedRigidbody))
-                {
-                    string rigidBodyUniquename = _rigidBodyNameMap[collider.attachedRigidbody];
+            _colliders.Add(model.Id, model);
+        }
+    }
 
-                    if (_rigidBodyColliderMap.ContainsKey(rigidBodyUniquename))
-                        _rigidBodyColliderMap[rigidBodyUniquename].Add(colliderUniqueName);
-                    else
-                        _rigidBodyColliderMap.Add(rigidBodyUniquename, new List<string> {colliderUniqueName});
-                }
+    private void UpdateFilter()
+    {
+        try
+        {
+            IEnumerable<RigidbodyModel> rigidbodies;
+            IEnumerable<ColliderModel> colliders;
+
+            // Rigidbody filtering
+
+            if (_selectedGroup != null)
+            {
+                rigidbodies = _rigidbodies.Values.Where(x => x.Groups.Contains(_selectedGroup));
+                colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody.Groups.Contains(_selectedGroup));
+            }
+            else
+            {
+                rigidbodies = _rigidbodies.Values;
+                colliders = _colliders.Values;
+            }
+            
+            _rigidbodiesJson.choices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Id)).ToList();
+            _rigidbodiesJson.displayChoices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Label)).ToList();
+            
+
+            if (_selectedRigidbody != null && _rigidbodiesJson.choices.Contains(_selectedRigidbody.Id))
+                _rigidbodiesJson.valNoCallback = _selectedRigidbody.Id;
+            else
+            {
+                _rigidbodiesJson.valNoCallback = "All";
+                _selectedRigidbody = null;
+            }
+
+            // Collider filtering
+
+            if (_selectedRigidbody != null)
+            {
+                colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody == _selectedRigidbody);
+            }
+
+            _collidersJson.choices = colliders.Select(x => x.Id).ToList();
+            _collidersJson.displayChoices = colliders.Select(x => x.Label).ToList();
+
+            if (_selectedCollider != null && _collidersJson.choices.Contains(_selectedCollider.Id))
+                _collidersJson.valNoCallback = _selectedCollider.Id;
+            else
+            {
+                var firstAvailableId = _collidersJson.choices.FirstOrDefault();
+                _collidersJson.valNoCallback = firstAvailableId ?? string.Empty;
+                if (!string.IsNullOrEmpty(firstAvailableId))
+                    _selectedCollider = _colliders[firstAvailableId];
+                else
+                    _selectedCollider = null;
+            }
+
+            UpdateSelectedRigidbody();
+            UpdateSelectedCollider();
+
+        }
+        catch (Exception e)
+        {
+            LogError(nameof(UpdateFilter), e.ToString());
+        }
+    }
+
+    private void UpdateSelectedCollider()
+    {
+        if (_lastSelectedCollider != null)
+            _lastSelectedCollider.Selected = false;
+
+        if (_selectedCollider != null)
+        {
+            _selectedCollider.Selected = true;
+            _lastSelectedCollider = _selectedCollider;
+        }
+    }
+
+    private void UpdateSelectedRigidbody()
+    {
+        if (_lastSelectedRigidbody != null)
+            _lastSelectedRigidbody.Selected = false;
+
+        if (_selectedRigidbody != null)
+        {
+            _selectedRigidbody.Selected = true;
+            _lastSelectedRigidbody = _selectedRigidbody;
+        }
+    }
+
+    private void LogError(string method, string message) => SuperController.LogError($"ColliderTuner.{method}: {message}");
+
+    private void HandleLoadPreset(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return;
+        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
+
+        LoadFromJson((JSONClass)LoadJSON(path));
+    }
+
+    private void LoadFromJson(JSONClass jsonClass)
+    {
+        var collidersJsonClass = jsonClass["colliders"].AsObject;
+        foreach (string colliderId in collidersJsonClass.Keys)
+        {
+            if (_colliders.ContainsKey(colliderId))
+            {
+                _colliders[colliderId]
+                    .LoadJson(collidersJsonClass[colliderId].AsObject);
+            }
+        }
+
+        var rigidbodiesJsonClass = jsonClass["rigidbodies"].AsObject;
+        foreach (string rigidbodyId in rigidbodiesJsonClass.Keys)
+        {
+            if (_rigidbodies.ContainsKey(rigidbodyId))
+            {
+                _rigidbodies[rigidbodyId]
+                    .LoadJson(rigidbodiesJsonClass[rigidbodyId].AsObject);
             }
         }
     }
 
-    private void ShowColliderAdjustments(string colliderName)
+    private void HandleSavePreset(string path)
     {
-        Collider collider = _colliders[colliderName];
-
-        Func<string, float?> getInitial = prop =>
-        {
-            // TODO: Default does not work here.
-            var jc = _state.GetIfExists("colliders")?.GetIfExists(colliderName);
-            if (jc == null) return null;
-            if (!jc.HasKey($"{prop}Initial")) return null;
-            var val = jc[$"{prop}Initial"].AsFloat;
-            return val;
-        };
-
-        Func<JSONClass> getJsonNode = () => _state.GetOrCreate("colliders").GetOrCreate(colliderName);
-
-        var sphereCollider = collider as SphereCollider;
-        if (sphereCollider != null)
-        {
-            CreateFloatAdjustment(colliderName, getJsonNode, "radius", getInitial("radius"), sphereCollider.radius, val => sphereCollider.radius = val);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.x", getInitial("center.x"), sphereCollider.center.x, val => sphereCollider.center = new Vector3(val, sphereCollider.center.y, sphereCollider.center.z), true, -0.05f, 0.05f);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.y", getInitial("center.y"), sphereCollider.center.y, val => sphereCollider.center = new Vector3(sphereCollider.center.x, val, sphereCollider.center.z), true, -0.05f, 0.05f);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.z", getInitial("center.z"), sphereCollider.center.z, val => sphereCollider.center = new Vector3(sphereCollider.center.x, sphereCollider.center.y, val), true, -0.05f, 0.05f);
-        }
-
-        var capsuleCollider = collider as CapsuleCollider;
-        if (capsuleCollider != null)
-        {
-            CreateFloatAdjustment(colliderName, getJsonNode, "radius", getInitial("radius"), capsuleCollider.radius, val => capsuleCollider.radius = val);
-            CreateFloatAdjustment(colliderName, getJsonNode, "height", getInitial("height"), capsuleCollider.height, val => capsuleCollider.height = val);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.x", getInitial("center.x"), capsuleCollider.center.x, val => capsuleCollider.center = new Vector3(val, capsuleCollider.center.y, capsuleCollider.center.z), true, -0.05f, 0.05f);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.y", getInitial("center.y"), capsuleCollider.center.y, val => capsuleCollider.center = new Vector3(capsuleCollider.center.x, val, capsuleCollider.center.z), true, -0.05f, 0.05f);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.z", getInitial("center.z"), capsuleCollider.center.z, val => capsuleCollider.center = new Vector3(capsuleCollider.center.x, capsuleCollider.center.y, val), true, -0.05f, 0.05f);
-        }
-
-        var boxCollider = collider as BoxCollider;
-        if (boxCollider != null)
-        {
-            CreateFloatAdjustment(colliderName, getJsonNode, "size.x", getInitial("size.x"), boxCollider.size.x, val => boxCollider.size = new Vector3(val, boxCollider.size.y, boxCollider.size.z));
-            CreateFloatAdjustment(colliderName, getJsonNode, "size.y", getInitial("size.y"), boxCollider.size.y, val => boxCollider.size = new Vector3(boxCollider.size.x, val, boxCollider.size.z));
-            CreateFloatAdjustment(colliderName, getJsonNode, "size.z", getInitial("size.z"), boxCollider.size.z, val => boxCollider.size = new Vector3(boxCollider.size.x, boxCollider.size.y, val));
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.x", getInitial("center.x"), boxCollider.center.x, val => boxCollider.center = new Vector3(val, boxCollider.center.y, boxCollider.center.z), true, -0.05f, 0.05f);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.y", getInitial("center.y"), boxCollider.center.y, val => boxCollider.center = new Vector3(boxCollider.center.x, val, boxCollider.center.z), true, -0.05f, 0.05f);
-            CreateFloatAdjustment(colliderName, getJsonNode, "center.z", getInitial("center.z"), boxCollider.center.z, val => boxCollider.center = new Vector3(boxCollider.center.x, boxCollider.center.y, val), true, -0.05f, 0.05f);
-        }
-    }
-
-    private void ShowRigidbodyAdjustments(string rigidbodyName)
-    {
-        Func<JSONClass> getJsonNode = () => _state.GetOrCreate("rigidbodies").GetOrCreate(rigidbodyName);
-
-        var jsonNode = getJsonNode();
-        var rigidBody = _rigidBodies[rigidbodyName];
-
-        bool? initial = jsonNode.HasKey("enabled") ? (bool?) jsonNode["enabled"].AsBool : null;
-
-        CreateBoolAdjustment(getJsonNode, "enabled", initial, rigidBody.detectCollisions, val => { rigidBody.detectCollisions = val; });
-    }
-    
-    private void DestroyColliderPreviews()
-    {
-        foreach (var rbDisplay in _colliderPreviews) Destroy(rbDisplay.Value);
-    }
-
-    public GameObject CreateDisplayGameObject(Collider collider)
-    {
-        GameObject primitive = null;
-
-        if (collider is SphereCollider)
-            primitive = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        else if (collider is CapsuleCollider)
-            primitive = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        else if (collider is BoxCollider) primitive = GameObject.CreatePrimitive(PrimitiveType.Cube);
-
-        if (primitive == null)
-            primitive = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-
-        try
-        {
-            primitive.GetComponent<Renderer>().material = GetNextMaterial();
-            foreach (var c in primitive.GetComponents<Collider>())
-            {
-                c.enabled = false;
-                Destroy(c);
-            }
-
-            primitive.transform.SetParent(collider.transform, false);
-            AdjustDisplayFromCollider(collider, primitive);
-        }
-        catch (Exception)
-        {
-            Destroy(primitive);
-            throw;
-        }
-
-        return primitive;
-    }
-
-    private void AdjustDisplayFromCollider(string colliderName)
-    {
-        if (_colliderPreviews.ContainsKey(colliderName) && _colliders.ContainsKey(colliderName))
-        {
-            SuperController.LogMessage($"AdjustDisplayFromCollider({colliderName})");
-            AdjustDisplayFromCollider(_colliders[colliderName], _colliderPreviews[colliderName]);
-        }
-    }
-
-    private void AdjustDisplayFromCollider(Collider collider, GameObject go)
-    {
-        SphereCollider sphereCollider = collider as SphereCollider;
-        if (sphereCollider != null)
-        {
-            go.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
-            go.transform.localPosition = sphereCollider.center;
+        if (string.IsNullOrEmpty(path))
             return;
-        }
 
-        var capsuleCollider = collider as CapsuleCollider;
-        if (capsuleCollider != null)
-        {
-            float size = capsuleCollider.radius * 2;
-            float height = capsuleCollider.height / 2;
-            go.transform.localScale = new Vector3(size, height, size);
-            if (capsuleCollider.direction == 0)
-                go.transform.localRotation = Quaternion.AngleAxis(90, Vector3.forward);
-            else if (capsuleCollider.direction == 2)
-                go.transform.localRotation = Quaternion.AngleAxis(90, Vector3.right);
-            go.transform.localPosition = capsuleCollider.center;
-            return;
-        }
+        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
 
-        var boxCollider = collider as BoxCollider;
-        if (boxCollider != null)
-        {
-            go.transform.localScale = boxCollider.size;
-            go.transform.localPosition = boxCollider.center;
-            return;
-        }
+        if (!path.ToLower().EndsWith($".{_saveExt}"))
+            path += $".{_saveExt}";
 
-        SuperController.LogError($"Unknown collider {collider.name} type: {collider}");
-    }
-
-    private JSONStorableFloat CreateFloatAdjustment(string colliderName, Func<JSONClass> getJsonNode, string propertyName, float? initial, float current, Action<float> setValue, bool allowSmallerThanMinimum = false, float min = 0.0002f, float? max = null)
-    {
-        var collider = _colliders[colliderName];
-        var defaultVal = initial ?? current;
-        JSONStorableFloat storable = null;
-        storable = new JSONStorableFloat(
-            propertyName,
-            defaultVal,
-            val =>
-            {
-                if (!allowSmallerThanMinimum && val < min)
-                {
-                    val = min;
-                    storable.valNoCallback = min;
-                }
-
-                var originalPropertyName = $"{propertyName}Initial";
-                var jc = getJsonNode();
-                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsFloat = defaultVal;
-                jc[propertyName].AsFloat = val;
-                setValue(val);
-                if (_colliderPreviews.ContainsKey(colliderName))
-                {
-                    var preview = _colliderPreviews[colliderName];
-                    AdjustDisplayFromCollider(collider, preview);
-                }
-            },
-            min,
-            max ?? defaultVal * 2f,
-            false)
-        {
-            valNoCallback = current
-        };
-        CreateFineSlider(storable, true);
-        _adjustmentStorables.Add(storable);
-
-        return storable;
-    }
-
-    public UIDynamicSlider CreateFineSlider(JSONStorableFloat jsf, bool rightSide)
-    {
-        var slider = CreateSlider(jsf, rightSide);
-        slider.valueFormat = "F5";
-        return slider;
-    }
-
-    private void CreateBoolAdjustment(Func<JSONClass> getJsonNode, string propertyName, bool? initial, bool current, Action<bool> setValue)
-    {
-        var defaultVal = initial ?? current;
-        var storable = new JSONStorableBool(
-            $"{propertyName}",
-            defaultVal,
-            val =>
-            {
-                var originalPropertyName = $"{propertyName}Initial";
-                var jc = getJsonNode();
-                if (!jc.HasKey(originalPropertyName)) jc[originalPropertyName].AsBool = defaultVal;
-                jc[propertyName].AsBool = val;
-                setValue(val);
-            })
-        {
-            valNoCallback = current
-        };
-        CreateToggle(storable, true);
-        _adjustmentStorables.Add(storable);
-    }
-
-    public void OnEnable()
-    {
-        if (_containingAtom == null) return;
-        try
-        {
-            RestoreFromState(false);
-            _filterStale = true;
-        }
-        catch (Exception e)
-        {
-            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(OnEnable)}: {e}");
-        }
-    }
-
-    public void OnDisable()
-    {
-        if (_containingAtom == null) return;
-        try
-        {
-            DestroyColliderPreviews();
-        }
-        catch (Exception e)
-        {
-            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(OnDisable)}: {e}");
-        }
+        var presetJsonClass = new JSONClass();
+        AppendJson(presetJsonClass);
+        SaveJSON(presetJsonClass, path);
     }
 
     public void OnDestroy()
     {
-        if (_containingAtom == null) return;
+        if (_colliders == null) return;
         try
         {
-            DestroyColliderPreviews();
+            foreach (var colliderModelPair in _colliders)
+                colliderModelPair.Value.DestroyPreview();
         }
         catch (Exception e)
         {
@@ -708,52 +347,58 @@ public class ColliderTuner : MVRScript
 
     public override JSONClass GetJSON(bool includePhysical = true, bool includeAppearance = true, bool forceStore = false)
     {
+        var jsonClass = base.GetJSON(includePhysical, includeAppearance, forceStore);
+
         needsStore = true;
-        return _state;
+
+        AppendJson(jsonClass);
+        
+        return jsonClass;
     }
 
+    private void AppendJson(JSONClass jsonClass)
+    {
+        var colliders = new JSONClass();
+        foreach (var colliderPairs in _colliders)
+            colliderPairs.Value.AppendJson(colliders);
+        jsonClass.Add("colliders", colliders);
+
+        var rigidbodies = new JSONClass();
+        foreach (var rigidbodyPair in _rigidbodies)
+            rigidbodyPair.Value.AppendJson(rigidbodies);
+        jsonClass.Add("rigidbodies", rigidbodies);
+    }
+    
     public override void RestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, JSONArray presetAtoms = null, bool setMissingToDefault = true)
     {
         base.RestoreFromJSON(jc, restorePhysical, restoreAppearance, presetAtoms, setMissingToDefault);
 
         try
         {
-            _state = jc;
-            RestoreFromState(false);
+            LoadFromJson(jc);
         }
         catch (Exception exc)
         {
-            SuperController.LogError($"{nameof(ColliderTuner)}.{nameof(RestoreFromJSON)}: {exc}");
+            LogError(nameof(RestoreFromJSON), exc.ToString());
         }
     }
+}
 
-    public override void LateRestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, bool setMissingToDefault = true)
+public static class ColorExtensions
+{
+    public static Color ToColor(this string value)
     {
-        RestoreFromJSON(jc, restorePhysical, restoreAppearance, null, setMissingToDefault);
+        Color color;
+        ColorUtility.TryParseHtmlString(value, out color);
+        color.a = 0.005f;
+        return color;
     }
+}
 
-    public override void PostRestore()
-    {
-        RestoreFromState(false);
-    }
-
-    private void Update()
-    {
-        if (_filterStale) ApplyRigidBodyFilter();
-    }
-
-    private Material CreateMaterial(Color color)
-    {
-        var material = new Material(Shader.Find("Battlehub/RTGizmos/Handles")) {color = color};
-
-        material.SetFloat("_Offset", 1f);
-        material.SetFloat("_MinAlpha", 1f);
-
-        return material;
-    }
-
-    private Queue<Material> _materials;
-    public Material GetNextMaterial()
+public static class MaterialHelper
+{
+    private static Queue<Material> _materials;
+    public static Material GetNextMaterial()
     {
         if (_materials == null)
         {
@@ -880,36 +525,700 @@ public class ColliderTuner : MVRScript
         _materials.Enqueue((current = _materials.Dequeue()));
         return current;
     }
-}
 
-public static class JSONNodeExtensions
-{
-    public static JSONClass GetOrCreate(this JSONClass jc, string propertyName)
+    private static Material CreateMaterial(Color color)
     {
-        if (jc.HasKey(propertyName))
-            return (JSONClass) jc[propertyName];
+        var material = new Material(Shader.Find("Battlehub/RTGizmos/Handles")) { color = color };
 
-        var child = new JSONClass();
-        jc.Add(propertyName, child);
-        return child;
-    }
+        material.SetFloat("_Offset", 1f);
+        material.SetFloat("_MinAlpha", 1f);
 
-    public static JSONClass GetIfExists(this JSONClass jc, string propertyName)
-    {
-        if (!jc.HasKey(propertyName))
-            return null;
-
-        return (JSONClass) jc[propertyName];
+        return material;
     }
 }
 
-public static class ColorExtensions
+public abstract class ColliderModel<T> : ColliderModel where T : Collider
 {
-    public static Color ToColor(this string value)
+    protected T Collider { get; }
+
+    protected ColliderModel(MVRScript parent, T collider, string label)
+        : base(parent, collider.Uuid(), label)
     {
-        Color color;
-        ColorUtility.TryParseHtmlString(value, out color);
-        color.a = 0.005f;
-        return color;
+        Collider = collider;
+    }
+
+    public override void CreatePreview()
+    {
+        var preview = DoCreatePreview();
+
+        preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial();
+        foreach (var c in preview.GetComponents<Collider>())
+        {
+            c.enabled = false;
+            UnityEngine.Object.Destroy(c);
+        }
+
+        preview.transform.SetParent(Collider.transform, false);
+
+        Preview = preview;
+
+        UpdatePreview();
+    }
+}
+
+public abstract class ColliderModel
+{
+    protected MVRScript Parent { get; }
+
+    public static ColliderModel CreateTyped(MVRScript parent, Collider collider, Dictionary<string, RigidbodyModel> rigidbodies)
+    {
+        ColliderModel typed;
+
+        if (collider is SphereCollider)
+            typed = new SphereColliderModel(parent, (SphereCollider)collider);
+        else if (collider is BoxCollider)
+            typed = new BoxColliderModel(parent, (BoxCollider)collider);
+        else if (collider is CapsuleCollider)
+            typed = new CapsuleColliderModel(parent, (CapsuleCollider)collider);
+        else
+            throw new ArgumentOutOfRangeException($"Unsupported collider type");
+
+        if (collider.attachedRigidbody != null)
+        {
+            var rigidbodyModel = rigidbodies[collider.attachedRigidbody.Uuid()];
+            typed.Rididbody = rigidbodyModel;
+            if (rigidbodyModel.Colliders == null)
+                rigidbodyModel.Colliders = new List<ColliderModel> { typed };
+            else
+                rigidbodyModel.Colliders.Add(typed);
+        }
+
+        return typed;
+    }
+
+    public string Id { get; }
+    public string Label { get; }
+    public RigidbodyModel Rididbody { get; set; }
+    
+    public GameObject Preview { get; protected set; }
+    public List<UIDynamic> Controls { get; private set; }
+
+    protected ColliderModel(MVRScript parent, string id, string label)
+    {
+        Parent = parent;
+
+        Id = id;
+        Label = label;
+    }
+
+    public void CreateControls()
+    {
+        DestroyControls();
+
+        var controls = new List<UIDynamic>();
+
+        var resetUi = Parent.CreateButton("Reset Collider", rightSide: true);
+        resetUi.button.onClick.AddListener(ResetToInitial);
+
+        controls.Add(resetUi);
+        controls.AddRange(DoCreateControls());
+
+        Controls = controls;
+    }
+
+    public abstract IEnumerable<UIDynamic> DoCreateControls();
+
+    public virtual void DestroyControls()
+    {
+        if (Controls == null)
+            return;
+
+        foreach (var adjustmentJson in Controls)
+            UnityEngine.Object.Destroy(adjustmentJson.gameObject);
+
+        Controls.Clear();
+    }
+
+    public abstract void CreatePreview();
+
+    public virtual void DestroyPreview()
+    {
+        if (Preview != null)
+            UnityEngine.Object.Destroy(Preview);
+    }
+
+    protected abstract GameObject DoCreatePreview();
+
+    public abstract void UpdatePreview();
+
+    private bool _selected;
+
+    public bool Selected
+    {
+        get { return _selected; }
+        set
+        {
+            if (_selected != value)
+            {
+                SetSelected(value);
+                _selected = value;
+            }
+        }
+    }
+
+    protected virtual void SetSelected(bool value)
+    {
+        var previewRenderer = Preview.GetComponent<Renderer>();
+        var color = previewRenderer.material.color;
+
+        if (value)
+        {
+            color.a = 0.3f;
+            CreateControls();
+        }
+        else
+        {
+            color.a = 0.001f;
+            DestroyControls();
+        }
+
+        previewRenderer.material.color = color;
+    }
+
+    public void AppendJson(JSONClass parent)
+    {
+        if (DeviatesFromInitial())
+            parent.Add(Id, DoGetJson());
+    }
+
+    public void LoadJson(JSONClass jsonClass)
+    {
+        DoLoadJson(jsonClass);
+        UpdatePreview();
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+    }
+
+    protected abstract void DoLoadJson(JSONClass jsonClass);
+
+    public abstract JSONClass DoGetJson();
+
+    public void ResetToInitial()
+    {
+        DoResetToInitial();
+        UpdatePreview();
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+    }
+
+    protected abstract void DoResetToInitial();
+
+    protected abstract bool DeviatesFromInitial();
+
+    public override string ToString() => Id;
+}
+
+public class RigidbodyModel
+{
+    public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<RigidbodyGroupModel> groups)
+    {
+        var model = new RigidbodyModel(script, rigidbody, rigidbody.name);
+        model.Groups = groups
+            .Where(category => category.Pattern.IsMatch(rigidbody.name))
+            .ToList();
+        return model;
+    }
+
+    private readonly MVRScript _script;
+    private readonly Rigidbody _rigidbody;
+
+    private List<UIDynamic> _controls;
+
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public string Label { get; set; }
+    public List<RigidbodyGroupModel> Groups { get; set; }
+    public List<ColliderModel> Colliders { get; set; }
+
+    private readonly bool _initialEnabled;
+
+    public RigidbodyModel(MVRScript script, Rigidbody rigidbody, string label)
+    {
+        _script = script;
+        _rigidbody = rigidbody;
+
+        Id = rigidbody.Uuid();
+        Name = rigidbody.name;
+        Label = label;
+
+        _initialEnabled = rigidbody.detectCollisions;
+    }
+
+    public override string ToString() => $"{Id}_{Name}";
+
+    private bool _selected;
+
+    public bool Selected
+    {
+        get { return _selected; }
+        set
+        {
+            if (_selected != value)
+            {
+                SetSelected(value);
+                _selected = value;
+            }
+        }
+    }
+
+    private void SetSelected(bool value)
+    {
+        if (value)
+            CreateControls();
+        else
+            DestroyControls();
+    }
+
+    public void CreateControls()
+    {
+        DestroyControls();
+
+        var controls = new List<UIDynamic>();
+
+        var resetUi = _script.CreateButton("Reset Rigidbody", rightSide: false);
+        resetUi.button.onClick.AddListener(ResetToInitial);
+
+        var enabledToggleJsf = new JSONStorableBool("enabled", _rigidbody.detectCollisions, (bool value) => { _rigidbody.detectCollisions = value; });
+        var enabledToggle = _script.CreateToggle(enabledToggleJsf, rightSide: false);
+        enabledToggle.label = "Detect Collisions";
+
+        controls.Add(resetUi);
+        controls.Add(enabledToggle);
+        
+        _controls = controls;
+    }
+    
+    public virtual void DestroyControls()
+    {
+        if (_controls == null)
+            return;
+
+        foreach (var control in _controls)
+            UnityEngine.Object.Destroy(control.gameObject);
+
+        _controls.Clear();
+    }
+
+    public void AppendJson(JSONClass parent)
+    {
+        if (DeviatesFromInitial())
+            parent.Add(Id, DoGetJson());
+    }
+
+    public void LoadJson(JSONClass jsonClass)
+    {
+        DoLoadJson(jsonClass);
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+    }
+
+    private void DoLoadJson(JSONClass jsonClass)
+    {
+        _rigidbody.detectCollisions = jsonClass["detectCollisions"].AsBool;
+    }
+
+    public JSONClass DoGetJson()
+    {
+        var jsonClass = new JSONClass();
+        jsonClass["detectCollisions"].AsBool = _rigidbody.detectCollisions;
+        return jsonClass;
+    }
+
+    public void ResetToInitial()
+    {
+        DoResetToInitial();
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+    }
+
+    protected void DoResetToInitial()
+    {
+        _rigidbody.detectCollisions = _initialEnabled;
+    }
+
+    protected bool DeviatesFromInitial()
+    {
+        return _rigidbody.detectCollisions != _initialEnabled;
+    }
+}
+
+public class RigidbodyGroupModel
+{
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public Regex Pattern { get; set; }
+
+    public RigidbodyGroupModel(string name, string pattern)
+    {
+        Id = name;
+        Name = name;
+        Pattern = new Regex(pattern, RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+    }
+}
+
+public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
+{
+    public float InitialRadius { get; set; }
+    public float InitialHeight { get; set; }
+    public Vector3 InitialCenter { get; set; }
+
+    public CapsuleColliderModel(MVRScript parent, CapsuleCollider collider)
+        : base(parent, collider, collider.name)
+    {
+        InitialRadius = collider.radius;
+        InitialHeight = collider.height;
+        InitialCenter = collider.center;
+    }
+
+    public override IEnumerable<UIDynamic> DoCreateControls()
+    {
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("radius", Collider.radius, (float value) =>
+        {
+            Collider.radius = value;
+            UpdatePreview();
+        }, 0f, 0.2f), "Radius");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("height", Collider.height, (float value) =>
+        {
+            Collider.height = value;
+            UpdatePreview();
+        }, 0f, 0.2f), "Height");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerX", Collider.center.x, (float value) =>
+        {
+            var center = Collider.center;
+            center.x = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.X");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerY", Collider.center.y, (float value) =>
+        {
+            var center = Collider.center;
+            center.y = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.Y");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerZ", Collider.center.z, (float value) =>
+        {
+            var center = Collider.center;
+            center.z = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.Z");
+    }
+
+    protected override void DoLoadJson(JSONClass jsonClass)
+    {
+        Collider.radius = jsonClass["radius"].AsFloat;
+        Collider.height = jsonClass["height"].AsFloat;
+
+        var center = Collider.center;
+        center.x = jsonClass["centerX"].AsFloat;
+        center.y = jsonClass["centerY"].AsFloat;
+        center.z = jsonClass["centerZ"].AsFloat;
+        Collider.center = center;
+    }
+
+    public override JSONClass DoGetJson()
+    {
+        var jsonClass = new JSONClass();
+        jsonClass["radius"].AsFloat = Collider.radius;
+        jsonClass["height"].AsFloat = Collider.height;
+        jsonClass["centerX"].AsFloat = Collider.center.x;
+        jsonClass["centerY"].AsFloat = Collider.center.y;
+        jsonClass["centerZ"].AsFloat = Collider.center.z;
+        return jsonClass;
+    }
+
+    protected override void DoResetToInitial()
+    {
+        Collider.radius = InitialRadius;
+        Collider.height = InitialHeight;
+        Collider.center = InitialCenter;
+    }
+
+    protected override bool DeviatesFromInitial()
+    {
+        return !Mathf.Approximately(InitialRadius, Collider.radius) ||
+               !Mathf.Approximately(InitialHeight, Collider.height) ||
+               InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+    }
+
+    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Capsule);
+
+    public override void UpdatePreview()
+    {
+        float size = Collider.radius * 2;
+        float height = Collider.height / 2;
+        Preview.transform.localScale = new Vector3(size, height, size);
+        if (Collider.direction == 0)
+            Preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.forward);
+        else if (Collider.direction == 2)
+            Preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.right);
+        Preview.transform.localPosition = Collider.center;
+    }
+}
+
+public class SphereColliderModel : ColliderModel<SphereCollider>
+{
+    public float InitialRadius { get; set; }
+    public Vector3 InitialCenter { get; set; }
+
+    public SphereColliderModel(MVRScript parent, SphereCollider collider)
+        : base(parent, collider, collider.name)
+    {
+        InitialRadius = collider.radius;
+        InitialCenter = collider.center;
+    }
+
+    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+    public override void UpdatePreview()
+    {
+        if (Preview == null)
+            Preview = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+        Preview.transform.localScale = Vector3.one * (Collider.radius * 2);
+        Preview.transform.localPosition = Collider.center;
+    }
+
+    protected override void DoLoadJson(JSONClass jsonClass)
+    {
+        Collider.radius = jsonClass["radius"].AsFloat;
+        
+        var center = Collider.center;
+        center.x = jsonClass["centerX"].AsFloat;
+        center.y = jsonClass["centerY"].AsFloat;
+        center.z = jsonClass["centerZ"].AsFloat;
+        Collider.center = center;
+    }
+
+    public override JSONClass DoGetJson()
+    {
+        var jsonClass = new JSONClass();
+
+        jsonClass["radius"].AsFloat = Collider.radius;
+
+        jsonClass["centerX"].AsFloat = Collider.center.x;
+        jsonClass["centerY"].AsFloat = Collider.center.y;
+        jsonClass["centerZ"].AsFloat = Collider.center.z;
+
+        return jsonClass;
+    }
+
+    protected override void DoResetToInitial()
+    {
+        Collider.radius = InitialRadius;
+        Collider.center = InitialCenter;
+    }
+
+    public override IEnumerable<UIDynamic> DoCreateControls()
+    {
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("radius", Collider.radius, (float value) =>
+        {
+            Collider.radius = value;
+            UpdatePreview();
+        }, 0f, 0.2f), "Radius");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerX", Collider.center.x, (float value) =>
+        {
+            var center = Collider.center;
+            center.x = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.X");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerY", Collider.center.y, (float value) =>
+        {
+            var center = Collider.center;
+            center.y = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.Y");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerZ", Collider.center.z, (float value) =>
+        {
+            var center = Collider.center;
+            center.z = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.Z");
+    }
+
+    protected override bool DeviatesFromInitial()
+    {
+        return !Mathf.Approximately(InitialRadius, Collider.radius) ||
+             InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+    }
+}
+
+public class BoxColliderModel : ColliderModel<BoxCollider>
+{
+    public Vector3 InitialSize { get; set; }
+    public Vector3 InitialCenter { get; set; }
+
+    public BoxColliderModel(MVRScript parent, BoxCollider collider)
+        : base(parent, collider, collider.name)
+    {
+        InitialSize = collider.size;
+        InitialCenter = collider.center;
+    }
+
+    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+    public override void UpdatePreview()
+    {
+        Preview.transform.localScale = Collider.size;
+        Preview.transform.localPosition = Collider.center;
+    }
+
+    protected override void DoLoadJson(JSONClass jsonClass)
+    {
+        var size = Collider.size;
+        size.x = jsonClass["sizeX"].AsFloat;
+        size.y = jsonClass["sizeY"].AsFloat;
+        size.z = jsonClass["sizeZ"].AsFloat;
+        Collider.size = size;
+        
+        var center = Collider.center;
+        center.x = jsonClass["centerX"].AsFloat;
+        center.y = jsonClass["centerY"].AsFloat;
+        center.z = jsonClass["centerZ"].AsFloat;
+        Collider.center = center;
+    }
+    
+    public override JSONClass DoGetJson()
+    {
+        var jsonClass = new JSONClass();
+
+        jsonClass["sizeX"].AsFloat = Collider.size.x;
+        jsonClass["sizeY"].AsFloat = Collider.size.y;
+        jsonClass["sizeZ"].AsFloat = Collider.size.z;
+
+        jsonClass["centerX"].AsFloat = Collider.center.x;
+        jsonClass["centerY"].AsFloat = Collider.center.y;
+        jsonClass["centerZ"].AsFloat = Collider.center.z;
+
+        return jsonClass;
+    }
+
+    protected override void DoResetToInitial()
+    {
+        Collider.size = InitialSize;
+        Collider.center = InitialCenter;
+    }
+
+    public override IEnumerable<UIDynamic> DoCreateControls()
+    {
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("sizeX", Collider.size.x, (float value) =>
+        {
+            var size = Collider.size;
+            size.x = value;
+            Collider.size = size;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Size.X");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("sizeY", Collider.size.y, (float value) =>
+        {
+            var size = Collider.size;
+            size.y = value;
+            Collider.size = size;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Size.Y");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("sizeZ", Collider.size.z, (float value) =>
+        {
+            var size = Collider.size;
+            size.z = value;
+            Collider.size = size;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Size.Z");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerX", Collider.center.x, (float value) =>
+        {
+            var center = Collider.center;
+            center.x = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.X");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerY", Collider.center.y, (float value) =>
+        {
+            var center = Collider.center;
+            center.y = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.Y");
+
+        yield return Parent.CreateFloatSlider(new JSONStorableFloat("centerZ", Collider.center.z, (float value) =>
+        {
+            var center = Collider.center;
+            center.z = value;
+            Collider.center = center;
+            UpdatePreview();
+        }, -0.05f, 0.05f), "Center.Z");
+    }
+
+    protected override bool DeviatesFromInitial()
+    {
+        return InitialSize != Collider.size || InitialCenter != Collider.center;  // Vector3 has built in epsilon equality checks
+    }
+}
+
+public static class ComponentExtensions
+{
+    public static string Uuid(this Component component)
+    {
+        var siblings = component.GetComponents<Component>().ToList();
+        int siblingIndex = siblings.IndexOf(component);
+        
+        var paths = new Stack<string>(new [] {$"{component.name}[{siblingIndex}]"});
+        var current = component.gameObject.transform;
+
+        while (current != null && !current.name.Equals("geometry", StringComparison.InvariantCultureIgnoreCase)
+                               && !current.name.Equals("Genesis2Female", StringComparison.InvariantCultureIgnoreCase)
+                               && !current.name.Equals("Genesis2Male", StringComparison.InvariantCultureIgnoreCase))
+        {
+            paths.Push($"{current.name}[{current.GetSiblingIndex()}]");
+            current = current.transform.parent;
+        }
+
+        return string.Join(".", paths.ToArray());
+    }
+
+    public static UIDynamic CreateFloatSlider(this MVRScript script, JSONStorableFloat jsf, string label, bool rightSide = true, string valueFormat = "F5" )
+    {
+        var control = script.CreateSlider(jsf, rightSide);
+        control.valueFormat = valueFormat;
+        control.label = label;
+        return control;
     }
 }
