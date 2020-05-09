@@ -1175,6 +1175,8 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     protected override void DoUpdatePreview()
     {
+        if (Preview == null) return;
+
         float size = Collider.radius * 2;
         float height = Collider.height / 2;
         Preview.transform.localScale = new Vector3(size, height, size);
@@ -1221,8 +1223,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     protected override void DoUpdatePreview()
     {
-        if (Preview == null)
-            Preview = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        if (Preview == null) return;
 
         Preview.transform.localScale = Vector3.one * (Collider.radius * 2);
         Preview.transform.localPosition = Collider.center;
@@ -1331,6 +1332,8 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override void DoUpdatePreview()
     {
+        if (Preview == null) return;
+
         Preview.transform.localScale = Collider.size;
         Preview.transform.localPosition = Collider.center;
     }
