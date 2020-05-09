@@ -51,11 +51,33 @@ public class ColliderTuner : MVRScript
 
     private void BuildUI()
     {
+
+        var showPreviews = new JSONStorableBool("showPreviews", false, (bool value) =>
+        {
+            foreach (var colliderPair in _colliders)
+                colliderPair.Value.ShowPreview = value;
+        });
+
+        var showPreviewsToggle = CreateToggle(showPreviews);
+        showPreviewsToggle.label = "Show Previews";
+        
+        CreateSlider(new JSONStorableFloat("previewOpacity", 0.001f, (float value) => {
+            var alpha = ExponentialScale(value, 0.2f, 1f);
+            foreach (var colliderPair in _colliders)
+                colliderPair.Value.PreviewOpacity = alpha;
+        }, 0f, 1f, true)).label = "Preview Opacity";
+
+        CreateSlider(new JSONStorableFloat("selectedPreviewOpacity", 0.3f, (float value) => {
+            var alpha = ExponentialScale(value, 0.2f, 1f);
+            foreach (var colliderPair in _colliders)
+                colliderPair.Value.SelectedPreviewOpacity = alpha;
+        }, 0f, 1f, true)).label = "Selected Preview Opacity";
+
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
         {
             if (_lastBrowseDir != null) SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-            SuperController.singleton.GetMediaPathDialog(path => { HandleLoadPreset(path); }, _saveExt);
+            SuperController.singleton.GetMediaPathDialog(HandleLoadPreset, _saveExt);
         });
 
         var savePresetUI = CreateButton("Save Preset");
@@ -368,7 +390,16 @@ public class ColliderTuner : MVRScript
             rigidbodyPair.Value.AppendJson(rigidbodies);
         jsonClass.Add("rigidbodies", rigidbodies);
     }
-    
+
+    private float ExponentialScale(float inputValue, float midValue, float maxValue)
+    {
+        var m = maxValue / midValue;
+        var c = Mathf.Log(Mathf.Pow(m - 1, 2));
+        var b = maxValue / (Mathf.Exp(c) - 1);
+        var a = -1 * b;
+        return a + b * Mathf.Exp(c * inputValue);
+    }
+
     public override void RestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, JSONArray presetAtoms = null, bool setMissingToDefault = true)
     {
         base.RestoreFromJSON(jc, restorePhysical, restoreAppearance, presetAtoms, setMissingToDefault);
@@ -563,6 +594,7 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
         Preview = preview;
 
         UpdatePreview();
+        SetSelected(Selected);
     }
 }
 
@@ -673,16 +705,74 @@ public abstract class ColliderModel
 
         if (value)
         {
-            color.a = 0.3f;
+            color.a = _selectedPreviewOpacity;
             CreateControls();
         }
         else
         {
-            color.a = 0.001f;
+            color.a = _previewOpacity;
             DestroyControls();
         }
 
         previewRenderer.material.color = color;
+    }
+
+    private float _selectedPreviewOpacity;
+    private float _previewOpacity;
+
+    public float SelectedPreviewOpacity
+    {
+        get { return _selectedPreviewOpacity; }
+        set
+        {
+            if (Mathf.Approximately(value, _selectedPreviewOpacity))
+                return;
+            
+            _selectedPreviewOpacity = value;
+
+            if (_selected)
+            {
+                var previewRenderer = Preview.GetComponent<Renderer>();
+                var color = previewRenderer.material.color;
+                color.a = _selectedPreviewOpacity;
+                previewRenderer.material.color = color;
+            }
+        }
+    }
+
+    public float PreviewOpacity
+    {
+        get { return _previewOpacity; }
+        set
+        {
+            if (Mathf.Approximately(value, _previewOpacity))
+                return;
+
+            _previewOpacity = value;
+
+            if (!_selected)
+            {
+                var previewRenderer = Preview.GetComponent<Renderer>();
+                var color = previewRenderer.material.color;
+                color.a = _previewOpacity;
+                previewRenderer.material.color = color;
+            }
+        }
+    }
+
+    private bool _showPreview;
+    public bool ShowPreview
+    {
+        get { return _showPreview; }
+        set
+        {
+            _showPreview = value;
+
+            if (_showPreview)
+                CreatePreview();
+            else
+                DestroyPreview();
+        }
     }
 
     public void AppendJson(JSONClass parent)
