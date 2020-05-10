@@ -1,12 +1,12 @@
 using System.Text.RegularExpressions;
 
-public class RigidbodyGroupModel
+public class GroupModel
 {
     public string Id { get; set; }
     public string Name { get; set; }
     public Regex Pattern { get; set; }
 
-    public RigidbodyGroupModel(string name, string pattern)
+    public GroupModel(string name, string pattern)
     {
         Id = name;
         Name = name;

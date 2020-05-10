@@ -17,29 +17,14 @@ public class ColliderEditor : MVRScript
 
     private string _lastBrowseDir = SuperController.singleton.savesDir;
 
-    private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
+    private JSONStorableStringChooser _editablesJson;
+
+    private IModel _selected;
+
+    private UIDynamicPopup _editablesList;
+
     private Dictionary<string, ColliderModel> _colliders;
-    private Dictionary<string, AutoColliderModel> _autoColliders;
-    private Dictionary<string, RigidbodyModel> _rigidbodies;
-
-    private JSONStorableStringChooser _rigidbodyGroupsJson;
-    private JSONStorableStringChooser _targetJson;
-    private JSONStorableStringChooser _autoColliderJson;
-    private JSONStorableStringChooser _rigidbodiesJson;
-
-    private ColliderModel _lastSelectedCollider;
-    private RigidbodyModel _lastSelectedRigidbody;
-    private AutoColliderModel _lastSelectedAutoCollider;
-
-    private ColliderModel _selectedCollider;
-    private RigidbodyGroupModel _selectedGroup;
-    private RigidbodyModel _selectedRigidbody;
-    private AutoColliderModel _selectedAutoCollider;
-
-    private UIDynamicPopup _rbGroupListUI;
-    private UIDynamicPopup _ridigBodyList;
-    private UIDynamicPopup _rbListUI;
-    private UIDynamicPopup _autoColliderListUI;
+    private Dictionary<string, IModel> _editables;
 
     public override void Init()
     {
@@ -120,159 +105,95 @@ public class ColliderEditor : MVRScript
                 colliderPair.Value.ResetToInitial();
         });
 
-        _rigidbodyGroupsJson = new JSONStorableStringChooser(
-            "Rigidbody Groups",
-            _rigidbodyGroups.Keys.ToList(),
-            _rigidbodyGroups.Select(x => x.Value.Name).ToList(),
-            _rigidbodyGroups.Keys.First(),
-            "Rigidbody Groups");
-
-        _rbGroupListUI = CreateScrollablePopup(_rigidbodyGroupsJson);
-        _rbGroupListUI.popupPanelHeight = 400f;
-
-        _rigidbodiesJson = new JSONStorableStringChooser(
+        _editablesJson = new JSONStorableStringChooser(
             "Rigidbodies",
             new List<string>(),
             new List<string>(),
             "All",
             "Rigidbodies");
 
-        _ridigBodyList = CreateScrollablePopup(_rigidbodiesJson);
-        _ridigBodyList.popupPanelHeight = 400f;
+        _editablesList = CreateScrollablePopup(_editablesJson);
+        _editablesList.popupPanelHeight = 400f;
 
-        _targetJson = new JSONStorableStringChooser(
-            "Colliders",
-            new List<string>(),
-            new List<string>(),
-            "",
-            "Colliders");
-
-        _rbListUI = CreateScrollablePopup(_targetJson, true);
-        _rbListUI.popupPanelHeight = 400f;
-
-        var autoColliderPairs = _autoColliders.OrderBy(kvp => kvp.Key).ToList();
-        _autoColliderJson = new JSONStorableStringChooser(
-            "Auto Colliders",
-            autoColliderPairs.Select(kvp => kvp.Key).ToList(),
-            autoColliderPairs.Select(kvp => kvp.Value.Label).ToList(),
-            "", "Auto Colliders"
-        );
-        _autoColliderListUI = CreateScrollablePopup(_autoColliderJson);
-        _autoColliderListUI.popupPanelHeight = 400f;
-
-        _rigidbodyGroupsJson.setCallbackFunction = groupId =>
+        _editablesJson.setCallbackFunction = id =>
         {
-            _rigidbodyGroups.TryGetValue(groupId, out _selectedGroup);
+            _selected?.DestroyControls();
+            _editables.TryGetValue(id, out _selected);
             UpdateFilter();
         };
-
-        _rigidbodiesJson.setCallbackFunction = rigidbodyId =>
-        {
-            _selectedRigidbody?.DestroyControls();
-            _rigidbodies.TryGetValue(rigidbodyId, out _selectedRigidbody);
-            UpdateFilter();
-        };
-
-        _targetJson.setCallbackFunction = colliderId =>
-        {
-            _colliders.TryGetValue(colliderId, out _selectedCollider);
-            UpdateFilter();
-        };
-
-        _autoColliderJson.setCallbackFunction = autoColliderId =>
-        {
-            _autoColliders.TryGetValue(autoColliderId, out _selectedAutoCollider);
-            UpdateFilter();
-        };
-
-        _rigidbodyGroups.TryGetValue("Head / Ears", out _selectedGroup);
 
         UpdateFilter();
     }
 
     private void SyncPopups()
     {
-        _rigidbodyGroupsJson.popup.Toggle();
-        _rigidbodyGroupsJson.popup.Toggle();
-
-        _rbListUI.popup.Toggle();
-        _rbListUI.popup.Toggle();
-
-        _ridigBodyList.popup.Toggle();
-        _ridigBodyList.popup.Toggle();
+        _editablesList.popup.Toggle();
+        _editablesList.popup.Toggle();
     }
 
     private void BuildModels()
     {
-        var rigidbodyGroups = containingAtom.type == "Person"
-        ? new List<RigidbodyGroupModel>
-        {
-            new RigidbodyGroupModel("All", @"^.+$"),
-            new RigidbodyGroupModel("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
-            new RigidbodyGroupModel("Left arm", @"^l(Shldr|ForeArm)"),
-            new RigidbodyGroupModel("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-            new RigidbodyGroupModel("Right arm", @"^r(Shldr|ForeArm)"),
-            new RigidbodyGroupModel("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-            new RigidbodyGroupModel("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
-            new RigidbodyGroupModel("Left breast", @"l((Pectoral)|Nipple)"),
-            new RigidbodyGroupModel("Right breast", @"r((Pectoral)|Nipple)"),
-            new RigidbodyGroupModel("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
-            new RigidbodyGroupModel("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
-            new RigidbodyGroupModel("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
-            new RigidbodyGroupModel("Anus", @"^_JointA[rl]"),
-            new RigidbodyGroupModel("Vagina", @"^_Joint(Gr|Gl|B)"),
-            new RigidbodyGroupModel("Penis", @"^(Gen[1-3])|Testes"),
-            new RigidbodyGroupModel("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
-            new RigidbodyGroupModel("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
-            new RigidbodyGroupModel("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
-            new RigidbodyGroupModel("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
-            new RigidbodyGroupModel("Other", @"^(?!.*).*$")
-        }
-        : new List<RigidbodyGroupModel>
-        {
-            new RigidbodyGroupModel("All", @"^.+$"),
-        };
+        var groups = containingAtom.type == "Person"
+                 ? new List<GroupModel>
+                 {
+                    new GroupModel("All", @"^.+$"),
+                    new GroupModel("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
+                    new GroupModel("Left arm", @"^l(Shldr|ForeArm)"),
+                    new GroupModel("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+                    new GroupModel("Right arm", @"^r(Shldr|ForeArm)"),
+                    new GroupModel("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+                    new GroupModel("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
+                    new GroupModel("Left breast", @"l((Pectoral)|Nipple)"),
+                    new GroupModel("Right breast", @"r((Pectoral)|Nipple)"),
+                    new GroupModel("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
+                    new GroupModel("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
+                    new GroupModel("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
+                    new GroupModel("Anus", @"^_JointA[rl]"),
+                    new GroupModel("Vagina", @"^_Joint(Gr|Gl|B)"),
+                    new GroupModel("Penis", @"^(Gen[1-3])|Testes"),
+                    new GroupModel("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
+                    new GroupModel("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
+                    new GroupModel("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
+                    new GroupModel("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
+                    new GroupModel("Other", @"^(?!.*).*$")
+                 }
+                 : new List<GroupModel>
+                 {
+                    new GroupModel("All", @"^.+$"),
+                 };
+        var groupsDict = groups.ToDictionary(x => x.Id);
 
         // AutoColliders
 
-        _autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
+        var autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
             .Select(autoCollider => AutoColliderModel.Create(this, autoCollider))
-            .ToDictionary(autoColliderModel => autoColliderModel.Id);
+            .ToList();
 
-        var autoCollidersRigidBodies = new HashSet<Rigidbody>(_autoColliders.Values.SelectMany(x => x.GetRigidbodies()));
-        var autoCollidersColliders = new HashSet<Collider>(_autoColliders.Values.SelectMany(x => x.GetColliders()));
+        var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
+        var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()));
 
         // Rigidbodies
 
-        _rigidbodyGroups = rigidbodyGroups.ToDictionary(x => x.Id);
-
-        _rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
+        var rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
             .Where(rigidbody => !autoCollidersRigidBodies.Contains(rigidbody))
             .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
-            .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, rigidbodyGroups))
-            .ToDictionary(x => x.Id);
+            .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, groups))
+            .ToList();
+        var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
 
         // Colliders
 
-        var colliderQuery = containingAtom.GetComponentsInChildren<Collider>(true)
+        var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
             .Where(collider => !autoCollidersColliders.Contains(collider))
-            .Where(collider => IsColliderIncluded(collider));
+            .Where(collider => IsColliderIncluded(collider))
+            .Select(collider => ColliderModel.CreateTyped(this, collider, rigidbodiesDict))
+            .ToList();
 
+        _colliders = colliders.ToDictionary(x => x.Id);
 
-        _colliders = new Dictionary<string, ColliderModel>();
+        // All Editables
 
-        foreach (Collider collider in colliderQuery)
-        {
-            var model = ColliderModel.CreateTyped(this, collider, _rigidbodies);
-
-            if (_colliders.ContainsKey(model.Id))
-            {
-                SuperController.LogError($"Duplicate collider Id {model.Id}");
-                continue;
-            }
-
-            _colliders.Add(model.Id, model);
-        }
+        _editables = colliders.Cast<IModel>().Concat(autoColliders).Concat(rigidbodies).ToDictionary(x => x.Id, x => x);
     }
 
     private static bool IsColliderIncluded(Collider collider)
@@ -305,112 +226,25 @@ public class ColliderEditor : MVRScript
     {
         try
         {
-            IEnumerable<RigidbodyModel> rigidbodies;
-            IEnumerable<ColliderModel> colliders;
+            var editables = _editables.Values.OrderBy(e => e.Label).ToList();
+            _editablesJson.choices = new[] { "All" }.Concat(editables.Select(x => x.Id)).ToList();
+            _editablesJson.displayChoices = new[] { "All" }.Concat(editables.Select(x => x.Label)).ToList();
 
-            // Rigidbody filtering
-
-            if (_selectedGroup != null)
+            if (_selected != null)
             {
-                rigidbodies = _rigidbodies.Values.Where(x => x.Groups.Contains(_selectedGroup));
-                colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody.Groups.Contains(_selectedGroup));
+                _editablesJson.valNoCallback = _selected.Id;
             }
             else
             {
-                rigidbodies = _rigidbodies.Values;
-                colliders = _colliders.Values;
+                _editablesJson.valNoCallback = "All";
             }
 
-            if (_selectedGroup != null && _rigidbodyGroupsJson.choices.Contains(_selectedGroup.Id))
-            {
-                _rigidbodyGroupsJson.valNoCallback = _selectedGroup.Id;
-            }
-            else
-            {
-                _rigidbodyGroupsJson.valNoCallback = "All";
-                _selectedGroup = null;
-            }
-
-            _rigidbodiesJson.choices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Id)).ToList();
-            _rigidbodiesJson.displayChoices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Label)).ToList();
-
-
-            if (_selectedRigidbody != null && _rigidbodiesJson.choices.Contains(_selectedRigidbody.Id))
-            {
-                _rigidbodiesJson.valNoCallback = _selectedRigidbody.Id;
-            }
-            else
-            {
-                _rigidbodiesJson.valNoCallback = "All";
-                _selectedRigidbody = null;
-            }
-
-            // Collider filtering
-
-            if (_selectedRigidbody != null) colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody == _selectedRigidbody);
-
-            _targetJson.choices = colliders.Select(x => x.Id).ToList();
-            _targetJson.displayChoices = colliders.Select(x => x.Label).ToList();
-
-            if (_selectedCollider != null && _targetJson.choices.Contains(_selectedCollider.Id))
-            {
-                _targetJson.valNoCallback = _selectedCollider.Id;
-            }
-            else
-            {
-                var firstAvailableId = _targetJson.choices.FirstOrDefault();
-                _targetJson.valNoCallback = firstAvailableId ?? string.Empty;
-                if (!string.IsNullOrEmpty(firstAvailableId))
-                    _colliders.TryGetValue(firstAvailableId, out _selectedCollider);
-                else
-                    _selectedCollider = null;
-            }
-
-            UpdateSelectedRigidbody();
-            UpdateSelectedCollider();
-            UpdateSelectedAutoCollider();
             SyncPopups();
 
         }
         catch (Exception e)
         {
             LogError(nameof(UpdateFilter), e.ToString());
-        }
-    }
-
-    private void UpdateSelectedCollider()
-    {
-        if (_lastSelectedCollider != null)
-            _lastSelectedCollider.Selected = false;
-
-        if (_selectedCollider != null)
-        {
-            _selectedCollider.Selected = true;
-            _lastSelectedCollider = _selectedCollider;
-        }
-    }
-
-    private void UpdateSelectedRigidbody()
-    {
-        if (_lastSelectedRigidbody != null)
-            _lastSelectedRigidbody.Selected = false;
-
-        if (_selectedRigidbody != null)
-        {
-            _selectedRigidbody.Selected = true;
-            _lastSelectedRigidbody = _selectedRigidbody;
-        }
-    }
-
-    private void UpdateSelectedAutoCollider()
-    {
-        if (_lastSelectedAutoCollider != null)
-            _lastSelectedAutoCollider.Selected = false;
-
-        if (_selectedAutoCollider != null)
-        {
-            _selectedAutoCollider.Selected = true;
-            _lastSelectedAutoCollider = _selectedAutoCollider;
         }
     }
 
@@ -427,20 +261,12 @@ public class ColliderEditor : MVRScript
 
     private void LoadFromJson(JSONClass jsonClass)
     {
-        var collidersJsonClass = jsonClass["colliders"].AsObject;
-        foreach (string colliderId in collidersJsonClass.Keys)
+        var editablesJsonClass = jsonClass["editables"].AsObject;
+        foreach (string editableId in editablesJsonClass.Keys)
         {
-            ColliderModel colliderModel;
-            if (_colliders.TryGetValue(colliderId, out colliderModel))
-                colliderModel.LoadJson(collidersJsonClass[colliderId].AsObject);
-        }
-
-        var rigidbodiesJsonClass = jsonClass["rigidbodies"].AsObject;
-        foreach (string rigidbodyId in rigidbodiesJsonClass.Keys)
-        {
-            RigidbodyModel rigidbodyModel;
-            if (_rigidbodies.TryGetValue(rigidbodyId, out rigidbodyModel))
-                rigidbodyModel.LoadJson(rigidbodiesJsonClass[rigidbodyId].AsObject);
+            IModel editableModel;
+            if (_editables.TryGetValue(editableId, out editableModel))
+                editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
         }
     }
 
@@ -486,15 +312,10 @@ public class ColliderEditor : MVRScript
 
     private void AppendJson(JSONClass jsonClass)
     {
-        var colliders = new JSONClass();
-        foreach (var colliderPairs in _colliders)
-            colliderPairs.Value.AppendJson(colliders);
-        jsonClass.Add("colliders", colliders);
-
-        var rigidbodies = new JSONClass();
-        foreach (var rigidbodyPair in _rigidbodies)
-            rigidbodyPair.Value.AppendJson(rigidbodies);
-        jsonClass.Add("rigidbodies", rigidbodies);
+        var editablesJsonClass = new JSONClass();
+        foreach (var editablePairs in _editables)
+            editablePairs.Value.AppendJson(editablesJsonClass);
+        jsonClass.Add("editables", editablesJsonClass);
     }
 
     private float ExponentialScale(float inputValue, float midValue, float maxValue)

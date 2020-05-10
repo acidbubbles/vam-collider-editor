@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SimpleJSON;
 using UnityEngine;
 
 using Object = UnityEngine.Object;
@@ -10,9 +11,7 @@ public class AutoColliderModel : IModel
         return new AutoColliderModel(script, autoCollider, autoCollider.name);
     }
 
-    private JSONStorableFloat _autoRadiusBufferFloat;
-    private JSONStorableFloat _autoRadiusMultiplierFloat;
-
+    private readonly float _initialAutoLengthBuffer;
     private readonly float _initialAutoRadiusBuffer;
     private readonly float _initialAutoRadiusMultiplier;
 
@@ -42,6 +41,7 @@ public class AutoColliderModel : IModel
     {
         _script = script;
         _autoCollider = autoCollider;
+        _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
         _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
         _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
         Id = autoCollider.Uuid();
@@ -80,12 +80,17 @@ public class AutoColliderModel : IModel
 
     public IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return _script.CreateFloatSlider(_autoRadiusBufferFloat = new JSONStorableFloat("autoRadiusBuffer", _autoCollider.autoRadiusBuffer, value =>
+        yield return _script.CreateFloatSlider(new JSONStorableFloat("autoLengthBuffer", _autoCollider.autoLengthBuffer, value =>
+        {
+            _autoCollider.autoLengthBuffer = value;
+        }, 0f, _initialAutoLengthBuffer * 4f, false).WithDefault(_initialAutoLengthBuffer), "Auto Length Buffer");
+
+        yield return _script.CreateFloatSlider(new JSONStorableFloat("autoRadiusBuffer", _autoCollider.autoRadiusBuffer, value =>
         {
             _autoCollider.autoRadiusBuffer = value;
         }, 0f, _initialAutoRadiusBuffer * 4f, false).WithDefault(_initialAutoRadiusBuffer), "Auto Radius Buffer");
 
-        yield return _script.CreateFloatSlider(_autoRadiusMultiplierFloat = new JSONStorableFloat("autoRadiusMultiplier", _autoCollider.autoRadiusMultiplier, value =>
+        yield return _script.CreateFloatSlider(new JSONStorableFloat("autoRadiusMultiplier", _autoCollider.autoRadiusMultiplier, value =>
         {
             _autoCollider.autoRadiusMultiplier = value;
         }, 0f, _initialAutoRadiusMultiplier * 4f, false).WithDefault(_initialAutoRadiusMultiplier), "Auto Radius Multiplier");
@@ -100,6 +105,38 @@ public class AutoColliderModel : IModel
             Object.Destroy(adjustmentJson.gameObject);
 
         Controls.Clear();
+    }
+
+    public void AppendJson(JSONClass parent)
+    {
+        parent.Add(Id, DoGetJson());
+    }
+
+    public void LoadJson(JSONClass jsonClass)
+    {
+        DoLoadJson(jsonClass);
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+    }
+
+    private void DoLoadJson(JSONClass jsonClass)
+    {
+        _autoCollider.autoLengthBuffer = jsonClass["autoLengthBuffer"].AsFloat;
+        _autoCollider.autoRadiusBuffer = jsonClass["autoRadiusBuffer"].AsFloat;
+        _autoCollider.autoRadiusMultiplier = jsonClass["autoRadiusMultiplier"].AsFloat;
+    }
+
+    public JSONClass DoGetJson()
+    {
+        var jsonClass = new JSONClass();
+        jsonClass["autoLengthBuffer"].AsFloat = _autoCollider.autoLengthBuffer;
+        jsonClass["autoRadiusBuffer"].AsFloat = _autoCollider.autoRadiusBuffer;
+        jsonClass["autoRadiusMultiplier"].AsFloat = _autoCollider.autoRadiusMultiplier;
+        return jsonClass;
     }
 
     public void ResetToInitial()
