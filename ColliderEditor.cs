@@ -717,7 +717,13 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
     }
 }
 
-public abstract class ColliderModel
+public interface IModel
+{
+    string Id { get; }
+    string Label { get; }
+}
+
+public abstract class ColliderModel : IModel
 {
     private float _previewOpacity;
 
@@ -1000,7 +1006,7 @@ public abstract class ColliderModel
     public override string ToString() => Id;
 }
 
-public class AutoColliderModel
+public class AutoColliderModel : IModel
 {
     public static AutoColliderModel Create(MVRScript script, AutoCollider autoCollider)
     {
@@ -1014,7 +1020,7 @@ public class AutoColliderModel
     private bool _selected;
     private readonly MVRScript _script;
     private readonly AutoCollider _autoCollider;
-    
+
     public string Id { get; set; }
     public string Label { get; set; }
 
@@ -1120,7 +1126,7 @@ public class AutoColliderModel
     }
 }
 
-public class RigidbodyModel
+public class RigidbodyModel : IModel
 {
     private readonly bool _initialEnabled;
     private readonly Rigidbody _rigidbody;
