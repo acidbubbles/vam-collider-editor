@@ -144,20 +144,20 @@ public class ColliderEditor : MVRScript
 
         _rigidbodyGroupsJson.setCallbackFunction = groupId =>
         {
-            _selectedGroup = _rigidbodyGroups.ContainsKey(groupId) ? _rigidbodyGroups[groupId] : null;
+            _rigidbodyGroups.TryGetValue(groupId, out _selectedGroup);
             UpdateFilter();
         };
 
         _rigidbodiesJson.setCallbackFunction = rigidbodyId =>
         {
             _selectedRigidbody?.DestroyControls();
-            _selectedRigidbody = _rigidbodies.ContainsKey(rigidbodyId) ? _rigidbodies[rigidbodyId] : null;
+            _rigidbodies.TryGetValue(rigidbodyId, out _selectedRigidbody);
             UpdateFilter();
         };
 
         _collidersJson.setCallbackFunction = colliderId =>
         {
-            _selectedCollider = _colliders.ContainsKey(colliderId) ? _colliders[colliderId] : null;
+            _colliders.TryGetValue(colliderId, out _selectedCollider);
             UpdateFilter();
         };
 
@@ -308,7 +308,7 @@ public class ColliderEditor : MVRScript
                 var firstAvailableId = _collidersJson.choices.FirstOrDefault();
                 _collidersJson.valNoCallback = firstAvailableId ?? string.Empty;
                 if (!string.IsNullOrEmpty(firstAvailableId))
-                    _selectedCollider = _colliders[firstAvailableId];
+                    _colliders.TryGetValue(firstAvailableId, out _selectedCollider);
                 else
                     _selectedCollider = null;
             }
@@ -363,15 +363,19 @@ public class ColliderEditor : MVRScript
     {
         var collidersJsonClass = jsonClass["colliders"].AsObject;
         foreach (string colliderId in collidersJsonClass.Keys)
-            if (_colliders.ContainsKey(colliderId))
-                _colliders[colliderId]
-                    .LoadJson(collidersJsonClass[colliderId].AsObject);
+        {
+            ColliderModel colliderModel;
+            if (_colliders.TryGetValue(colliderId, out colliderModel))
+                colliderModel.LoadJson(collidersJsonClass[colliderId].AsObject);
+        }
 
         var rigidbodiesJsonClass = jsonClass["rigidbodies"].AsObject;
         foreach (string rigidbodyId in rigidbodiesJsonClass.Keys)
-            if (_rigidbodies.ContainsKey(rigidbodyId))
-                _rigidbodies[rigidbodyId]
-                    .LoadJson(rigidbodiesJsonClass[rigidbodyId].AsObject);
+        {
+            RigidbodyModel rigidbodyModel;
+            if (_rigidbodies.TryGetValue(rigidbodyId, out rigidbodyModel))
+                rigidbodyModel.LoadJson(rigidbodiesJsonClass[rigidbodyId].AsObject);
+        }
     }
 
     private void HandleSavePreset(string path)
