@@ -106,20 +106,20 @@ public class ColliderEditor : MVRScript
         });
 
         _editablesJson = new JSONStorableStringChooser(
-            "Rigidbodies",
+            "Edit",
             new List<string>(),
             new List<string>(),
-            "All",
-            "Rigidbodies");
+            "",
+            "Edit");
 
-        _editablesList = CreateScrollablePopup(_editablesJson);
+        _editablesList = CreateScrollablePopup(_editablesJson, true);
         _editablesList.popupPanelHeight = 400f;
 
         _editablesJson.setCallbackFunction = id =>
         {
-            _selected?.DestroyControls();
+            if (_selected != null) _selected.Selected = false;
             _editables.TryGetValue(id, out _selected);
-            UpdateFilter();
+            if (_selected != null) _selected.Selected = true;
         };
 
         UpdateFilter();
@@ -193,7 +193,10 @@ public class ColliderEditor : MVRScript
 
         // All Editables
 
-        _editables = colliders.Cast<IModel>().Concat(autoColliders).Concat(rigidbodies).ToDictionary(x => x.Id, x => x);
+        _editables = colliders.Cast<IModel>()
+            .Concat(autoColliders.Cast<IModel>())
+            .Concat(rigidbodies.Cast<IModel>())
+            .ToDictionary(x => x.Id, x => x);
     }
 
     private static bool IsColliderIncluded(Collider collider)
@@ -226,21 +229,12 @@ public class ColliderEditor : MVRScript
     {
         try
         {
+            // TODO: Split updating filter and updating selection, no need to repopulate every time
             var editables = _editables.Values.OrderBy(e => e.Label).ToList();
-            _editablesJson.choices = new[] { "All" }.Concat(editables.Select(x => x.Id)).ToList();
-            _editablesJson.displayChoices = new[] { "All" }.Concat(editables.Select(x => x.Label)).ToList();
-
-            if (_selected != null)
-            {
-                _editablesJson.valNoCallback = _selected.Id;
-            }
-            else
-            {
-                _editablesJson.valNoCallback = "All";
-            }
+            _editablesJson.choices = editables.Select(x => x.Id).ToList();
+            _editablesJson.displayChoices = editables.Select(x => x.Label).ToList();
 
             SyncPopups();
-
         }
         catch (Exception e)
         {

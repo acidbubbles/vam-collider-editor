@@ -20,7 +20,24 @@ public static class ComponentExtensions
             current = current.transform.parent;
         }
 
-        return string.Join(".", paths.ToArray());
+        return component.GetTypeName() + ":" + string.Join(".", paths.ToArray());
+    }
+
+    public static string GetTypeName(this Component component)
+    {
+        if (component is CapsuleCollider)
+            return nameof(CapsuleCollider);
+        if (component is SphereCollider)
+            return nameof(SphereCollider);
+        if (component is BoxCollider)
+            return nameof(BoxCollider);
+        if (component is AutoCollider)
+            return nameof(AutoCollider);
+        if (component is AutoColliderGroup)
+            return nameof(AutoColliderGroup);
+        if (component is Rigidbody)
+            return nameof(Rigidbody);
+        throw new InvalidOperationException($"Unknown component type: {component.GetType()}");
     }
 
     public static UIDynamic CreateFloatSlider(this MVRScript script, JSONStorableFloat jsf, string label, bool rightSide = true, string valueFormat = "F8")

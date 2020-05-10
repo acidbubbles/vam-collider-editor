@@ -72,11 +72,11 @@ public class RigidbodyModel : IModel
 
         var controls = new List<UIDynamic>();
 
-        var resetUi = _script.CreateButton("Reset Rigidbody");
+        var resetUi = _script.CreateButton("Reset Rigidbody", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
 
         var enabledToggleJsf = new JSONStorableBool("enabled", _rigidbody.detectCollisions, value => { _rigidbody.detectCollisions = value; });
-        var enabledToggle = _script.CreateToggle(enabledToggleJsf);
+        var enabledToggle = _script.CreateToggle(enabledToggleJsf, true);
         enabledToggle.label = "Detect Collisions";
 
         controls.Add(resetUi);
