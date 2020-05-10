@@ -56,7 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="ColliderEditor.cs" />
+    <Compile Include="src/ColliderEditor.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
