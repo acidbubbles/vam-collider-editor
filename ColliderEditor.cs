@@ -24,9 +24,9 @@ public class ColliderEditor : MVRScript
     private string _lastBrowseDir = SuperController.singleton.savesDir;
     private ColliderModel _lastSelectedCollider;
     private RigidbodyModel _lastSelectedRigidbody;
+    private Dictionary<string, AutoColliderModel> _autoColliders;
     private Dictionary<string, RigidbodyModel> _rigidbodies;
     private JSONStorableStringChooser _rigidbodiesJson;
-
     private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
 
     private JSONStorableStringChooser _rigidbodyGroupsJson;
@@ -43,7 +43,7 @@ public class ColliderEditor : MVRScript
     {
         try
         {
-            BuildModels(includeAutoColliders: false);
+            BuildModels();
             BuildUI();
         }
         catch (Exception e)
@@ -169,6 +169,16 @@ public class ColliderEditor : MVRScript
 
         _rigidbodyGroups.TryGetValue("Head / Ears", out _selectedGroup);
 
+        var autoColliderPairs = _autoColliders.OrderBy(kvp => kvp.Key).ToList();
+        var autoColliders = new JSONStorableStringChooser("Auto Colliders", autoColliderPairs.Select(kvp => kvp.Key).ToList(), "", "Auto Colliders", (string val) =>
+        {
+            // TODO
+        })
+        {
+            displayChoices = autoColliderPairs.Select(kvp => kvp.Value.Label).ToList()
+        };
+        CreateScrollablePopup(autoColliders);
+
         UpdateFilter();
     }
 
@@ -184,7 +194,7 @@ public class ColliderEditor : MVRScript
         _ridigBodyList.popup.Toggle();
     }
 
-    private void BuildModels(bool includeAutoColliders)
+    private void BuildModels()
     {
         var rigidbodyGroups = containingAtom.type == "Person"
         ? new List<RigidbodyGroupModel>
@@ -215,19 +225,30 @@ public class ColliderEditor : MVRScript
             new RigidbodyGroupModel("All", @"^.+$"),
         };
 
+        // AutoColliders
+
+        _autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
+            .Select(autoCollider => AutoColliderModel.Create(this, autoCollider))
+            .ToDictionary(autoColliderModel => autoColliderModel.Id);
+
+        var autoCollidersRigidBodies = new HashSet<Rigidbody>(_autoColliders.Values.SelectMany(x => x.GetRigidbodies()));
+        var autoCollidersColliders = new HashSet<Collider>(_autoColliders.Values.SelectMany(x => x.GetColliders()));
+
+        // Rigidbodies
+
         _rigidbodyGroups = rigidbodyGroups.ToDictionary(x => x.Id);
 
         _rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
-            .Where(rigidbody => IsRigidbodyIncluded(includeAutoColliders, rigidbody)
-            )
+            .Where(rigidbody => !autoCollidersRigidBodies.Contains(rigidbody))
+            .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
             .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, rigidbodyGroups))
             .ToDictionary(x => x.Id);
 
         // Colliders
 
         var colliderQuery = containingAtom.GetComponentsInChildren<Collider>(true)
-            .Where(collider => IsColliderIncluded(includeAutoColliders, collider)
-            );
+            .Where(collider => !autoCollidersColliders.Contains(collider))
+            .Where(collider => IsColliderIncluded(collider));
 
 
         _colliders = new Dictionary<string, ColliderModel>();
@@ -246,7 +267,7 @@ public class ColliderEditor : MVRScript
         }
     }
 
-    private static bool IsColliderIncluded(bool includeAutoColliders, Collider collider)
+    private static bool IsColliderIncluded(Collider collider)
     {
         if (collider.name == "control") return false;
         if (collider.name == "object") return false;
@@ -256,15 +277,10 @@ public class ColliderEditor : MVRScript
         if (collider.name.EndsWith("Trigger")) return false;
         if (collider.name.EndsWith("UI")) return false;
         if (collider.name.Contains("Ponytail")) return false;
-        if (!includeAutoColliders)
-        {
-            if (collider.name.Contains("AutoCollider")) return false;
-            if (collider.name.Contains("PhysicsMesh")) return false;
-        }
         return true;
     }
 
-    private static bool IsRigidbodyIncluded(bool includeAutoColliders, Rigidbody rigidbody)
+    private static bool IsRigidbodyIncluded(Rigidbody rigidbody)
     {
         if (rigidbody.isKinematic) return false;
         if (rigidbody.name == "control") return false;
@@ -274,11 +290,6 @@ public class ColliderEditor : MVRScript
         if (rigidbody.name.EndsWith("Trigger")) return false;
         if (rigidbody.name.EndsWith("UI")) return false;
         if (rigidbody.name.Contains("Ponytail")) return false;
-        if (!includeAutoColliders)
-        {
-            if (rigidbody.name.Contains("AutoCollider")) return false;
-            if (rigidbody.name.Contains("PhysicsMesh")) return false;
-        }
         return true;
     }
 
@@ -958,6 +969,47 @@ public abstract class ColliderModel
     protected abstract bool DeviatesFromInitial();
 
     public override string ToString() => Id;
+}
+
+public class AutoColliderModel
+{
+    private readonly MVRScript _script;
+    private readonly AutoCollider _autoCollider;
+
+    public string Id { get; set; }
+    public string Label { get; set; }
+
+    public AutoColliderModel(MVRScript script, AutoCollider autoCollider, string label)
+    {
+        _script = script;
+        _autoCollider = autoCollider;
+        Id = autoCollider.Uuid();
+        if (label.StartsWith("AutoColliderAutoColliders"))
+            Label = label.Substring("AutoColliderAutoColliders".Length);
+        else if (label.StartsWith("AutoColliderFemaleAutoColliders"))
+            Label = label.Substring("AutoColliderFemaleAutoColliders".Length);
+        else if (label.StartsWith("AutoCollider"))
+            Label = label.Substring("AutoCollider".Length);
+        else
+            Label = label;
+    }
+
+    public static AutoColliderModel Create(MVRScript script, AutoCollider autoCollider)
+    {
+        return new AutoColliderModel(script, autoCollider, autoCollider.name);
+    }
+
+    public IEnumerable<Collider> GetColliders()
+    {
+        if (_autoCollider.hardCollider != null) yield return _autoCollider.hardCollider;
+        if (_autoCollider.jointCollider != null) yield return _autoCollider.jointCollider;
+    }
+
+    public IEnumerable<Rigidbody> GetRigidbodies()
+    {
+        if (_autoCollider.jointRB != null) yield return _autoCollider.jointRB;
+        if (_autoCollider.kinematicRB != null) yield return _autoCollider.kinematicRB;
+    }
 }
 
 public class RigidbodyModel
