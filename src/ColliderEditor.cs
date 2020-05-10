@@ -120,6 +120,7 @@ public class ColliderEditor : MVRScript
             if (_selected != null) _selected.Selected = false;
             _editables.TryGetValue(id, out _selected);
             if (_selected != null) _selected.Selected = true;
+            SyncPopups();
         };
 
         UpdateFilter();
