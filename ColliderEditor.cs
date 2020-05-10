@@ -218,11 +218,7 @@ public class ColliderEditor : MVRScript
         _rigidbodyGroups = rigidbodyGroups.ToDictionary(x => x.Id);
 
         _rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
-            .Where(rigidbody => !rigidbody.isKinematic && rigidbody.name != "control" && rigidbody.name != "object" &&
-                                !rigidbody.name.EndsWith("Control") && !rigidbody.name.StartsWith("hairTool") && !rigidbody.name.EndsWith("Trigger") &&
-                                !rigidbody.name.EndsWith("UI") &&
-                                (includeAutoColliders || (!rigidbody.name.Contains("AutoCollider") && !rigidbody.name.Contains("PhysicsMesh"))) &&
-                                !rigidbody.name.Contains("Ponytail")
+            .Where(rigidbody => IsRigidbodyIncluded(includeAutoColliders, rigidbody)
             )
             .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, rigidbodyGroups))
             .ToDictionary(x => x.Id);
@@ -230,11 +226,7 @@ public class ColliderEditor : MVRScript
         // Colliders
 
         var colliderQuery = containingAtom.GetComponentsInChildren<Collider>(true)
-            .Where(collider => collider.name != "control" && collider.name != "object" && !collider.name.Contains("Tool") &&
-                               !collider.name.EndsWith("Control") && !collider.name.EndsWith("Link") && !collider.name.EndsWith("Trigger") &&
-                               !collider.name.EndsWith("UI") &&
-                                (includeAutoColliders || (!collider.name.Contains("AutoCollider") && !collider.name.Contains("PhysicsMesh"))) &&
-                               !collider.name.Contains("Ponytail")
+            .Where(collider => IsColliderIncluded(includeAutoColliders, collider)
             );
 
 
@@ -252,6 +244,42 @@ public class ColliderEditor : MVRScript
 
             _colliders.Add(model.Id, model);
         }
+    }
+
+    private static bool IsColliderIncluded(bool includeAutoColliders, Collider collider)
+    {
+        if (collider.name == "control") return false;
+        if (collider.name == "object") return false;
+        if (collider.name.Contains("Tool")) return false;
+        if (collider.name.EndsWith("Control")) return false;
+        if (collider.name.EndsWith("Link")) return false;
+        if (collider.name.EndsWith("Trigger")) return false;
+        if (collider.name.EndsWith("UI")) return false;
+        if (collider.name.Contains("Ponytail")) return false;
+        if (!includeAutoColliders)
+        {
+            if (collider.name.Contains("AutoCollider")) return false;
+            if (collider.name.Contains("PhysicsMesh")) return false;
+        }
+        return true;
+    }
+
+    private static bool IsRigidbodyIncluded(bool includeAutoColliders, Rigidbody rigidbody)
+    {
+        if (rigidbody.isKinematic) return false;
+        if (rigidbody.name == "control") return false;
+        if (rigidbody.name == "object") return false;
+        if (rigidbody.name.EndsWith("Control")) return false;
+        if (rigidbody.name.StartsWith("hairTool")) return false;
+        if (rigidbody.name.EndsWith("Trigger")) return false;
+        if (rigidbody.name.EndsWith("UI")) return false;
+        if (rigidbody.name.Contains("Ponytail")) return false;
+        if (!includeAutoColliders)
+        {
+            if (rigidbody.name.Contains("AutoCollider")) return false;
+            if (rigidbody.name.Contains("PhysicsMesh")) return false;
+        }
+        return true;
     }
 
     private void UpdateFilter()
