@@ -1014,8 +1014,10 @@ public class AutoColliderModel : IModel
     }
 
     private JSONStorableFloat _autoRadiusBufferFloat;
+    private JSONStorableFloat _autoRadiusMultiplierFloat;
 
-    private float _initialAutoRadiusBuffer;
+    private readonly float _initialAutoRadiusBuffer;
+    private readonly float _initialAutoRadiusMultiplier;
 
     private bool _selected;
     private readonly MVRScript _script;
@@ -1043,6 +1045,8 @@ public class AutoColliderModel : IModel
     {
         _script = script;
         _autoCollider = autoCollider;
+        _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
+        _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
         Id = autoCollider.Uuid();
         if (label.StartsWith("AutoColliderAutoColliders"))
             Label = label.Substring("AutoColliderAutoColliders".Length);
@@ -1082,8 +1086,12 @@ public class AutoColliderModel : IModel
         yield return _script.CreateFloatSlider(_autoRadiusBufferFloat = new JSONStorableFloat("autoRadiusBuffer", _autoCollider.autoRadiusBuffer, value =>
         {
             _autoCollider.autoRadiusBuffer = value;
-        }, 0f, _initialAutoRadiusBuffer * 4f, false)
-            .WithDefault(_initialAutoRadiusBuffer), "Auto Radius Buffer");
+        }, 0f, _initialAutoRadiusBuffer * 4f, false).WithDefault(_initialAutoRadiusBuffer), "Auto Radius Buffer");
+
+        yield return _script.CreateFloatSlider(_autoRadiusMultiplierFloat = new JSONStorableFloat("autoRadiusMultiplier", _autoCollider.autoRadiusMultiplier, value =>
+        {
+            _autoCollider.autoRadiusMultiplier = value;
+        }, 0f, _initialAutoRadiusMultiplier * 4f, false).WithDefault(_initialAutoRadiusMultiplier), "Auto Radius Multiplier");
     }
 
     public virtual void DestroyControls()
