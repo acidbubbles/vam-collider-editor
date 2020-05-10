@@ -102,7 +102,7 @@ public class ColliderEditor : MVRScript
 
             var browser = SuperController.singleton.mediaFileBrowserUI;
             browser.SetTextEntry(true);
-            browser.fileEntryField.text = (int) (DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
+            browser.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
             browser.ActivateFileNameField();
         });
 
@@ -119,7 +119,7 @@ public class ColliderEditor : MVRScript
             _rigidbodyGroups.Select(x => x.Value.Name).ToList(),
             _rigidbodyGroups.Keys.First(),
             "Rigidbody Groups");
-        
+
         _rbGroupListUI = CreateScrollablePopup(_rigidbodyGroupsJson);
         _rbGroupListUI.popupPanelHeight = 400f;
 
@@ -279,8 +279,8 @@ public class ColliderEditor : MVRScript
                 _selectedGroup = null;
             }
 
-            _rigidbodiesJson.choices = new[] {"All"}.Concat(rigidbodies.Select(x => x.Id)).ToList();
-            _rigidbodiesJson.displayChoices = new[] {"All"}.Concat(rigidbodies.Select(x => x.Label)).ToList();
+            _rigidbodiesJson.choices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Id)).ToList();
+            _rigidbodiesJson.displayChoices = new[] { "All" }.Concat(rigidbodies.Select(x => x.Label)).ToList();
 
 
             if (_selectedRigidbody != null && _rigidbodiesJson.choices.Contains(_selectedRigidbody.Id))
@@ -355,9 +355,9 @@ public class ColliderEditor : MVRScript
     {
         if (string.IsNullOrEmpty(path))
             return;
-        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] {'/', '\\'})) + @"\";
+        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
 
-        LoadFromJson((JSONClass) LoadJSON(path));
+        LoadFromJson((JSONClass)LoadJSON(path));
     }
 
     private void LoadFromJson(JSONClass jsonClass)
@@ -380,7 +380,7 @@ public class ColliderEditor : MVRScript
         if (string.IsNullOrEmpty(path))
             return;
 
-        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] {'/', '\\'})) + @"\";
+        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
 
         if (!path.ToLower().EndsWith($".{_saveExt}"))
             path += $".{_saveExt}";
@@ -606,7 +606,7 @@ public static class MaterialHelper
 
     private static Material CreateMaterial(Color color)
     {
-        var material = new Material(Shader.Find("Battlehub/RTGizmos/Handles")) {color = color};
+        var material = new Material(Shader.Find("Battlehub/RTGizmos/Handles")) { color = color };
         material.SetFloat("_Offset", 1f);
         material.SetFloat("_MinAlpha", 1f);
 
@@ -713,7 +713,7 @@ public abstract class ColliderModel
                 var color = previewRenderer.material.color;
                 color.a = _previewOpacity;
                 previewRenderer.material.color = color;
-                
+
             }
         }
     }
@@ -754,8 +754,8 @@ public abstract class ColliderModel
                 else
                 {
                     material.shader = Shader.Find("Standard");
-                    material.SetInt("_SrcBlend", (int) UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    material.SetInt("_DstBlend", (int) UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
                     material.SetInt("_ZWrite", 0);
                     material.DisableKeyword("_ALPHATEST_ON");
                     material.EnableKeyword("_ALPHABLEND_ON");
@@ -781,11 +781,11 @@ public abstract class ColliderModel
         ColliderModel typed;
 
         if (collider is SphereCollider)
-            typed = new SphereColliderModel(parent, (SphereCollider) collider);
+            typed = new SphereColliderModel(parent, (SphereCollider)collider);
         else if (collider is BoxCollider)
-            typed = new BoxColliderModel(parent, (BoxCollider) collider);
+            typed = new BoxColliderModel(parent, (BoxCollider)collider);
         else if (collider is CapsuleCollider)
-            typed = new CapsuleColliderModel(parent, (CapsuleCollider) collider);
+            typed = new CapsuleColliderModel(parent, (CapsuleCollider)collider);
         else
             throw new ArgumentOutOfRangeException("Unsupported collider type");
 
@@ -1449,7 +1449,7 @@ public static class ComponentExtensions
         var siblings = component.GetComponents<Component>().ToList();
         int siblingIndex = siblings.IndexOf(component);
 
-        var paths = new Stack<string>(new[] {$"{component.name}[{siblingIndex}]"});
+        var paths = new Stack<string>(new[] { $"{component.name}[{siblingIndex}]" });
         var current = component.gameObject.transform;
 
         while (current != null && !current.name.Equals("geometry", StringComparison.InvariantCultureIgnoreCase)
