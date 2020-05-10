@@ -1138,13 +1138,13 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         {
             Collider.radius = value;
             DoUpdatePreview();
-        }, 0f, InitialRadius * 4f, false), "Radius");
+        }, 0f, InitialRadius * 4f, false).WithDefault(InitialRadius), "Radius");
 
         yield return Parent.CreateFloatSlider(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
         {
             Collider.height = value;
             DoUpdatePreview();
-        }, 0f, InitialHeight * 4f, false), "Height");
+        }, 0f, InitialHeight * 4f, false).WithDefault(InitialHeight), "Height");
 
         yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
@@ -1152,7 +1152,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.X");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
 
         yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -1160,7 +1160,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.Y");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
 
         yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -1168,7 +1168,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.Z");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.z), "Center.Z");
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
@@ -1312,7 +1312,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
         {
             Collider.radius = value;
             DoUpdatePreview();
-        }, 0f, InitialRadius * 4f, false), "Radius");
+        }, 0f, InitialRadius * 4f, false).WithDefault(InitialRadius), "Radius");
 
         yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
@@ -1320,7 +1320,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.X");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
 
         yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -1328,7 +1328,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.Y");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
 
         yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -1336,7 +1336,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.Z");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.z), "Center.Z");
     }
 
     protected override bool DeviatesFromInitial() =>
@@ -1433,7 +1433,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.x = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Size.X");
+        }, -0.25f, 0.25f, false).WithDefault(InitialSize.x), "Size.X");
 
         yield return Parent.CreateFloatSlider(_sizeYStorableFloat = new JSONStorableFloat("sizeY", Collider.size.y, value =>
         {
@@ -1441,7 +1441,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.y = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Size.Y");
+        }, -0.25f, 0.25f, false).WithDefault(InitialSize.y), "Size.Y");
 
         yield return Parent.CreateFloatSlider(_sizeZStorableFloat = new JSONStorableFloat("sizeZ", Collider.size.z, value =>
         {
@@ -1449,7 +1449,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.z = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Size.Z");
+        }, -0.25f, 0.25f, false).WithDefault(InitialSize.z), "Size.Z");
 
         yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
@@ -1457,7 +1457,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.X");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
 
         yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -1465,7 +1465,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.Y");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
 
         yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -1473,10 +1473,19 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false), "Center.Z");
+        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.z), "Center.Z");
     }
 
     protected override bool DeviatesFromInitial() => InitialSize != Collider.size || InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+}
+
+public static class JSONStorableFloatExtensions
+{
+    public static JSONStorableFloat WithDefault(this JSONStorableFloat jsf, float defaultVal)
+    {
+        jsf.defaultVal = defaultVal;
+        return jsf;
+    }
 }
 
 public static class ComponentExtensions
