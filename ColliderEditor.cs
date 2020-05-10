@@ -10,11 +10,10 @@ using Random = UnityEngine.Random;
 
 
 /// <summary>
-///     Collider Editor
-///     Disables colliders or adjust them to your liking
-///     This is a rewrite with permission from acidbubbles of his plugin 'ColliderTuner', the original plugin was written from the perspective of
-///     manipulating RigidBodies. After a discussion on VaM Discord it turns out that Colliders should be the focus and the plugin was re-written
-///     based on this. This fixed a host of issues around the identification of specific colliders so they can be saved and restored.
+/// Collider Editor
+/// By Acidbubbles and ProjectCanyon
+/// Configures and customizes collisions (rigidbodies and colliders)
+/// Source: https://github.com/acidbubbles/vam-collider-editor
 /// </summary>
 public class ColliderEditor : MVRScript
 {
@@ -349,7 +348,7 @@ public class ColliderEditor : MVRScript
         }
     }
 
-    private void LogError(string method, string message) => SuperController.LogError($"ColliderTuner.{method}: {message}");
+    private void LogError(string method, string message) => SuperController.LogError($"{nameof(ColliderEditor)}.{method}: {message}");
 
     private void HandleLoadPreset(string path)
     {
