@@ -44,12 +44,6 @@ public class ColliderEditor : MVRScript
     {
         try
         {
-            if (containingAtom.type != "Person")
-            {
-                SuperController.LogError($"This plugin is for use with 'Person' atom only, not '{containingAtom.type}'");
-                return;
-            }
-
             BuildModels(includeAutoColliders: false);
             BuildUI();
         }
@@ -168,7 +162,7 @@ public class ColliderEditor : MVRScript
             UpdateFilter();
         };
 
-        _selectedGroup = _rigidbodyGroups["Head / Ears"];
+        _rigidbodyGroups.TryGetValue("Head / Ears", out _selectedGroup);
 
         UpdateFilter();
     }
@@ -187,7 +181,8 @@ public class ColliderEditor : MVRScript
 
     private void BuildModels(bool includeAutoColliders)
     {
-        var rigidbodyGroups = new List<RigidbodyGroupModel>
+        var rigidbodyGroups = containingAtom.type == "Person"
+        ? new List<RigidbodyGroupModel>
         {
             new RigidbodyGroupModel("All", @"^.+$"),
             new RigidbodyGroupModel("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
@@ -209,6 +204,10 @@ public class ColliderEditor : MVRScript
             new RigidbodyGroupModel("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
             new RigidbodyGroupModel("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
             new RigidbodyGroupModel("Other", @"^(?!.*).*$")
+        }
+        : new List<RigidbodyGroupModel>
+        {
+            new RigidbodyGroupModel("All", @"^.+$"),
         };
 
         _rigidbodyGroups = rigidbodyGroups.ToDictionary(x => x.Id);
@@ -792,12 +791,15 @@ public abstract class ColliderModel
 
         if (collider.attachedRigidbody != null)
         {
-            var rigidbodyModel = rigidbodies[collider.attachedRigidbody.Uuid()];
-            typed.Rididbody = rigidbodyModel;
-            if (rigidbodyModel.Colliders == null)
-                rigidbodyModel.Colliders = new List<ColliderModel> {typed};
-            else
-                rigidbodyModel.Colliders.Add(typed);
+            RigidbodyModel rigidbodyModel;
+            if (rigidbodies.TryGetValue(collider.attachedRigidbody.Uuid(), out rigidbodyModel))
+            {
+                typed.Rididbody = rigidbodyModel;
+                if (rigidbodyModel.Colliders == null)
+                    rigidbodyModel.Colliders = new List<ColliderModel> { typed };
+                else
+                    rigidbodyModel.Colliders.Add(typed);
+            }
         }
 
         return typed;
