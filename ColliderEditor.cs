@@ -18,26 +18,32 @@ using Random = UnityEngine.Random;
 public class ColliderEditor : MVRScript
 {
     private const string _saveExt = "colliders";
-    private Dictionary<string, ColliderModel> _colliders;
-    private JSONStorableStringChooser _collidersJson;
 
     private string _lastBrowseDir = SuperController.singleton.savesDir;
-    private ColliderModel _lastSelectedCollider;
-    private RigidbodyModel _lastSelectedRigidbody;
+
+    private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
+    private Dictionary<string, ColliderModel> _colliders;
     private Dictionary<string, AutoColliderModel> _autoColliders;
     private Dictionary<string, RigidbodyModel> _rigidbodies;
-    private JSONStorableStringChooser _rigidbodiesJson;
-    private Dictionary<string, RigidbodyGroupModel> _rigidbodyGroups;
 
     private JSONStorableStringChooser _rigidbodyGroupsJson;
-    private ColliderModel _selectedCollider;
+    private JSONStorableStringChooser _targetJson;
+    private JSONStorableStringChooser _autoColliderJson;
+    private JSONStorableStringChooser _rigidbodiesJson;
 
+    private ColliderModel _lastSelectedCollider;
+    private RigidbodyModel _lastSelectedRigidbody;
+    private AutoColliderModel _lastSelectedAutoCollider;
+
+    private ColliderModel _selectedCollider;
     private RigidbodyGroupModel _selectedGroup;
     private RigidbodyModel _selectedRigidbody;
+    private AutoColliderModel _selectedAutoCollider;
 
     private UIDynamicPopup _rbGroupListUI;
     private UIDynamicPopup _ridigBodyList;
     private UIDynamicPopup _rbListUI;
+    private UIDynamicPopup _autoColliderListUI;
 
     public override void Init()
     {
@@ -138,15 +144,25 @@ public class ColliderEditor : MVRScript
         _ridigBodyList = CreateScrollablePopup(_rigidbodiesJson);
         _ridigBodyList.popupPanelHeight = 400f;
 
-        _collidersJson = new JSONStorableStringChooser(
+        _targetJson = new JSONStorableStringChooser(
             "Colliders",
             new List<string>(),
             new List<string>(),
             "",
             "Colliders");
 
-        _rbListUI = CreateScrollablePopup(_collidersJson, true);
+        _rbListUI = CreateScrollablePopup(_targetJson, true);
         _rbListUI.popupPanelHeight = 400f;
+
+        var autoColliderPairs = _autoColliders.OrderBy(kvp => kvp.Key).ToList();
+        _autoColliderJson = new JSONStorableStringChooser(
+            "Auto Colliders",
+            autoColliderPairs.Select(kvp => kvp.Key).ToList(),
+            autoColliderPairs.Select(kvp => kvp.Value.Label).ToList(),
+            "", "Auto Colliders"
+        );
+        _autoColliderListUI = CreateScrollablePopup(_autoColliderJson);
+        _autoColliderListUI.popupPanelHeight = 400f;
 
         _rigidbodyGroupsJson.setCallbackFunction = groupId =>
         {
@@ -161,23 +177,19 @@ public class ColliderEditor : MVRScript
             UpdateFilter();
         };
 
-        _collidersJson.setCallbackFunction = colliderId =>
+        _targetJson.setCallbackFunction = colliderId =>
         {
             _colliders.TryGetValue(colliderId, out _selectedCollider);
             UpdateFilter();
         };
 
-        _rigidbodyGroups.TryGetValue("Head / Ears", out _selectedGroup);
-
-        var autoColliderPairs = _autoColliders.OrderBy(kvp => kvp.Key).ToList();
-        var autoColliders = new JSONStorableStringChooser("Auto Colliders", autoColliderPairs.Select(kvp => kvp.Key).ToList(), "", "Auto Colliders", (string val) =>
+        _autoColliderJson.setCallbackFunction = autoColliderId =>
         {
-            // TODO
-        })
-        {
-            displayChoices = autoColliderPairs.Select(kvp => kvp.Value.Label).ToList()
+            _autoColliders.TryGetValue(autoColliderId, out _selectedAutoCollider);
+            UpdateFilter();
         };
-        CreateScrollablePopup(autoColliders);
+
+        _rigidbodyGroups.TryGetValue("Head / Ears", out _selectedGroup);
 
         UpdateFilter();
     }
@@ -341,17 +353,17 @@ public class ColliderEditor : MVRScript
 
             if (_selectedRigidbody != null) colliders = _colliders.Values.Where(collider => collider.Rididbody != null && collider.Rididbody == _selectedRigidbody);
 
-            _collidersJson.choices = colliders.Select(x => x.Id).ToList();
-            _collidersJson.displayChoices = colliders.Select(x => x.Label).ToList();
+            _targetJson.choices = colliders.Select(x => x.Id).ToList();
+            _targetJson.displayChoices = colliders.Select(x => x.Label).ToList();
 
-            if (_selectedCollider != null && _collidersJson.choices.Contains(_selectedCollider.Id))
+            if (_selectedCollider != null && _targetJson.choices.Contains(_selectedCollider.Id))
             {
-                _collidersJson.valNoCallback = _selectedCollider.Id;
+                _targetJson.valNoCallback = _selectedCollider.Id;
             }
             else
             {
-                var firstAvailableId = _collidersJson.choices.FirstOrDefault();
-                _collidersJson.valNoCallback = firstAvailableId ?? string.Empty;
+                var firstAvailableId = _targetJson.choices.FirstOrDefault();
+                _targetJson.valNoCallback = firstAvailableId ?? string.Empty;
                 if (!string.IsNullOrEmpty(firstAvailableId))
                     _colliders.TryGetValue(firstAvailableId, out _selectedCollider);
                 else
@@ -360,6 +372,7 @@ public class ColliderEditor : MVRScript
 
             UpdateSelectedRigidbody();
             UpdateSelectedCollider();
+            UpdateSelectedAutoCollider();
             SyncPopups();
 
         }
@@ -390,6 +403,18 @@ public class ColliderEditor : MVRScript
         {
             _selectedRigidbody.Selected = true;
             _lastSelectedRigidbody = _selectedRigidbody;
+        }
+    }
+
+    private void UpdateSelectedAutoCollider()
+    {
+        if (_lastSelectedAutoCollider != null)
+            _lastSelectedAutoCollider.Selected = false;
+
+        if (_selectedAutoCollider != null)
+        {
+            _selectedAutoCollider.Selected = true;
+            _lastSelectedAutoCollider = _selectedAutoCollider;
         }
     }
 
@@ -699,6 +724,7 @@ public abstract class ColliderModel
     private bool _selected;
 
     private float _selectedPreviewOpacity;
+    private JSONStorableBool _xRayStorable;
 
     private bool _showPreview;
     protected MVRScript Parent { get; }
@@ -812,6 +838,9 @@ public abstract class ColliderModel
                 }
 
                 previewRenderer.material = material;
+
+                if (_xRayStorable != null)
+                    _xRayStorable.valNoCallback = value;
             }
         }
     }
@@ -835,7 +864,7 @@ public abstract class ColliderModel
         else if (collider is CapsuleCollider)
             typed = new CapsuleColliderModel(parent, (CapsuleCollider)collider);
         else
-            throw new ArgumentOutOfRangeException("Unsupported collider type");
+            throw new InvalidOperationException("Unsupported collider type");
 
         if (collider.attachedRigidbody != null)
         {
@@ -859,9 +888,9 @@ public abstract class ColliderModel
 
         var controls = new List<UIDynamic>();
 
-        var xRay = new JSONStorableBool("xRayPreview", true, (bool value) => { XRayPreview = value; });
+        _xRayStorable = new JSONStorableBool("xRayPreview", true, (bool value) => { XRayPreview = value; });
 
-        var xRayToggle = Parent.CreateToggle(xRay, true);
+        var xRayToggle = Parent.CreateToggle(_xRayStorable, true);
         xRayToggle.label = "XRay Preview";
 
         var resetUi = Parent.CreateButton("Reset Collider", true);
@@ -973,11 +1002,36 @@ public abstract class ColliderModel
 
 public class AutoColliderModel
 {
+    public static AutoColliderModel Create(MVRScript script, AutoCollider autoCollider)
+    {
+        return new AutoColliderModel(script, autoCollider, autoCollider.name);
+    }
+
+    private JSONStorableFloat _autoRadiusBufferFloat;
+
+    private float _initialAutoRadiusBuffer;
+
+    private bool _selected;
     private readonly MVRScript _script;
     private readonly AutoCollider _autoCollider;
-
+    
     public string Id { get; set; }
     public string Label { get; set; }
+
+    public List<UIDynamic> Controls { get; private set; }
+
+    public bool Selected
+    {
+        get { return _selected; }
+        set
+        {
+            if (_selected != value)
+            {
+                SetSelected(value);
+                _selected = value;
+            }
+        }
+    }
 
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider, string label)
     {
@@ -994,9 +1048,63 @@ public class AutoColliderModel
             Label = label;
     }
 
-    public static AutoColliderModel Create(MVRScript script, AutoCollider autoCollider)
+    protected virtual void SetSelected(bool value)
     {
-        return new AutoColliderModel(script, autoCollider, autoCollider.name);
+        if (value)
+            CreateControls();
+        else
+            DestroyControls();
+    }
+
+    public void CreateControls()
+    {
+        DestroyControls();
+
+        var controls = new List<UIDynamic>();
+
+        var resetUi = _script.CreateButton("Reset AutoCollider", true);
+        resetUi.button.onClick.AddListener(ResetToInitial);
+
+        controls.Add(resetUi);
+        controls.AddRange(DoCreateControls());
+
+        Controls = controls;
+    }
+
+    public IEnumerable<UIDynamic> DoCreateControls()
+    {
+        yield return _script.CreateFloatSlider(_autoRadiusBufferFloat = new JSONStorableFloat("autoRadiusBuffer", _autoCollider.autoRadiusBuffer, value =>
+        {
+            _autoCollider.autoRadiusBuffer = value;
+        }, 0f, _initialAutoRadiusBuffer * 4f, false)
+            .WithDefault(_initialAutoRadiusBuffer), "Auto Radius Buffer");
+    }
+
+    public virtual void DestroyControls()
+    {
+        if (Controls == null)
+            return;
+
+        foreach (var adjustmentJson in Controls)
+            Object.Destroy(adjustmentJson.gameObject);
+
+        Controls.Clear();
+    }
+
+    public void ResetToInitial()
+    {
+        DoResetToInitial();
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+    }
+
+    protected void DoResetToInitial()
+    {
+        _autoCollider.autoRadiusBuffer = _initialAutoRadiusBuffer;
     }
 
     public IEnumerable<Collider> GetColliders()
