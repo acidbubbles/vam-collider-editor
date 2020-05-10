@@ -59,6 +59,7 @@ public class ColliderEditor : MVRScript
             foreach (var colliderPair in _colliders)
                 colliderPair.Value.ShowPreview = value;
         });
+        RegisterBool(showPreviews);
 
         var showPreviewsToggle = CreateToggle(showPreviews);
         showPreviewsToggle.label = "Show Previews";
@@ -68,23 +69,28 @@ public class ColliderEditor : MVRScript
             foreach (var colliderPair in _colliders)
                 colliderPair.Value.XRayPreview = value;
         });
+        RegisterBool(xRayPreviews);
 
         var xRayPreviewsToggle = CreateToggle(xRayPreviews);
         xRayPreviewsToggle.label = "Use XRay Previews";
 
-        CreateSlider(new JSONStorableFloat("previewOpacity", 0.001f, value =>
-        {
-            var alpha = ExponentialScale(value, 0.2f, 1f);
-            foreach (var colliderPair in _colliders)
-                colliderPair.Value.PreviewOpacity = alpha;
-        }, 0f, 1f)).label = "Preview Opacity";
+        JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", 0.001f, value =>
+                   {
+                       var alpha = ExponentialScale(value, 0.2f, 1f);
+                       foreach (var colliderPair in _colliders)
+                           colliderPair.Value.PreviewOpacity = alpha;
+                   }, 0f, 1f);
+        RegisterFloat(previewOpacity);
+        CreateSlider(previewOpacity).label = "Preview Opacity";
 
-        CreateSlider(new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
-        {
-            var alpha = ExponentialScale(value, 0.2f, 1f);
-            foreach (var colliderPair in _colliders)
-                colliderPair.Value.SelectedPreviewOpacity = alpha;
-        }, 0f, 1f)).label = "Selected Preview Opacity";
+        JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
+                   {
+                       var alpha = ExponentialScale(value, 0.2f, 1f);
+                       foreach (var colliderPair in _colliders)
+                           colliderPair.Value.SelectedPreviewOpacity = alpha;
+                   }, 0f, 1f);
+        RegisterFloat(selectedPreviewOpacity);
+        CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
 
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
