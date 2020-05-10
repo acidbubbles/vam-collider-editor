@@ -44,8 +44,6 @@ public class ColliderEditor : MVRScript
     {
         try
         {
-            pluginLabelJSON.val = "Collider Editor";
-
             if (containingAtom.type != "Person")
             {
                 SuperController.LogError($"This plugin is for use with 'Person' atom only, not '{containingAtom.type}'");
