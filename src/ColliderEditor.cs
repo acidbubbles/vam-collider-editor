@@ -63,7 +63,7 @@ public class ColliderEditor : MVRScript
 
         JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", 0.001f, value =>
         {
-            var alpha = ExponentialScale(value, 0.2f, 1f);
+            var alpha = ExponentialScale(value, 0.1f, 1f);
             foreach (var editablePair in _editables)
                 editablePair.Value.SetPreviewOpacity(alpha);
         }, 0f, 1f);
@@ -72,7 +72,7 @@ public class ColliderEditor : MVRScript
 
         JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
         {
-            var alpha = ExponentialScale(value, 0.2f, 1f);
+            var alpha = ExponentialScale(value, 0.1f, 1f);
             foreach (var editablePair in _editables)
                 editablePair.Value.SetSelectedPreviewOpacity(alpha);
         }, 0f, 1f);

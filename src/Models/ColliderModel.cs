@@ -39,10 +39,12 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 
 public abstract class ColliderModel : ModelBase<Collider>, IModel
 {
-    private float _previewOpacity;
-    private float _selectedPreviewOpacity;
 
     private bool _showPreview;
+    private float _previewOpacity;
+    private float _selectedPreviewOpacity;
+    private bool _xRayPreview;
+    private bool _highlighted;
 
     public Collider Collider { get; set; }
     public RigidbodyModel RigidbodyModel { get; set; }
@@ -93,9 +95,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         else
             DestroyPreview();
     }
-
-    private bool _xRayPreview;
-    private bool _highlighted;
 
     protected ColliderModel(MVRScript script, Collider collider)
         : base(script, collider, CreateLabel(collider))
