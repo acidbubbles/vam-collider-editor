@@ -137,9 +137,16 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     }
 
     protected ColliderModel(MVRScript script, Collider collider)
-        : base(script, collider, $"[co] {Simplify(collider.attachedRigidbody != null ? collider.attachedRigidbody.name : collider.gameObject.name)}/{Simplify(collider.name)}")
+        : base(script, collider, CreateLabel(collider))
     {
         Collider = collider;
+    }
+
+    private static string CreateLabel(Collider collider)
+    {
+        var parent = collider.attachedRigidbody != null ? collider.attachedRigidbody.name : collider.transform.parent.name;
+        var label = parent == collider.name ? Simplify(collider.name) : $"{Simplify(parent)}/{Simplify(collider.name)}";
+        return $"[co] {label}";
     }
 
     public static ColliderModel CreateTyped(MVRScript script, Collider collider)
