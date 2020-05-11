@@ -10,16 +10,16 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
     private JSONStorableFloat _heightStorableFloat;
     private JSONStorableFloat _radiusStorableFloat;
 
-    public float InitialRadius { get; set; }
-    public float InitialHeight { get; set; }
-    public Vector3 InitialCenter { get; set; }
+    private readonly float _initialRadius;
+    private readonly float _initialHeight;
+    private readonly Vector3 _initialCenter;
 
     public CapsuleColliderModel(MVRScript parent, CapsuleCollider collider)
         : base(parent, collider)
     {
-        InitialRadius = collider.radius;
-        InitialHeight = collider.height;
-        InitialCenter = collider.center;
+        _initialRadius = collider.radius;
+        _initialHeight = collider.height;
+        _initialCenter = collider.center;
     }
 
     public override IEnumerable<UIDynamic> DoCreateControls()
@@ -28,13 +28,13 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         {
             Collider.radius = value;
             DoUpdatePreview();
-        }, 0f, InitialRadius * 4f, false).WithDefault(InitialRadius), "Radius");
+        }, 0f, _initialRadius * 4f, false).WithDefault(_initialRadius), "Radius");
 
         yield return Script.CreateFloatSlider(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
         {
             Collider.height = value;
             DoUpdatePreview();
-        }, 0f, InitialHeight * 4f, false).WithDefault(InitialHeight), "Height");
+        }, 0f, _initialHeight * 4f, false).WithDefault(_initialHeight), "Height");
 
         yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
@@ -42,7 +42,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.x), "Center.X");
 
         yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -50,7 +50,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.y), "Center.Y");
 
         yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -58,7 +58,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.z), "Center.Z");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.z), "Center.Z");
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
@@ -86,15 +86,15 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     protected override void DoResetToInitial()
     {
-        Collider.radius = InitialRadius;
-        Collider.height = InitialHeight;
-        Collider.center = InitialCenter;
+        Collider.radius = _initialRadius;
+        Collider.height = _initialHeight;
+        Collider.center = _initialCenter;
     }
 
     protected override bool DeviatesFromInitial() =>
-        !Mathf.Approximately(InitialRadius, Collider.radius) ||
-        !Mathf.Approximately(InitialHeight, Collider.height) ||
-        InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+        !Mathf.Approximately(_initialRadius, Collider.radius) ||
+        !Mathf.Approximately(_initialHeight, Collider.height) ||
+        _initialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Capsule);
 

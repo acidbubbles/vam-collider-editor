@@ -208,7 +208,7 @@ public class ColliderEditor : MVRScript
                 if (rigidbodiesDict.TryGetValue(colliderModel.Collider.attachedRigidbody.Uuid(), out rigidbodyModel))
                 {
                     colliderModel.RigidbodyModel = rigidbodyModel;
-                        rigidbodyModel.Colliders.Add(colliderModel);
+                    rigidbodyModel.Colliders.Add(colliderModel);
                 }
             }
         }
@@ -251,7 +251,6 @@ public class ColliderEditor : MVRScript
     {
         try
         {
-            // TODO: Split updating filter and updating selection, no need to repopulate every time
             var editables = _editables.Values.OrderBy(e => e.Label).ToList();
             _editablesJson.choices = editables.Select(x => x.Id).ToList();
             _editablesJson.displayChoices = editables.Select(x => x.Label).ToList();

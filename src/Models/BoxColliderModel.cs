@@ -11,14 +11,14 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
     private JSONStorableFloat _sizeYStorableFloat;
     private JSONStorableFloat _sizeZStorableFloat;
 
-    public Vector3 InitialSize { get; set; }
-    public Vector3 InitialCenter { get; set; }
+    private readonly Vector3 _initialSize;
+    private readonly Vector3 _initialCenter;
 
     public BoxColliderModel(MVRScript parent, BoxCollider collider)
         : base(parent, collider)
     {
-        InitialSize = collider.size;
-        InitialCenter = collider.center;
+        _initialSize = collider.size;
+        _initialCenter = collider.center;
     }
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -79,8 +79,8 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override void DoResetToInitial()
     {
-        Collider.size = InitialSize;
-        Collider.center = InitialCenter;
+        Collider.size = _initialSize;
+        Collider.center = _initialCenter;
     }
 
     public override IEnumerable<UIDynamic> DoCreateControls()
@@ -91,7 +91,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.x = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialSize.x), "Size.X");
+        }, -0.25f, 0.25f, false).WithDefault(_initialSize.x), "Size.X");
 
         yield return Script.CreateFloatSlider(_sizeYStorableFloat = new JSONStorableFloat("sizeY", Collider.size.y, value =>
         {
@@ -99,7 +99,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.y = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialSize.y), "Size.Y");
+        }, -0.25f, 0.25f, false).WithDefault(_initialSize.y), "Size.Y");
 
         yield return Script.CreateFloatSlider(_sizeZStorableFloat = new JSONStorableFloat("sizeZ", Collider.size.z, value =>
         {
@@ -107,7 +107,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.z = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialSize.z), "Size.Z");
+        }, -0.25f, 0.25f, false).WithDefault(_initialSize.z), "Size.Z");
 
         yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
@@ -115,7 +115,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.x), "Center.X");
 
         yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -123,7 +123,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.y), "Center.Y");
 
         yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -131,8 +131,8 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.z), "Center.Z");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.z), "Center.Z");
     }
 
-    protected override bool DeviatesFromInitial() => InitialSize != Collider.size || InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+    protected override bool DeviatesFromInitial() => _initialSize != Collider.size || _initialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 }

@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 {
-    private readonly bool _initialEnabled;
+    private readonly bool _initialDetectCollisions;
 
     private List<UIDynamic> _controls;
 
@@ -16,7 +16,7 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     public RigidbodyModel(MVRScript script, Rigidbody rigidbody)
         : base(script, rigidbody, $"[rb] {Simplify(rigidbody.name)}")
     {
-        _initialEnabled = rigidbody.detectCollisions;
+        _initialDetectCollisions = rigidbody.detectCollisions;
     }
 
     public override IEnumerable<ColliderModel> GetColliders() => Colliders;
@@ -30,12 +30,12 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
         var resetUi = Script.CreateButton("Reset Rigidbody", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
 
-        var enabledToggleJsf = new JSONStorableBool("enabled", Component.detectCollisions, value => { Component.detectCollisions = value; });
-        var enabledToggle = Script.CreateToggle(enabledToggleJsf, true);
-        enabledToggle.label = "Detect Collisions";
+        var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value => { Component.detectCollisions = value; });
+        var detectCollisionsToggle = Script.CreateToggle(detectCollisionsJsf, true);
+        detectCollisionsToggle.label = "Detect Collisions";
 
         controls.Add(resetUi);
-        controls.Add(enabledToggle);
+        controls.Add(detectCollisionsToggle);
 
         _controls = controls;
     }
@@ -76,8 +76,8 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     protected void DoResetToInitial()
     {
-        Component.detectCollisions = _initialEnabled;
+        Component.detectCollisions = _initialDetectCollisions;
     }
 
-    protected bool DeviatesFromInitial() => Component.detectCollisions != _initialEnabled;
+    protected bool DeviatesFromInitial() => Component.detectCollisions != _initialDetectCollisions;
 }

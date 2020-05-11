@@ -9,14 +9,14 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
     private JSONStorableFloat _centerZStorableFloat;
     private JSONStorableFloat _radiusStorableFloat;
 
-    public float InitialRadius { get; set; }
-    public Vector3 InitialCenter { get; set; }
+    private readonly float _initialRadius;
+    private readonly Vector3 _initialCenter;
 
     public SphereColliderModel(MVRScript parent, SphereCollider collider)
         : base(parent, collider)
     {
-        InitialRadius = collider.radius;
-        InitialCenter = collider.center;
+        _initialRadius = collider.radius;
+        _initialCenter = collider.center;
     }
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -67,8 +67,8 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     protected override void DoResetToInitial()
     {
-        Collider.radius = InitialRadius;
-        Collider.center = InitialCenter;
+        Collider.radius = _initialRadius;
+        Collider.center = _initialCenter;
     }
 
     public override IEnumerable<UIDynamic> DoCreateControls()
@@ -77,7 +77,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
         {
             Collider.radius = value;
             DoUpdatePreview();
-        }, 0f, InitialRadius * 4f, false).WithDefault(InitialRadius), "Radius");
+        }, 0f, _initialRadius * 4f, false).WithDefault(_initialRadius), "Radius");
 
         yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
@@ -85,7 +85,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.x), "Center.X");
 
         yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -93,7 +93,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.y), "Center.Y");
 
         yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -101,10 +101,10 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(InitialCenter.z), "Center.Z");
+        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.z), "Center.Z");
     }
 
     protected override bool DeviatesFromInitial() =>
-        !Mathf.Approximately(InitialRadius, Collider.radius) ||
-        InitialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+        !Mathf.Approximately(_initialRadius, Collider.radius) ||
+        _initialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 }
