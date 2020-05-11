@@ -10,7 +10,7 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
     protected T Collider { get; }
 
     protected ColliderModel(MVRScript parent, T collider, string label)
-        : base(parent, collider.Uuid(), label)
+        : base(parent, collider, label)
     {
         Collider = collider;
     }
@@ -35,35 +35,18 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
     }
 }
 
-public abstract class ColliderModel : ModelBase, IModel
+public abstract class ColliderModel : ModelBase<Collider>, IModel
 {
     private float _previewOpacity;
-
-    private bool _selected;
-
     private float _selectedPreviewOpacity;
     private JSONStorableBool _xRayStorable;
 
     private bool _showPreview;
-    protected MVRScript Parent { get; }
 
     public RigidbodyModel Rididbody { get; set; }
 
     public GameObject Preview { get; protected set; }
     public List<UIDynamic> Controls { get; private set; }
-
-    public bool Selected
-    {
-        get { return _selected; }
-        set
-        {
-            if (_selected != value)
-            {
-                SetSelected(value);
-                _selected = value;
-            }
-        }
-    }
 
     public float SelectedPreviewOpacity
     {
@@ -75,7 +58,7 @@ public abstract class ColliderModel : ModelBase, IModel
 
             _selectedPreviewOpacity = value;
 
-            if (Preview != null && _selected)
+            if (Preview != null && Selected)
             {
                 var previewRenderer = Preview.GetComponent<Renderer>();
                 var color = previewRenderer.material.color;
@@ -97,7 +80,7 @@ public abstract class ColliderModel : ModelBase, IModel
 
             _previewOpacity = value;
 
-            if (Preview != null && !_selected)
+            if (Preview != null && !Selected)
             {
                 var previewRenderer = Preview.GetComponent<Renderer>();
                 var color = previewRenderer.material.color;
@@ -161,24 +144,21 @@ public abstract class ColliderModel : ModelBase, IModel
         }
     }
 
-    protected ColliderModel(MVRScript parent, string id, string label)
+    protected ColliderModel(MVRScript script, Collider component, string label)
+        : base(script, component, label)
     {
-        Parent = parent;
-
-        Id = id;
-        Label = label;
     }
 
-    public static ColliderModel CreateTyped(MVRScript parent, Collider collider, Dictionary<string, RigidbodyModel> rigidbodies)
+    public static ColliderModel CreateTyped(MVRScript script, Collider collider, Dictionary<string, RigidbodyModel> rigidbodies)
     {
         ColliderModel typed;
 
         if (collider is SphereCollider)
-            typed = new SphereColliderModel(parent, (SphereCollider)collider);
+            typed = new SphereColliderModel(script, (SphereCollider)collider);
         else if (collider is BoxCollider)
-            typed = new BoxColliderModel(parent, (BoxCollider)collider);
+            typed = new BoxColliderModel(script, (BoxCollider)collider);
         else if (collider is CapsuleCollider)
-            typed = new CapsuleColliderModel(parent, (CapsuleCollider)collider);
+            typed = new CapsuleColliderModel(script, (CapsuleCollider)collider);
         else
             throw new InvalidOperationException("Unsupported collider type");
 
@@ -198,7 +178,7 @@ public abstract class ColliderModel : ModelBase, IModel
         return typed;
     }
 
-    public void CreateControls()
+    protected override void CreateControls()
     {
         DestroyControls();
 
@@ -206,10 +186,10 @@ public abstract class ColliderModel : ModelBase, IModel
 
         _xRayStorable = new JSONStorableBool("xRayPreview", true, (bool value) => { XRayPreview = value; });
 
-        var xRayToggle = Parent.CreateToggle(_xRayStorable, true);
+        var xRayToggle = Script.CreateToggle(_xRayStorable, true);
         xRayToggle.label = "XRay Preview";
 
-        var resetUi = Parent.CreateButton("Reset Collider", true);
+        var resetUi = Script.CreateButton("Reset Collider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
 
         controls.Add(xRayToggle);
@@ -221,7 +201,7 @@ public abstract class ColliderModel : ModelBase, IModel
 
     public abstract IEnumerable<UIDynamic> DoCreateControls();
 
-    public virtual void DestroyControls()
+    protected override void DestroyControls()
     {
         if (Controls == null)
             return;
@@ -260,7 +240,7 @@ public abstract class ColliderModel : ModelBase, IModel
 
     protected abstract void DoUpdateControls();
 
-    protected virtual void SetSelected(bool value)
+    protected override void SetSelected(bool value)
     {
         if (Preview != null)
         {
@@ -270,32 +250,14 @@ public abstract class ColliderModel : ModelBase, IModel
             previewRenderer.material.color = color;
         }
 
-        if (value)
-            CreateControls();
-        else
-            DestroyControls();
+        base.SetSelected(value);
     }
 
-    public void AppendJson(JSONClass parent)
+    public override void LoadJson(JSONClass jsonClass)
     {
-        parent.Add(Id, DoGetJson());
-    }
-
-    public void LoadJson(JSONClass jsonClass)
-    {
-        DoLoadJson(jsonClass);
+        base.LoadJson(jsonClass);
         DoUpdatePreview();
-
-        if (Selected)
-        {
-            DestroyControls();
-            CreateControls();
-        }
     }
-
-    protected abstract void DoLoadJson(JSONClass jsonClass);
-
-    public abstract JSONClass DoGetJson();
 
     public void ResetToInitial()
     {
@@ -310,7 +272,6 @@ public abstract class ColliderModel : ModelBase, IModel
     }
 
     protected abstract void DoResetToInitial();
-
     protected abstract bool DeviatesFromInitial();
 
     public override string ToString() => Id;

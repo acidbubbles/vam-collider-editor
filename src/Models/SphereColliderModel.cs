@@ -52,7 +52,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
         Collider.center = center;
     }
 
-    public override JSONClass DoGetJson()
+    protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
 
@@ -73,13 +73,13 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     public override IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return Parent.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
+        yield return Script.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
         {
             Collider.radius = value;
             DoUpdatePreview();
         }, 0f, InitialRadius * 4f, false).WithDefault(InitialRadius), "Radius");
 
-        yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
+        yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
@@ -87,7 +87,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             DoUpdatePreview();
         }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
 
-        yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
+        yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
@@ -95,7 +95,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             DoUpdatePreview();
         }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
 
-        yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
+        yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;

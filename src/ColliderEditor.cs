@@ -168,7 +168,7 @@ public class ColliderEditor : MVRScript
 
         var autoColliderDuplicates = new HashSet<string>();
         var autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
-            .Select(autoCollider => AutoColliderModel.Create(this, autoCollider))
+            .Select(autoCollider => new AutoColliderModel(this, autoCollider))
             .Where(model => { if (!autoColliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
 

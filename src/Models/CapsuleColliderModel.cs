@@ -24,19 +24,19 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     public override IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return Parent.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
+        yield return Script.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
         {
             Collider.radius = value;
             DoUpdatePreview();
         }, 0f, InitialRadius * 4f, false).WithDefault(InitialRadius), "Radius");
 
-        yield return Parent.CreateFloatSlider(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
+        yield return Script.CreateFloatSlider(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
         {
             Collider.height = value;
             DoUpdatePreview();
         }, 0f, InitialHeight * 4f, false).WithDefault(InitialHeight), "Height");
 
-        yield return Parent.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
+        yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
@@ -44,7 +44,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             DoUpdatePreview();
         }, -0.25f, 0.25f, false).WithDefault(InitialCenter.x), "Center.X");
 
-        yield return Parent.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
+        yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
@@ -52,7 +52,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             DoUpdatePreview();
         }, -0.25f, 0.25f, false).WithDefault(InitialCenter.y), "Center.Y");
 
-        yield return Parent.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
+        yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;
@@ -73,7 +73,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.center = center;
     }
 
-    public override JSONClass DoGetJson()
+    protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
         jsonClass["radius"].AsFloat = Collider.radius;

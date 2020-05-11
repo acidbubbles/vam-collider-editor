@@ -5,43 +5,18 @@ using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-public class RigidbodyModel : ModelBase, IModel
+public class RigidbodyModel : ModelBase<Rigidbody>, IModel
 {
     private readonly bool _initialEnabled;
-    private readonly Rigidbody _rigidbody;
-
-    private readonly MVRScript _script;
 
     private List<UIDynamic> _controls;
 
-    private bool _selected;
-
-    public string Name { get; set; }
     public List<Group> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; }
 
-    public bool Selected
-    {
-        get { return _selected; }
-        set
-        {
-            if (_selected != value)
-            {
-                SetSelected(value);
-                _selected = value;
-            }
-        }
-    }
-
     public RigidbodyModel(MVRScript script, Rigidbody rigidbody, string label)
+        : base (script, rigidbody, label)
     {
-        _script = script;
-        _rigidbody = rigidbody;
-
-        Id = rigidbody.Uuid();
-        Name = rigidbody.name;
-        Label = label;
-
         _initialEnabled = rigidbody.detectCollisions;
     }
 
@@ -54,27 +29,17 @@ public class RigidbodyModel : ModelBase, IModel
         return model;
     }
 
-    public override string ToString() => $"{Id}_{Name}";
-
-    private void SetSelected(bool value)
-    {
-        if (value)
-            CreateControls();
-        else
-            DestroyControls();
-    }
-
-    public void CreateControls()
+    protected override void CreateControls()
     {
         DestroyControls();
 
         var controls = new List<UIDynamic>();
 
-        var resetUi = _script.CreateButton("Reset Rigidbody", true);
+        var resetUi = Script.CreateButton("Reset Rigidbody", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
 
-        var enabledToggleJsf = new JSONStorableBool("enabled", _rigidbody.detectCollisions, value => { _rigidbody.detectCollisions = value; });
-        var enabledToggle = _script.CreateToggle(enabledToggleJsf, true);
+        var enabledToggleJsf = new JSONStorableBool("enabled", Component.detectCollisions, value => { Component.detectCollisions = value; });
+        var enabledToggle = Script.CreateToggle(enabledToggleJsf, true);
         enabledToggle.label = "Detect Collisions";
 
         controls.Add(resetUi);
@@ -83,7 +48,7 @@ public class RigidbodyModel : ModelBase, IModel
         _controls = controls;
     }
 
-    public virtual void DestroyControls()
+    protected override void DestroyControls()
     {
         if (_controls == null)
             return;
@@ -94,31 +59,15 @@ public class RigidbodyModel : ModelBase, IModel
         _controls.Clear();
     }
 
-    public void AppendJson(JSONClass parent)
+    protected override void DoLoadJson(JSONClass jsonClass)
     {
-        parent.Add(Id, DoGetJson());
+        Component.detectCollisions = jsonClass["detectCollisions"].AsBool;
     }
 
-    public void LoadJson(JSONClass jsonClass)
-    {
-        DoLoadJson(jsonClass);
-
-        if (Selected)
-        {
-            DestroyControls();
-            CreateControls();
-        }
-    }
-
-    private void DoLoadJson(JSONClass jsonClass)
-    {
-        _rigidbody.detectCollisions = jsonClass["detectCollisions"].AsBool;
-    }
-
-    public JSONClass DoGetJson()
+    protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
-        jsonClass["detectCollisions"].AsBool = _rigidbody.detectCollisions;
+        jsonClass["detectCollisions"].AsBool = Component.detectCollisions;
         return jsonClass;
     }
 
@@ -135,8 +84,8 @@ public class RigidbodyModel : ModelBase, IModel
 
     protected void DoResetToInitial()
     {
-        _rigidbody.detectCollisions = _initialEnabled;
+        Component.detectCollisions = _initialEnabled;
     }
 
-    protected bool DeviatesFromInitial() => _rigidbody.detectCollisions != _initialEnabled;
+    protected bool DeviatesFromInitial() => Component.detectCollisions != _initialEnabled;
 }

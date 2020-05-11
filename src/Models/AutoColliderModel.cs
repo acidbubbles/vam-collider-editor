@@ -3,69 +3,42 @@ using SimpleJSON;
 using UnityEngine;
 
 using Object = UnityEngine.Object;
-public class AutoColliderModel : ModelBase, IModel
+public class AutoColliderModel : ModelBase<AutoCollider>, IModel
 {
-    public static AutoColliderModel Create(MVRScript script, AutoCollider autoCollider)
-    {
-        return new AutoColliderModel(script, autoCollider, autoCollider.name);
-    }
-
     private readonly float _initialAutoLengthBuffer;
     private readonly float _initialAutoRadiusBuffer;
     private readonly float _initialAutoRadiusMultiplier;
 
-    private bool _selected;
-    private readonly MVRScript _script;
-    private readonly AutoCollider _autoCollider;
-
     public List<UIDynamic> Controls { get; private set; }
 
-    public bool Selected
+    public AutoColliderModel(MVRScript script, AutoCollider autoCollider)
+        : base(script, autoCollider, GetLabel(autoCollider))
     {
-        get { return _selected; }
-        set
-        {
-            if (_selected != value)
-            {
-                SetSelected(value);
-                _selected = value;
-            }
-        }
-    }
-
-    public AutoColliderModel(MVRScript script, AutoCollider autoCollider, string label)
-    {
-        _script = script;
-        _autoCollider = autoCollider;
         _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
         _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
         _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
-        Id = autoCollider.Uuid();
-        if (label.StartsWith("AutoColliderAutoColliders"))
-            Label = label.Substring("AutoColliderAutoColliders".Length);
-        else if (label.StartsWith("AutoColliderFemaleAutoColliders"))
-            Label = label.Substring("AutoColliderFemaleAutoColliders".Length);
-        else if (label.StartsWith("AutoCollider"))
-            Label = label.Substring("AutoCollider".Length);
-        else
-            Label = label;
     }
 
-    protected virtual void SetSelected(bool value)
+    private static string GetLabel(AutoCollider autoCollider)
     {
-        if (value)
-            CreateControls();
+        var label = autoCollider.name;
+        if (label.StartsWith("AutoColliderAutoColliders"))
+            return label.Substring("AutoColliderAutoColliders".Length);
+        else if (label.StartsWith("AutoColliderFemaleAutoColliders"))
+            return label.Substring("AutoColliderFemaleAutoColliders".Length);
+        else if (label.StartsWith("AutoCollider"))
+            return label.Substring("AutoCollider".Length);
         else
-            DestroyControls();
+            return label;
     }
 
-    public void CreateControls()
+    protected override void CreateControls()
     {
         DestroyControls();
 
         var controls = new List<UIDynamic>();
 
-        var resetUi = _script.CreateButton("Reset AutoCollider", true);
+        var resetUi = Script.CreateButton("Reset AutoCollider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
 
         controls.Add(resetUi);
@@ -76,23 +49,23 @@ public class AutoColliderModel : ModelBase, IModel
 
     public IEnumerable<UIDynamic> DoCreateControls()
     {
-        yield return _script.CreateFloatSlider(new JSONStorableFloat("autoLengthBuffer", _autoCollider.autoLengthBuffer, value =>
+        yield return Script.CreateFloatSlider(new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
         {
-            _autoCollider.autoLengthBuffer = value;
+            Component.autoLengthBuffer = value;
         }, 0f, _initialAutoLengthBuffer * 4f, false).WithDefault(_initialAutoLengthBuffer), "Auto Length Buffer");
 
-        yield return _script.CreateFloatSlider(new JSONStorableFloat("autoRadiusBuffer", _autoCollider.autoRadiusBuffer, value =>
+        yield return Script.CreateFloatSlider(new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
         {
-            _autoCollider.autoRadiusBuffer = value;
+            Component.autoRadiusBuffer = value;
         }, 0f, _initialAutoRadiusBuffer * 4f, false).WithDefault(_initialAutoRadiusBuffer), "Auto Radius Buffer");
 
-        yield return _script.CreateFloatSlider(new JSONStorableFloat("autoRadiusMultiplier", _autoCollider.autoRadiusMultiplier, value =>
+        yield return Script.CreateFloatSlider(new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
         {
-            _autoCollider.autoRadiusMultiplier = value;
+            Component.autoRadiusMultiplier = value;
         }, 0f, _initialAutoRadiusMultiplier * 4f, false).WithDefault(_initialAutoRadiusMultiplier), "Auto Radius Multiplier");
     }
 
-    public virtual void DestroyControls()
+    protected override void DestroyControls()
     {
         if (Controls == null)
             return;
@@ -103,35 +76,19 @@ public class AutoColliderModel : ModelBase, IModel
         Controls.Clear();
     }
 
-    public void AppendJson(JSONClass parent)
+    protected override void DoLoadJson(JSONClass jsonClass)
     {
-        parent.Add(Id, DoGetJson());
+        Component.autoLengthBuffer = jsonClass["autoLengthBuffer"].AsFloat;
+        Component.autoRadiusBuffer = jsonClass["autoRadiusBuffer"].AsFloat;
+        Component.autoRadiusMultiplier = jsonClass["autoRadiusMultiplier"].AsFloat;
     }
 
-    public void LoadJson(JSONClass jsonClass)
-    {
-        DoLoadJson(jsonClass);
-
-        if (Selected)
-        {
-            DestroyControls();
-            CreateControls();
-        }
-    }
-
-    private void DoLoadJson(JSONClass jsonClass)
-    {
-        _autoCollider.autoLengthBuffer = jsonClass["autoLengthBuffer"].AsFloat;
-        _autoCollider.autoRadiusBuffer = jsonClass["autoRadiusBuffer"].AsFloat;
-        _autoCollider.autoRadiusMultiplier = jsonClass["autoRadiusMultiplier"].AsFloat;
-    }
-
-    public JSONClass DoGetJson()
+    protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
-        jsonClass["autoLengthBuffer"].AsFloat = _autoCollider.autoLengthBuffer;
-        jsonClass["autoRadiusBuffer"].AsFloat = _autoCollider.autoRadiusBuffer;
-        jsonClass["autoRadiusMultiplier"].AsFloat = _autoCollider.autoRadiusMultiplier;
+        jsonClass["autoLengthBuffer"].AsFloat = Component.autoLengthBuffer;
+        jsonClass["autoRadiusBuffer"].AsFloat = Component.autoRadiusBuffer;
+        jsonClass["autoRadiusMultiplier"].AsFloat = Component.autoRadiusMultiplier;
         return jsonClass;
     }
 
@@ -148,18 +105,22 @@ public class AutoColliderModel : ModelBase, IModel
 
     protected void DoResetToInitial()
     {
-        _autoCollider.autoRadiusBuffer = _initialAutoRadiusBuffer;
+        Component.autoRadiusBuffer = _initialAutoRadiusBuffer;
     }
 
     public IEnumerable<Collider> GetColliders()
     {
-        if (_autoCollider.hardCollider != null) yield return _autoCollider.hardCollider;
-        if (_autoCollider.jointCollider != null) yield return _autoCollider.jointCollider;
+        // TODO: How can this be null? Delete and check.
+        if (Component == null) yield break;
+        if (Component.hardCollider != null) yield return Component.hardCollider;
+        if (Component.jointCollider != null) yield return Component.jointCollider;
     }
 
     public IEnumerable<Rigidbody> GetRigidbodies()
     {
-        if (_autoCollider.jointRB != null) yield return _autoCollider.jointRB;
-        if (_autoCollider.kinematicRB != null) yield return _autoCollider.kinematicRB;
+        // TODO: How can this be null? Delete and check.
+        if (Component == null) yield break;
+        if (Component.jointRB != null) yield return Component.jointRB;
+        if (Component.kinematicRB != null) yield return Component.kinematicRB;
     }
 }

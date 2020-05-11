@@ -7,8 +7,6 @@ public interface IModel
     bool IsDuplicate { get; }
     bool Selected { get; set; }
 
-    // TODO: Replace by deselecting, this should not be public
-    void DestroyControls();
     void LoadJson(JSONClass jc);
     void AppendJson(JSONClass jc);
 }
