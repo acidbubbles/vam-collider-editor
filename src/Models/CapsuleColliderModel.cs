@@ -22,43 +22,43 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _initialCenter = collider.center;
     }
 
-    public override IEnumerable<UIDynamic> DoCreateControls()
+    public override void DoCreateControls()
     {
-        yield return Script.CreateFloatSlider(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
         {
             Collider.radius = value;
             DoUpdatePreview();
-        }, 0f, _initialRadius * 4f, false).WithDefault(_initialRadius), "Radius");
+        }, 0f, _initialRadius * 4f, false)).WithDefault(_initialRadius), "Radius"));
 
-        yield return Script.CreateFloatSlider(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
         {
             Collider.height = value;
             DoUpdatePreview();
-        }, 0f, _initialHeight * 4f, false).WithDefault(_initialHeight), "Height");
+        }, 0f, _initialHeight * 4f, false)).WithDefault(_initialHeight), "Height"));
 
-        yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.x), "Center.X");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
 
-        yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.y), "Center.Y");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
 
-        yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.z), "Center.Z");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)

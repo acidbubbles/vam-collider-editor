@@ -49,7 +49,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public Collider Collider { get; set; }
     public RigidbodyModel RigidbodyModel { get; set; }
     public GameObject Preview { get; protected set; }
-    public List<UIDynamic> Controls { get; private set; }
 
     public void SetSelectedPreviewOpacity(float value)
     {
@@ -129,29 +128,14 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     {
         DestroyControls();
 
-        var controls = new List<UIDynamic>();
-
         var resetUi = Script.CreateButton("Reset Collider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
+        RegisterControl(resetUi);
 
-        controls.Add(resetUi);
-        controls.AddRange(DoCreateControls());
-
-        Controls = controls;
+        DoCreateControls();
     }
 
-    public abstract IEnumerable<UIDynamic> DoCreateControls();
-
-    protected override void DestroyControls()
-    {
-        if (Controls == null)
-            return;
-
-        foreach (var adjustmentJson in Controls)
-            Object.Destroy(adjustmentJson.gameObject);
-
-        Controls.Clear();
-    }
+    public abstract void DoCreateControls();
 
     public virtual void DestroyPreview()
     {

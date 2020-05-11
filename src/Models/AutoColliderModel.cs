@@ -2,8 +2,6 @@ using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
 
-using Object = UnityEngine.Object;
-
 public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IModel
 {
     private readonly float _initialAutoLengthBuffer;
@@ -12,8 +10,6 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
 
     protected override bool OwnsColliders => true;
-
-    public List<UIDynamic> Controls { get; private set; }
 
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider)
         : base(script, autoCollider, $"[au] {Simplify(autoCollider.name)}")
@@ -29,44 +25,39 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     {
         DestroyControls();
 
-        var controls = new List<UIDynamic>();
-
         var resetUi = Script.CreateButton("Reset AutoCollider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
+        RegisterControl(resetUi);
 
-        controls.Add(resetUi);
-        controls.AddRange(DoCreateControls());
+        RegisterControl(
+                Script.CreateFloatSlider(RegisterStorable(
+                    new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
+                    {
+                        Component.autoLengthBuffer = value;
+                    }, 0f, _initialAutoLengthBuffer * 4f, false)
+                    .WithDefault(_initialAutoLengthBuffer)
+                ), "Auto Length Buffer")
+        );
 
-        Controls = controls;
-    }
+        RegisterControl(
+                Script.CreateFloatSlider(RegisterStorable(
+                    new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
+                    {
+                        Component.autoRadiusBuffer = value;
+                    }, 0f, _initialAutoRadiusBuffer * 4f, false)
+                    .WithDefault(_initialAutoRadiusBuffer)
+                ), "Auto Radius Buffer")
+        );
 
-    public IEnumerable<UIDynamic> DoCreateControls()
-    {
-        yield return Script.CreateFloatSlider(new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
-        {
-            Component.autoLengthBuffer = value;
-        }, 0f, _initialAutoLengthBuffer * 4f, false).WithDefault(_initialAutoLengthBuffer), "Auto Length Buffer");
-
-        yield return Script.CreateFloatSlider(new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
-        {
-            Component.autoRadiusBuffer = value;
-        }, 0f, _initialAutoRadiusBuffer * 4f, false).WithDefault(_initialAutoRadiusBuffer), "Auto Radius Buffer");
-
-        yield return Script.CreateFloatSlider(new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
-        {
-            Component.autoRadiusMultiplier = value;
-        }, 0f, _initialAutoRadiusMultiplier * 4f, false).WithDefault(_initialAutoRadiusMultiplier), "Auto Radius Multiplier");
-    }
-
-    protected override void DestroyControls()
-    {
-        if (Controls == null)
-            return;
-
-        foreach (var adjustmentJson in Controls)
-            Object.Destroy(adjustmentJson.gameObject);
-
-        Controls.Clear();
+        RegisterControl(
+                Script.CreateFloatSlider(RegisterStorable(
+                    new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
+                    {
+                        Component.autoRadiusMultiplier = value;
+                    }, 0f, _initialAutoRadiusMultiplier * 4f, false)
+                    .WithDefault(_initialAutoRadiusMultiplier)
+                ), "Auto Radius Multiplier")
+        );
     }
 
     protected override void SetSelected(bool value)

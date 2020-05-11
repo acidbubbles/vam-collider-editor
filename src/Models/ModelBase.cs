@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
 
 public abstract class ModelBase<T> where T : Component
 {
     private bool _selected;
+    private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
+    private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
 
     protected readonly MVRScript Script;
     protected readonly T Component;
@@ -64,8 +67,68 @@ public abstract class ModelBase<T> where T : Component
 
     public override string ToString() => Id;
 
+    protected TControl RegisterControl<TControl>(TControl control)
+        where TControl : UIDynamic
+    {
+        _controlDynamics.Add(control);
+        return control;
+    }
+
+    protected TStorable RegisterStorable<TStorable>(TStorable storable)
+        where TStorable : JSONStorableParam
+    {
+        _controlsStorables.Add(storable);
+        return storable;
+    }
+
     protected abstract void CreateControls();
-    protected abstract void DestroyControls();
+    protected void DestroyControls()
+    {
+        foreach (var storable in _controlsStorables)
+        {
+            if (storable is JSONStorableFloat)
+            {
+                var jsf = (JSONStorableFloat)storable;
+                Script.RemoveSlider(jsf);
+            }
+            else if (storable is JSONStorableBool)
+            {
+                var jsb = (JSONStorableBool)storable;
+                Script.RemoveToggle(jsb);
+            }
+            else
+            {
+                SuperController.LogError($"Unknown storable type: {storable.GetType()}");
+            }
+        }
+
+        _controlsStorables.Clear();
+
+        foreach (var control in _controlDynamics)
+        {
+            if (control is UIDynamicSlider)
+            {
+                var slider = (UIDynamicSlider)control;
+                Script.RemoveSlider(slider);
+            }
+            else if (control is UIDynamicToggle)
+            {
+                var toggle = (UIDynamicToggle)control;
+                Script.RemoveToggle(toggle);
+            }
+            else if (control is UIDynamicButton)
+            {
+                var button = (UIDynamicButton)control;
+                Script.RemoveButton(button);
+            }
+            else
+            {
+                SuperController.LogError($"Unknown control type: {control.GetType()}");
+            }
+        }
+
+        _controlDynamics.Clear();
+    }
 
     protected abstract void DoLoadJson(JSONClass jsonClass);
     protected abstract JSONClass DoGetJson();

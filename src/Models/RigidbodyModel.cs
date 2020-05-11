@@ -2,13 +2,10 @@ using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
 
-using Object = UnityEngine.Object;
 
 public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 {
     private readonly bool _initialDetectCollisions;
-
-    private List<UIDynamic> _controls;
 
     protected override bool OwnsColliders => false;
 
@@ -27,31 +24,17 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     {
         DestroyControls();
 
-        var controls = new List<UIDynamic>();
-
         var resetUi = Script.CreateButton("Reset Rigidbody", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
+        RegisterControl(resetUi);
 
         var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value => { Component.detectCollisions = value; });
+        RegisterStorable(detectCollisionsJsf);
         var detectCollisionsToggle = Script.CreateToggle(detectCollisionsJsf, true);
         detectCollisionsToggle.label = "Detect Collisions";
-
-        controls.Add(resetUi);
-        controls.Add(detectCollisionsToggle);
-
-        _controls = controls;
+        RegisterControl(detectCollisionsToggle);
     }
 
-    protected override void DestroyControls()
-    {
-        if (_controls == null)
-            return;
-
-        foreach (var control in _controls)
-            Object.Destroy(control.gameObject);
-
-        _controls.Clear();
-    }
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {

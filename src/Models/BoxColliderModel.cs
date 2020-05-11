@@ -83,55 +83,55 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
         Collider.center = _initialCenter;
     }
 
-    public override IEnumerable<UIDynamic> DoCreateControls()
+    public override void DoCreateControls()
     {
-        yield return Script.CreateFloatSlider(_sizeXStorableFloat = new JSONStorableFloat("sizeX", Collider.size.x, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_sizeXStorableFloat = new JSONStorableFloat("sizeX", Collider.size.x, value =>
         {
             var size = Collider.size;
             size.x = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialSize.x), "Size.X");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialSize.x), "Size.X"));
 
-        yield return Script.CreateFloatSlider(_sizeYStorableFloat = new JSONStorableFloat("sizeY", Collider.size.y, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_sizeYStorableFloat = new JSONStorableFloat("sizeY", Collider.size.y, value =>
         {
             var size = Collider.size;
             size.y = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialSize.y), "Size.Y");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialSize.y), "Size.Y"));
 
-        yield return Script.CreateFloatSlider(_sizeZStorableFloat = new JSONStorableFloat("sizeZ", Collider.size.z, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_sizeZStorableFloat = new JSONStorableFloat("sizeZ", Collider.size.z, value =>
         {
             var size = Collider.size;
             size.z = value;
             Collider.size = size;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialSize.z), "Size.Z");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialSize.z), "Size.Z"));
 
-        yield return Script.CreateFloatSlider(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerXStorableFloat = new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.x), "Center.X");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
 
-        yield return Script.CreateFloatSlider(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerYStorableFloat = new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.y), "Center.Y");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
 
-        yield return Script.CreateFloatSlider(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerZStorableFloat = new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
             DoUpdatePreview();
-        }, -0.25f, 0.25f, false).WithDefault(_initialCenter.z), "Center.Z");
+        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
 
     protected override bool DeviatesFromInitial() => _initialSize != Collider.size || _initialCenter != Collider.center; // Vector3 has built in epsilon equality checks
