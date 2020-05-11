@@ -1,6 +1,7 @@
 src\Models\AutoColliderModel.cs
 src\Models\BoxColliderModel.cs
 src\Models\CapsuleColliderModel.cs
+src\Models\ColliderContainerModelBase.cs
 src\Models\ColliderModel.cs
 src\Models\IModel.cs
 src\Models\ModelBase.cs

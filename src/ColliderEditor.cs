@@ -43,8 +43,8 @@ public class ColliderEditor : MVRScript
     {
         var showPreviews = new JSONStorableBool("showPreviews", false, value =>
         {
-            foreach (var colliderPair in _colliders)
-                colliderPair.Value.ShowPreview = value;
+            foreach (var editablePair in _editables)
+                editablePair.Value.SetShowPreview(value);
         });
         RegisterBool(showPreviews);
 
@@ -62,20 +62,20 @@ public class ColliderEditor : MVRScript
         xRayPreviewsToggle.label = "Use XRay Previews";
 
         JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", 0.001f, value =>
-                   {
-                       var alpha = ExponentialScale(value, 0.2f, 1f);
-                       foreach (var colliderPair in _colliders)
-                           colliderPair.Value.PreviewOpacity = alpha;
-                   }, 0f, 1f);
+        {
+            var alpha = ExponentialScale(value, 0.2f, 1f);
+            foreach (var editablePair in _editables)
+                editablePair.Value.SetPreviewOpacity(alpha);
+        }, 0f, 1f);
         RegisterFloat(previewOpacity);
         CreateSlider(previewOpacity).label = "Preview Opacity";
 
         JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
-                   {
-                       var alpha = ExponentialScale(value, 0.2f, 1f);
-                       foreach (var colliderPair in _colliders)
-                           colliderPair.Value.SelectedPreviewOpacity = alpha;
-                   }, 0f, 1f);
+        {
+            var alpha = ExponentialScale(value, 0.2f, 1f);
+            foreach (var editablePair in _editables)
+                editablePair.Value.SetSelectedPreviewOpacity(alpha);
+        }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
         CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
 
@@ -173,7 +173,7 @@ public class ColliderEditor : MVRScript
             .ToList();
 
         var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
-        var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()));
+        var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()).Select(x => x.Collider));
 
         // Rigidbodies
 
@@ -181,7 +181,7 @@ public class ColliderEditor : MVRScript
         var rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
             .Where(rigidbody => !autoCollidersRigidBodies.Contains(rigidbody))
             .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
-            .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, groups))
+            .Select(rigidbody => new RigidbodyModel(this, rigidbody))
             .Where(model => { if (!rigidbodyDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
         var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
@@ -192,11 +192,26 @@ public class ColliderEditor : MVRScript
         var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
             .Where(collider => !autoCollidersColliders.Contains(collider))
             .Where(collider => IsColliderIncluded(collider))
-            .Select(collider => ColliderModel.CreateTyped(this, collider, rigidbodiesDict))
+            .Select(collider => ColliderModel.CreateTyped(this, collider))
             .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
 
         _colliders = colliders.ToDictionary(x => x.Id);
+
+        // Attach colliders to rigidbodies
+
+        foreach(var colliderModel in colliders)
+        {
+            if (colliderModel.Collider.attachedRigidbody != null)
+            {
+                RigidbodyModel rigidbodyModel;
+                if (rigidbodiesDict.TryGetValue(colliderModel.Collider.attachedRigidbody.Uuid(), out rigidbodyModel))
+                {
+                    colliderModel.RigidbodyModel = rigidbodyModel;
+                        rigidbodyModel.Colliders.Add(colliderModel);
+                }
+            }
+        }
 
         // All Editables
 
@@ -288,11 +303,11 @@ public class ColliderEditor : MVRScript
 
     public void OnDestroy()
     {
-        if (_colliders == null) return;
+        if (_editables == null) return;
         try
         {
-            foreach (var colliderModelPair in _colliders)
-                colliderModelPair.Value.DestroyPreview();
+            foreach (var editablePair in _editables)
+                editablePair.Value.DestroyPreview();
         }
         catch (Exception e)
         {

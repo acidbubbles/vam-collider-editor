@@ -59,6 +59,7 @@
     <Compile Include="src\Models\AutoColliderModel.cs" />
     <Compile Include="src\Models\BoxColliderModel.cs" />
     <Compile Include="src\Models\CapsuleColliderModel.cs" />
+    <Compile Include="src\Models\ColliderContainerModelBase.cs" />
     <Compile Include="src\Models\ColliderModel.cs" />
     <Compile Include="src\Models\IModel.cs" />
     <Compile Include="src\Models\ModelBase.cs" />

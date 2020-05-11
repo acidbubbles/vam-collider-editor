@@ -1,33 +1,25 @@
 using System.Collections.Generic;
-using System.Linq;
 using SimpleJSON;
 using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-public class RigidbodyModel : ModelBase<Rigidbody>, IModel
+public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 {
     private readonly bool _initialEnabled;
 
     private List<UIDynamic> _controls;
 
     public List<Group> Groups { get; set; }
-    public List<ColliderModel> Colliders { get; set; }
+    public List<ColliderModel> Colliders { get; set; } = new List<ColliderModel>();
 
     public RigidbodyModel(MVRScript script, Rigidbody rigidbody)
-        : base (script, rigidbody, $"[rb] {Simplify(rigidbody.name)}")
+        : base(script, rigidbody, $"[rb] {Simplify(rigidbody.name)}")
     {
         _initialEnabled = rigidbody.detectCollisions;
     }
 
-    public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<Group> groups)
-    {
-        var model = new RigidbodyModel(script, rigidbody);
-        model.Groups = groups
-            .Where(category => category.Pattern.IsMatch(rigidbody.name))
-            .ToList();
-        return model;
-    }
+    public override IEnumerable<ColliderModel> GetColliders() => Colliders;
 
     protected override void CreateControls()
     {

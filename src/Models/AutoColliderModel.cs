@@ -3,11 +3,13 @@ using SimpleJSON;
 using UnityEngine;
 
 using Object = UnityEngine.Object;
-public class AutoColliderModel : ModelBase<AutoCollider>, IModel
+
+public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IModel
 {
     private readonly float _initialAutoLengthBuffer;
     private readonly float _initialAutoRadiusBuffer;
     private readonly float _initialAutoRadiusMultiplier;
+    private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
 
     public List<UIDynamic> Controls { get; private set; }
 
@@ -17,6 +19,8 @@ public class AutoColliderModel : ModelBase<AutoCollider>, IModel
         _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
         _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
         _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
+        if (Component.hardCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, autoCollider.hardCollider));
+        if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider));
     }
 
     protected override void CreateControls()
@@ -63,6 +67,12 @@ public class AutoColliderModel : ModelBase<AutoCollider>, IModel
         Controls.Clear();
     }
 
+    protected override void SetSelected(bool value)
+    {
+        // TODO: Track colliders to highlight them
+        base.SetSelected(value);
+    }
+
     protected override void DoLoadJson(JSONClass jsonClass)
     {
         Component.autoLengthBuffer = jsonClass["autoLengthBuffer"].AsFloat;
@@ -95,18 +105,10 @@ public class AutoColliderModel : ModelBase<AutoCollider>, IModel
         Component.autoRadiusBuffer = _initialAutoRadiusBuffer;
     }
 
-    public IEnumerable<Collider> GetColliders()
-    {
-        // TODO: How can this be null? Delete and check.
-        if (Component == null) yield break;
-        if (Component.hardCollider != null) yield return Component.hardCollider;
-        if (Component.jointCollider != null) yield return Component.jointCollider;
-    }
+    public override IEnumerable<ColliderModel> GetColliders() => _ownedColliders;
 
     public IEnumerable<Rigidbody> GetRigidbodies()
     {
-        // TODO: How can this be null? Delete and check.
-        if (Component == null) yield break;
         if (Component.jointRB != null) yield return Component.jointRB;
         if (Component.kinematicRB != null) yield return Component.kinematicRB;
     }

@@ -33,6 +33,7 @@ public abstract class ModelBase<T> where T : Component
         if (string.IsNullOrEmpty(label)) throw new ArgumentException("message", nameof(label));
 
         Script = script;
+        Component = component;
         Id = component.Uuid();
         Label = label;
     }

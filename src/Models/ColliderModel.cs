@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 public abstract class ColliderModel<T> : ColliderModel where T : Collider
 {
-    protected T Collider { get; }
+    protected new T Collider { get; }
 
     protected ColliderModel(MVRScript parent, T collider)
         : base(parent, collider)
@@ -31,7 +31,7 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
         Preview = preview;
 
         DoUpdatePreview();
-        SetSelected(Selected);
+        RefreshHighlighted();
     }
 }
 
@@ -43,69 +43,59 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     private bool _showPreview;
 
-    public RigidbodyModel Rididbody { get; set; }
-
+    public Collider Collider { get; set; }
+    public RigidbodyModel RigidbodyModel { get; set; }
     public GameObject Preview { get; protected set; }
     public List<UIDynamic> Controls { get; private set; }
 
-    public float SelectedPreviewOpacity
+    public void SetSelectedPreviewOpacity(float value)
     {
-        get { return _selectedPreviewOpacity; }
-        set
+        if (Mathf.Approximately(value, _selectedPreviewOpacity))
+            return;
+
+        _selectedPreviewOpacity = value;
+
+        if (Preview != null && _highlighted)
         {
-            if (Mathf.Approximately(value, _selectedPreviewOpacity))
-                return;
-
-            _selectedPreviewOpacity = value;
-
-            if (Preview != null && Selected)
-            {
-                var previewRenderer = Preview.GetComponent<Renderer>();
-                var color = previewRenderer.material.color;
-                color.a = _selectedPreviewOpacity;
-                previewRenderer.material.color = color;
-                previewRenderer.enabled = false;
-                previewRenderer.enabled = true;
-            }
+            var previewRenderer = Preview.GetComponent<Renderer>();
+            var color = previewRenderer.material.color;
+            color.a = _selectedPreviewOpacity;
+            previewRenderer.material.color = color;
+            previewRenderer.enabled = false;
+            previewRenderer.enabled = true;
         }
     }
 
-    public float PreviewOpacity
+    public void SetPreviewOpacity(float value)
     {
-        get { return _previewOpacity; }
-        set
+        if (Mathf.Approximately(value, _previewOpacity))
+            return;
+
+        _previewOpacity = value;
+
+        if (Preview != null && !_highlighted)
         {
-            if (Mathf.Approximately(value, _previewOpacity))
-                return;
+            var previewRenderer = Preview.GetComponent<Renderer>();
+            var color = previewRenderer.material.color;
+            color.a = _previewOpacity;
+            previewRenderer.material.color = color;
 
-            _previewOpacity = value;
-
-            if (Preview != null && !Selected)
-            {
-                var previewRenderer = Preview.GetComponent<Renderer>();
-                var color = previewRenderer.material.color;
-                color.a = _previewOpacity;
-                previewRenderer.material.color = color;
-
-            }
         }
     }
 
-    public bool ShowPreview
+    public void SetShowPreview(bool value)
     {
-        get { return _showPreview; }
-        set
-        {
-            _showPreview = value;
+        _showPreview = value;
 
-            if (_showPreview)
-                CreatePreview();
-            else
-                DestroyPreview();
-        }
+        if (_showPreview)
+            CreatePreview();
+        else
+            DestroyPreview();
     }
 
     private bool _xRayPreview;
+    private bool _highlighted;
+
     public bool XRayPreview
     {
         get { return _xRayPreview; }
@@ -144,12 +134,13 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         }
     }
 
-    protected ColliderModel(MVRScript script, Collider component)
-        : base(script, component, $"[co] {Simplify(component.attachedRigidbody != null ? component.attachedRigidbody.name : component.gameObject.name)}/{Simplify(component.name)}")
+    protected ColliderModel(MVRScript script, Collider collider)
+        : base(script, collider, $"[co] {Simplify(collider.attachedRigidbody != null ? collider.attachedRigidbody.name : collider.gameObject.name)}/{Simplify(collider.name)}")
     {
+        Collider = collider;
     }
 
-    public static ColliderModel CreateTyped(MVRScript script, Collider collider, Dictionary<string, RigidbodyModel> rigidbodies)
+    public static ColliderModel CreateTyped(MVRScript script, Collider collider)
     {
         ColliderModel typed;
 
@@ -161,19 +152,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
             typed = new CapsuleColliderModel(script, (CapsuleCollider)collider);
         else
             throw new InvalidOperationException("Unsupported collider type");
-
-        if (collider.attachedRigidbody != null)
-        {
-            RigidbodyModel rigidbodyModel;
-            if (rigidbodies.TryGetValue(collider.attachedRigidbody.Uuid(), out rigidbodyModel))
-            {
-                typed.Rididbody = rigidbodyModel;
-                if (rigidbodyModel.Colliders == null)
-                    rigidbodyModel.Colliders = new List<ColliderModel> { typed };
-                else
-                    rigidbodyModel.Colliders.Add(typed);
-            }
-        }
 
         return typed;
     }
@@ -242,15 +220,27 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected override void SetSelected(bool value)
     {
+        SetHighlighted(value);
+        base.SetSelected(value);
+    }
+
+    public void SetHighlighted(bool value)
+    {
+        if (_highlighted == value) return;
+
+        _highlighted = value;
+        RefreshHighlighted();
+    }
+
+    protected void RefreshHighlighted()
+    {
         if (Preview != null)
         {
             var previewRenderer = Preview.GetComponent<Renderer>();
             var color = previewRenderer.material.color;
-            color.a = value ? _selectedPreviewOpacity : _previewOpacity;
+            color.a = _highlighted ? _selectedPreviewOpacity : _previewOpacity;
             previewRenderer.material.color = color;
         }
-
-        base.SetSelected(value);
     }
 
     public override void LoadJson(JSONClass jsonClass)
