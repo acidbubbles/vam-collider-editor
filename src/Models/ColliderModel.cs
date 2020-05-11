@@ -17,6 +17,8 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 
     public override void CreatePreview()
     {
+        if (Preview != null) return;
+
         var preview = DoCreatePreview();
 
         preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial();

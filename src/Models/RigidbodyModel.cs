@@ -10,6 +10,8 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     private List<UIDynamic> _controls;
 
+    protected override bool OwnsColliders => false;
+
     public List<Group> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; } = new List<ColliderModel>();
 

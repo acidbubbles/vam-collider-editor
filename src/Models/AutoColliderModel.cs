@@ -11,6 +11,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     private readonly float _initialAutoRadiusMultiplier;
     private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
 
+    protected override bool OwnsColliders => true;
+
     public List<UIDynamic> Controls { get; private set; }
 
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider)

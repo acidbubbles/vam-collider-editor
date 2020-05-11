@@ -3,6 +3,8 @@ using UnityEngine;
 
 public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Component
 {
+    protected abstract bool OwnsColliders { get; }
+
     protected ColliderContainerModelBase(MVRScript script, T component, string label)
         : base(script, component, label)
     {
@@ -17,18 +19,21 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
 
     public void SetSelectedPreviewOpacity(float value)
     {
+        if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
             colliderModel.SetSelectedPreviewOpacity(value);
     }
 
     public void SetPreviewOpacity(float value)
     {
+        if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
             colliderModel.SetPreviewOpacity(value);
     }
 
     public void SetShowPreview(bool value)
     {
+        if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
             colliderModel.SetShowPreview(value);
     }
