@@ -56,20 +56,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="src/AutoColliderModel.cs" />
-    <Compile Include="src/BoxColliderModel.cs" />
-    <Compile Include="src/CapsuleColliderModel.cs" />
-    <Compile Include="src/ColliderEditor.cs" />
-    <Compile Include="src/ColliderModel.cs" />
-    <Compile Include="src/ColorExtensions.cs" />
-    <Compile Include="src/ComponentExtensions.cs" />
-    <Compile Include="src/IModel.cs" />
-    <Compile Include="src/JSONStorableFloatExtensions.cs" />
-    <Compile Include="src/MaterialHelper.cs" />
-    <Compile Include="src/ModelBase.cs" />
-    <Compile Include="src/RigidbodyGroupModel.cs" />
-    <Compile Include="src/RigidbodyModel.cs" />
-    <Compile Include="src/SphereColliderModel.cs" />
+    <Compile Include="src\Models\AutoColliderModel.cs" />
+    <Compile Include="src\Models\BoxColliderModel.cs" />
+    <Compile Include="src\Models\CapsuleColliderModel.cs" />
+    <Compile Include="src\Models\ColliderModel.cs" />
+    <Compile Include="src\Models\IModel.cs" />
+    <Compile Include="src\Models\ModelBase.cs" />
+    <Compile Include="src\Models\RigidbodyModel.cs" />
+    <Compile Include="src\Models\SphereColliderModel.cs" />
+    <Compile Include="src\ColliderEditor.cs" />
+    <Compile Include="src\ColorExtensions.cs" />
+    <Compile Include="src\ComponentExtensions.cs" />
+    <Compile Include="src\Group.cs" />
+    <Compile Include="src\JSONStorableFloatExtensions.cs" />
+    <Compile Include="src\MaterialHelper.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

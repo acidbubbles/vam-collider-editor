@@ -135,32 +135,32 @@ public class ColliderEditor : MVRScript
     private void BuildModels()
     {
         var groups = containingAtom.type == "Person"
-                 ? new List<GroupModel>
+                 ? new List<Group>
                  {
-                    new GroupModel("All", @"^.+$"),
-                    new GroupModel("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
-                    new GroupModel("Left arm", @"^l(Shldr|ForeArm)"),
-                    new GroupModel("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-                    new GroupModel("Right arm", @"^r(Shldr|ForeArm)"),
-                    new GroupModel("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-                    new GroupModel("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
-                    new GroupModel("Left breast", @"l((Pectoral)|Nipple)"),
-                    new GroupModel("Right breast", @"r((Pectoral)|Nipple)"),
-                    new GroupModel("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
-                    new GroupModel("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
-                    new GroupModel("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
-                    new GroupModel("Anus", @"^_JointA[rl]"),
-                    new GroupModel("Vagina", @"^_Joint(Gr|Gl|B)"),
-                    new GroupModel("Penis", @"^(Gen[1-3])|Testes"),
-                    new GroupModel("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
-                    new GroupModel("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
-                    new GroupModel("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
-                    new GroupModel("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
-                    new GroupModel("Other", @"^(?!.*).*$")
+                    new Group("All", @"^.+$"),
+                    new Group("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
+                    new Group("Left arm", @"^l(Shldr|ForeArm)"),
+                    new Group("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+                    new Group("Right arm", @"^r(Shldr|ForeArm)"),
+                    new Group("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
+                    new Group("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
+                    new Group("Left breast", @"l((Pectoral)|Nipple)"),
+                    new Group("Right breast", @"r((Pectoral)|Nipple)"),
+                    new Group("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
+                    new Group("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
+                    new Group("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
+                    new Group("Anus", @"^_JointA[rl]"),
+                    new Group("Vagina", @"^_Joint(Gr|Gl|B)"),
+                    new Group("Penis", @"^(Gen[1-3])|Testes"),
+                    new Group("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
+                    new Group("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
+                    new Group("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
+                    new Group("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
+                    new Group("Other", @"^(?!.*).*$")
                  }
-                 : new List<GroupModel>
+                 : new List<Group>
                  {
-                    new GroupModel("All", @"^.+$"),
+                    new Group("All", @"^.+$"),
                  };
         var groupsDict = groups.ToDictionary(x => x.Id);
 

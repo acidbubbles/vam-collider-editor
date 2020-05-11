@@ -17,7 +17,7 @@ public class RigidbodyModel : ModelBase, IModel
     private bool _selected;
 
     public string Name { get; set; }
-    public List<GroupModel> Groups { get; set; }
+    public List<Group> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; }
 
     public bool Selected
@@ -45,7 +45,7 @@ public class RigidbodyModel : ModelBase, IModel
         _initialEnabled = rigidbody.detectCollisions;
     }
 
-    public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<GroupModel> groups)
+    public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<Group> groups)
     {
         var model = new RigidbodyModel(script, rigidbody, rigidbody.name);
         model.Groups = groups

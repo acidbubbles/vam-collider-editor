@@ -1,12 +1,12 @@
 using System.Text.RegularExpressions;
 
-public class GroupModel
+public class Group
 {
     public string Id { get; set; }
     public string Name { get; set; }
     public Regex Pattern { get; set; }
 
-    public GroupModel(string name, string pattern)
+    public Group(string name, string pattern)
     {
         Id = name;
         Name = name;
