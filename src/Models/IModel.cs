@@ -7,6 +7,7 @@ public interface IModel
     bool IsDuplicate { get; }
     bool Selected { get; set; }
 
+    void SetXRayPreview(bool value);
     void SetSelectedPreviewOpacity(float value);
     void SetPreviewOpacity(float value);
     void SetShowPreview(bool value);

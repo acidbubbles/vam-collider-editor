@@ -41,7 +41,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 {
     private float _previewOpacity;
     private float _selectedPreviewOpacity;
-    private JSONStorableBool _xRayStorable;
 
     private bool _showPreview;
 
@@ -98,44 +97,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     private bool _xRayPreview;
     private bool _highlighted;
 
-    public bool XRayPreview
-    {
-        get { return _xRayPreview; }
-        set
-        {
-            _xRayPreview = value;
-
-            if (Preview != null)
-            {
-                var previewRenderer = Preview.GetComponent<Renderer>();
-                var material = previewRenderer.material;
-
-                if (_xRayPreview)
-                {
-                    material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
-                    material.SetFloat("_Offset", 1f);
-                    material.SetFloat("_MinAlpha", 1f);
-                }
-                else
-                {
-                    material.shader = Shader.Find("Standard");
-                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                    material.SetInt("_ZWrite", 0);
-                    material.DisableKeyword("_ALPHATEST_ON");
-                    material.EnableKeyword("_ALPHABLEND_ON");
-                    material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                    material.renderQueue = 3000;
-                }
-
-                previewRenderer.material = material;
-
-                if (_xRayStorable != null)
-                    _xRayStorable.valNoCallback = value;
-            }
-        }
-    }
-
     protected ColliderModel(MVRScript script, Collider collider)
         : base(script, collider, CreateLabel(collider))
     {
@@ -171,15 +132,9 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
         var controls = new List<UIDynamic>();
 
-        _xRayStorable = new JSONStorableBool("xRayPreview", true, (bool value) => { XRayPreview = value; });
-
-        var xRayToggle = Script.CreateToggle(_xRayStorable, true);
-        xRayToggle.label = "XRay Preview";
-
         var resetUi = Script.CreateButton("Reset Collider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
 
-        controls.Add(xRayToggle);
         controls.Add(resetUi);
         controls.AddRange(DoCreateControls());
 
@@ -231,6 +186,37 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     {
         SetHighlighted(value);
         base.SetSelected(value);
+    }
+
+    public void SetXRayPreview(bool value)
+    {
+        _xRayPreview = value;
+
+        if (Preview != null)
+        {
+            var previewRenderer = Preview.GetComponent<Renderer>();
+            var material = previewRenderer.material;
+
+            if (_xRayPreview)
+            {
+                material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
+                material.SetFloat("_Offset", 1f);
+                material.SetFloat("_MinAlpha", 1f);
+            }
+            else
+            {
+                material.shader = Shader.Find("Standard");
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                material.SetInt("_ZWrite", 0);
+                material.DisableKeyword("_ALPHATEST_ON");
+                material.EnableKeyword("_ALPHABLEND_ON");
+                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                material.renderQueue = 3000;
+            }
+
+            previewRenderer.material = material;
+        }
     }
 
     public void SetHighlighted(bool value)

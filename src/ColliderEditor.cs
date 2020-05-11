@@ -53,8 +53,8 @@ public class ColliderEditor : MVRScript
 
         var xRayPreviews = new JSONStorableBool("xRayPreviews", true, value =>
         {
-            foreach (var colliderPair in _colliders)
-                colliderPair.Value.XRayPreview = value;
+            foreach (var editablePair in _editables)
+                editablePair.Value.SetXRayPreview(value);
         });
         RegisterBool(xRayPreviews);
 
