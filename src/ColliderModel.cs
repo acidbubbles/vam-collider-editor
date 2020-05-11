@@ -35,7 +35,7 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
     }
 }
 
-public abstract class ColliderModel : IModel
+public abstract class ColliderModel : ModelBase, IModel
 {
     private float _previewOpacity;
 
@@ -47,8 +47,6 @@ public abstract class ColliderModel : IModel
     private bool _showPreview;
     protected MVRScript Parent { get; }
 
-    public string Id { get; }
-    public string Label { get; }
     public RigidbodyModel Rididbody { get; set; }
 
     public GameObject Preview { get; protected set; }

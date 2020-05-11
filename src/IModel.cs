@@ -4,6 +4,7 @@ public interface IModel
 {
     string Id { get; }
     string Label { get; }
+    bool IsDuplicate { get; }
     bool Selected { get; set; }
 
     // TODO: Replace by deselecting, this should not be public

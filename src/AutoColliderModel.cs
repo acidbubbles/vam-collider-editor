@@ -3,8 +3,7 @@ using SimpleJSON;
 using UnityEngine;
 
 using Object = UnityEngine.Object;
-
-public class AutoColliderModel : IModel
+public class AutoColliderModel : ModelBase, IModel
 {
     public static AutoColliderModel Create(MVRScript script, AutoCollider autoCollider)
     {
@@ -18,9 +17,6 @@ public class AutoColliderModel : IModel
     private bool _selected;
     private readonly MVRScript _script;
     private readonly AutoCollider _autoCollider;
-
-    public string Id { get; set; }
-    public string Label { get; set; }
 
     public List<UIDynamic> Controls { get; private set; }
 

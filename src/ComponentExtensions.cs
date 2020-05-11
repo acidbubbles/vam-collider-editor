@@ -6,21 +6,25 @@ public static class ComponentExtensions
 {
     public static string Uuid(this Component component)
     {
-        var siblings = component.GetComponents<Component>().ToList();
-        int siblingIndex = siblings.IndexOf(component);
-
-        var paths = new Stack<string>(new[] { $"{component.name}[{siblingIndex}]" });
+        var paths = new Stack<string>(new[] { $"{component.name}" });
         var current = component.gameObject.transform;
 
-        while (current != null && !current.name.Equals("geometry", StringComparison.InvariantCultureIgnoreCase)
-                               && !current.name.Equals("Genesis2Female", StringComparison.InvariantCultureIgnoreCase)
-                               && !current.name.Equals("Genesis2Male", StringComparison.InvariantCultureIgnoreCase))
+        while (CanNavigateUp(current))
         {
-            paths.Push($"{current.name}[{current.GetSiblingIndex()}]");
+            paths.Push(current.name);
             current = current.transform.parent;
         }
 
         return component.GetTypeName() + ":" + string.Join(".", paths.ToArray());
+    }
+
+    private static bool CanNavigateUp(Transform current)
+    {
+        if (current == null) return false;
+        if (current.name.Equals("geometry", StringComparison.InvariantCultureIgnoreCase)) return false;
+        if (current.name.Equals("Genesis2Female", StringComparison.InvariantCultureIgnoreCase)) return false;
+        if (current.name.Equals("Genesis2Male", StringComparison.InvariantCultureIgnoreCase)) return false;
+        return true;
     }
 
     public static string GetTypeName(this Component component)

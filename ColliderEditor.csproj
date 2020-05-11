@@ -66,6 +66,7 @@
     <Compile Include="src/IModel.cs" />
     <Compile Include="src/JSONStorableFloatExtensions.cs" />
     <Compile Include="src/MaterialHelper.cs" />
+    <Compile Include="src/ModelBase.cs" />
     <Compile Include="src/RigidbodyGroupModel.cs" />
     <Compile Include="src/RigidbodyModel.cs" />
     <Compile Include="src/SphereColliderModel.cs" />

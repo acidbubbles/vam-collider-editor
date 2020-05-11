@@ -166,8 +166,10 @@ public class ColliderEditor : MVRScript
 
         // AutoColliders
 
+        var autoColliderDuplicates = new HashSet<string>();
         var autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
             .Select(autoCollider => AutoColliderModel.Create(this, autoCollider))
+            .Where(model => { if (!autoColliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
 
         var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
@@ -175,19 +177,23 @@ public class ColliderEditor : MVRScript
 
         // Rigidbodies
 
+        var rigidbodyDuplicates = new HashSet<string>();
         var rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
             .Where(rigidbody => !autoCollidersRigidBodies.Contains(rigidbody))
             .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
             .Select(rigidbody => RigidbodyModel.Create(this, rigidbody, groups))
+            .Where(model => { if (!rigidbodyDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
         var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
 
         // Colliders
 
+        var colliderDuplicates = new HashSet<string>();
         var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
             .Where(collider => !autoCollidersColliders.Contains(collider))
             .Where(collider => IsColliderIncluded(collider))
             .Select(collider => ColliderModel.CreateTyped(this, collider, rigidbodiesDict))
+            .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
 
         _colliders = colliders.ToDictionary(x => x.Id);
@@ -308,8 +314,11 @@ public class ColliderEditor : MVRScript
     private void AppendJson(JSONClass jsonClass)
     {
         var editablesJsonClass = new JSONClass();
-        foreach (var editablePairs in _editables)
-            editablePairs.Value.AppendJson(editablesJsonClass);
+        foreach (var editablePair in _editables)
+        {
+            if (editablePair.Value.IsDuplicate) continue;
+            editablePair.Value.AppendJson(editablesJsonClass);
+        }
         jsonClass.Add("editables", editablesJsonClass);
     }
 

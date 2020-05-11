@@ -8,6 +8,7 @@ src\ComponentExtensions.cs
 src\IModel.cs
 src\JSONStorableFloatExtensions.cs
 src\MaterialHelper.cs
+src\ModelBase.cs
 src\RigidbodyGroupModel.cs
 src\RigidbodyModel.cs
 src\SphereColliderModel.cs

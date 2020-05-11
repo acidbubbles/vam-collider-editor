@@ -5,7 +5,7 @@ using UnityEngine;
 
 using Object = UnityEngine.Object;
 
-public class RigidbodyModel : IModel
+public class RigidbodyModel : ModelBase, IModel
 {
     private readonly bool _initialEnabled;
     private readonly Rigidbody _rigidbody;
@@ -16,9 +16,7 @@ public class RigidbodyModel : IModel
 
     private bool _selected;
 
-    public string Id { get; set; }
     public string Name { get; set; }
-    public string Label { get; set; }
     public List<GroupModel> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; }
 
