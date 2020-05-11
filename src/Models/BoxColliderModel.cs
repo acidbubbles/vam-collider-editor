@@ -15,7 +15,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
     public Vector3 InitialCenter { get; set; }
 
     public BoxColliderModel(MVRScript parent, BoxCollider collider)
-        : base(parent, collider, collider.name)
+        : base(parent, collider)
     {
         InitialSize = collider.size;
         InitialCenter = collider.center;

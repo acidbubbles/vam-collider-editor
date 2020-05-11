@@ -12,24 +12,11 @@ public class AutoColliderModel : ModelBase<AutoCollider>, IModel
     public List<UIDynamic> Controls { get; private set; }
 
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider)
-        : base(script, autoCollider, GetLabel(autoCollider))
+        : base(script, autoCollider, $"[au] {Simplify(autoCollider.name)}")
     {
         _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
         _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
         _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
-    }
-
-    private static string GetLabel(AutoCollider autoCollider)
-    {
-        var label = autoCollider.name;
-        if (label.StartsWith("AutoColliderAutoColliders"))
-            return label.Substring("AutoColliderAutoColliders".Length);
-        else if (label.StartsWith("AutoColliderFemaleAutoColliders"))
-            return label.Substring("AutoColliderFemaleAutoColliders".Length);
-        else if (label.StartsWith("AutoCollider"))
-            return label.Substring("AutoCollider".Length);
-        else
-            return label;
     }
 
     protected override void CreateControls()

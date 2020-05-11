@@ -13,7 +13,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
     public Vector3 InitialCenter { get; set; }
 
     public SphereColliderModel(MVRScript parent, SphereCollider collider)
-        : base(parent, collider, collider.name)
+        : base(parent, collider)
     {
         InitialRadius = collider.radius;
         InitialCenter = collider.center;

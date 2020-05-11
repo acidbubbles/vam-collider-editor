@@ -9,8 +9,8 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 {
     protected T Collider { get; }
 
-    protected ColliderModel(MVRScript parent, T collider, string label)
-        : base(parent, collider, label)
+    protected ColliderModel(MVRScript parent, T collider)
+        : base(parent, collider)
     {
         Collider = collider;
     }
@@ -144,8 +144,8 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         }
     }
 
-    protected ColliderModel(MVRScript script, Collider component, string label)
-        : base(script, component, label)
+    protected ColliderModel(MVRScript script, Collider component)
+        : base(script, component, $"[co] {Simplify(component.attachedRigidbody != null ? component.attachedRigidbody.name : component.gameObject.name)}/{Simplify(component.name)}")
     {
     }
 

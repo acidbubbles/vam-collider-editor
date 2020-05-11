@@ -15,7 +15,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
     public Vector3 InitialCenter { get; set; }
 
     public CapsuleColliderModel(MVRScript parent, CapsuleCollider collider)
-        : base(parent, collider, collider.name)
+        : base(parent, collider)
     {
         InitialRadius = collider.radius;
         InitialHeight = collider.height;

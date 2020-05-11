@@ -14,15 +14,15 @@ public class RigidbodyModel : ModelBase<Rigidbody>, IModel
     public List<Group> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; }
 
-    public RigidbodyModel(MVRScript script, Rigidbody rigidbody, string label)
-        : base (script, rigidbody, label)
+    public RigidbodyModel(MVRScript script, Rigidbody rigidbody)
+        : base (script, rigidbody, $"[rb] {Simplify(rigidbody.name)}")
     {
         _initialEnabled = rigidbody.detectCollisions;
     }
 
     public static RigidbodyModel Create(MVRScript script, Rigidbody rigidbody, IEnumerable<Group> groups)
     {
-        var model = new RigidbodyModel(script, rigidbody, rigidbody.name);
+        var model = new RigidbodyModel(script, rigidbody);
         model.Groups = groups
             .Where(category => category.Pattern.IsMatch(rigidbody.name))
             .ToList();
