@@ -124,10 +124,8 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         return typed;
     }
 
-    protected override void CreateControls()
+    protected override void CreateControlsInternals()
     {
-        DestroyControls();
-
         var resetUi = Script.CreateButton("Reset Collider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
         RegisterControl(resetUi);

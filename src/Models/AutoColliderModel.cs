@@ -21,10 +21,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider));
     }
 
-    protected override void CreateControls()
+    protected override void CreateControlsInternals()
     {
-        DestroyControls();
-
         var resetUi = Script.CreateButton("Reset AutoCollider", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
         RegisterControl(resetUi);

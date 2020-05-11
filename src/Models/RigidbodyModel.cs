@@ -20,10 +20,8 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     public override IEnumerable<ColliderModel> GetColliders() => Colliders;
 
-    protected override void CreateControls()
+    protected override void CreateControlsInternals()
     {
-        DestroyControls();
-
         var resetUi = Script.CreateButton("Reset Rigidbody", true);
         resetUi.button.onClick.AddListener(ResetToInitial);
         RegisterControl(resetUi);

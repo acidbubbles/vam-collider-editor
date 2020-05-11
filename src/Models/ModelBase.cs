@@ -51,12 +51,14 @@ public abstract class ModelBase<T> where T : Component
 
     public void AppendJson(JSONClass parent)
     {
+        if (IsDuplicate) return;
         parent.Add(Id, DoGetJson());
     }
 
     public virtual void LoadJson(JSONClass jsonClass)
     {
-        DoLoadJson(jsonClass);
+        if (!IsDuplicate)
+            DoLoadJson(jsonClass);
 
         if (Selected)
         {
@@ -81,7 +83,20 @@ public abstract class ModelBase<T> where T : Component
         return storable;
     }
 
-    protected abstract void CreateControls();
+    protected void CreateControls()
+    {
+        DestroyControls();
+        if (IsDuplicate)
+        {
+            var jss = RegisterStorable(new JSONStorableString("Duplicate", "This item has duplicates and cannot be edited."));
+            RegisterControl(Script.CreateTextField(jss));
+        }
+        else
+        {
+            CreateControlsInternals();
+        }
+    }
+    protected abstract void CreateControlsInternals();
     protected void DestroyControls()
     {
         foreach (var storable in _controlsStorables)
@@ -95,6 +110,11 @@ public abstract class ModelBase<T> where T : Component
             {
                 var jsb = (JSONStorableBool)storable;
                 Script.RemoveToggle(jsb);
+            }
+            else if (storable is JSONStorableString)
+            {
+                var jss = (JSONStorableString)storable;
+                Script.RemoveTextField(jss);
             }
             else
             {
@@ -115,6 +135,11 @@ public abstract class ModelBase<T> where T : Component
             {
                 var toggle = (UIDynamicToggle)control;
                 Script.RemoveToggle(toggle);
+            }
+            else if (control is UIDynamicTextField)
+            {
+                var textfield = (UIDynamicTextField)control;
+                Script.RemoveTextField(textfield);
             }
             else if (control is UIDynamicButton)
             {
