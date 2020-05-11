@@ -113,7 +113,7 @@ public class ColliderEditor : MVRScript
             "Edit");
 
         _editablesList = CreateScrollablePopup(_editablesJson, true);
-        _editablesList.popupPanelHeight = 400f;
+        _editablesList.popupPanelHeight = 1200f;
 
         _editablesJson.setCallbackFunction = id =>
         {
