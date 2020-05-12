@@ -9,6 +9,7 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     protected override bool OwnsColliders => false;
 
+    public string Type => "Rigidbody";
     public List<Group> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; } = new List<ColliderModel>();
 

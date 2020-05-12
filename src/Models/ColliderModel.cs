@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
 
@@ -39,13 +38,13 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 
 public abstract class ColliderModel : ModelBase<Collider>, IModel
 {
-
     private bool _showPreview;
     private float _previewOpacity;
     private float _selectedPreviewOpacity;
     private bool _xRayPreview;
     private bool _highlighted;
 
+    public string Type => "Collider";
     public Collider Collider { get; set; }
     public RigidbodyModel RigidbodyModel { get; set; }
     public GameObject Preview { get; protected set; }

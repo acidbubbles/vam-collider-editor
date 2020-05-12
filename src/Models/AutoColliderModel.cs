@@ -11,6 +11,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override bool OwnsColliders => true;
 
+    public string Type => "Auto Collider";
+
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider)
         : base(script, autoCollider, $"[au] {Simplify(autoCollider.name)}")
     {

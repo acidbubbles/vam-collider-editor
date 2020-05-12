@@ -87,12 +87,12 @@ public class EditablesList
 
         // All Editables
 
-        var editables = colliders.Cast<IModel>()
+        var all = colliders.Cast<IModel>()
             .Concat(autoColliders.Cast<IModel>())
             .Concat(rigidbodies.Cast<IModel>())
-            .ToDictionary(x => x.Id, x => x);
+            .ToList();
 
-        return new EditablesList(editables, colliders.ToDictionary(x => x.Id));
+        return new EditablesList(all, colliders);
     }
 
     private static bool IsColliderIncluded(Collider collider)
@@ -122,11 +122,13 @@ public class EditablesList
     }
 
     public Dictionary<string, ColliderModel> Colliders { get; }
-    public Dictionary<string, IModel> All { get; }
+    public Dictionary<string, IModel> ByUuid { get; }
+    public List<IModel> All { get; }
 
-    public EditablesList(Dictionary<string, IModel> all, Dictionary<string, ColliderModel> colliders)
+    public EditablesList(List<IModel> all, List<ColliderModel> colliders)
     {
-        All = all;
-        Colliders = colliders;
+        ByUuid = all.ToDictionary(x => x.Id, x => x);
+        All = all.OrderBy(a => a.Label).ToList();
+        Colliders = colliders.ToDictionary(x => x.Id);
     }
 }

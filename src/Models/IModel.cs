@@ -2,6 +2,7 @@ using SimpleJSON;
 
 public interface IModel
 {
+    string Type { get; }
     string Id { get; }
     string Label { get; }
     bool IsDuplicate { get; }
