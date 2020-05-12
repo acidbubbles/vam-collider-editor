@@ -1,3 +1,5 @@
+using UnityEngine;
+using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +14,8 @@ using SimpleJSON;
 public class ColliderEditor : MVRScript
 {
     private const string _saveExt = "colliders";
-
+    private const string NoSelectionLabel = "Select...";
+    private const string AllLabel = "All";
     private string _lastBrowseDir = SuperController.singleton.savesDir;
 
     private JSONStorableStringChooser _typesJson;
@@ -21,6 +24,7 @@ public class ColliderEditor : MVRScript
 
     private IModel _selected;
     private EditablesList _editables;
+    private JSONStorableString _textFilterJson;
 
     public override void Init()
     {
@@ -99,14 +103,18 @@ public class ColliderEditor : MVRScript
                 colliderPair.Value.ResetToInitial();
         });
 
-        var types = new List<string> { "Select a type" };
+        var types = new List<string> { NoSelectionLabel };
         types.AddRange(_editables.All.Select(e => e.Type).Distinct());
-        types.Add("Add");
+        types.Add(AllLabel);
         _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Types");
         _typesJson.setCallbackFunction = _ => UpdateFilter();
         var typesList = CreateScrollablePopup(_typesJson, false);
         typesList.popupPanelHeight = 400f;
         _popups.Add(typesList);
+
+        _textFilterJson = new JSONStorableString("Search", "");
+        _textFilterJson.setCallbackFunction = _ => UpdateFilter();
+        CreateTextInput(_textFilterJson, false);
 
         _editablesJson = new JSONStorableStringChooser(
             "Edit",
@@ -142,8 +150,20 @@ public class ColliderEditor : MVRScript
         try
         {
             IEnumerable<IModel> filtered = _editables.All;
-            if (_typesJson.val != "All")
+            var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val);
+            if (_typesJson.val != AllLabel && !(_typesJson.val == NoSelectionLabel && hasSearchQuery))
                 filtered = filtered.Where(e => e.Type == _typesJson.val);
+            if (hasSearchQuery)
+            {
+                var tokens = _textFilterJson.val.Split(' ').Select(t => t.Trim());
+                foreach (var token in tokens)
+                {
+                    filtered = filtered.Where(e =>
+                        e.Type.IndexOf(token, StringComparison.InvariantCultureIgnoreCase) > -1 ||
+                        e.Label.IndexOf(token, StringComparison.InvariantCultureIgnoreCase) > -1
+                    );
+                }
+            }
             var result = filtered.ToList();
 
             _editablesJson.choices = filtered.Select(x => x.Id).ToList();
@@ -268,4 +288,16 @@ public class ColliderEditor : MVRScript
     #endregion
 
     private void LogError(string method, string message) => SuperController.LogError($"{nameof(ColliderEditor)}.{method}: {message}");
+
+    public UIDynamicTextField CreateTextInput(JSONStorableString jss, bool rightSide = false)
+    {
+        var textfield = CreateTextField(jss, rightSide);
+        textfield.height = 20f;
+        textfield.backgroundColor = Color.white;
+        var input = textfield.gameObject.AddComponent<InputField>();
+        var rect = input.GetComponent<RectTransform>().sizeDelta = new Vector2(1f, 0.4f);
+        input.textComponent = textfield.UItext;
+        jss.inputField = input;
+        return textfield;
+    }
 }
