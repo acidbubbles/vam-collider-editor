@@ -10,6 +10,8 @@ src\Models\SphereColliderModel.cs
 src\ColliderEditor.cs
 src\ColorExtensions.cs
 src\ComponentExtensions.cs
+src\EditablesList.cs
+src\FloatExtensions.cs
 src\Group.cs
 src\JSONStorableFloatExtensions.cs
 src\MaterialHelper.cs

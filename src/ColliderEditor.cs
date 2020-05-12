@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SimpleJSON;
-using UnityEngine;
-
 
 /// <summary>
 /// Collider Editor
@@ -18,19 +16,16 @@ public class ColliderEditor : MVRScript
     private string _lastBrowseDir = SuperController.singleton.savesDir;
 
     private JSONStorableStringChooser _editablesJson;
-
-    private IModel _selected;
-
     private UIDynamicPopup _editablesList;
 
-    private Dictionary<string, ColliderModel> _colliders;
-    private Dictionary<string, IModel> _editables;
+    private IModel _selected;
+    private EditablesList _editables;
 
     public override void Init()
     {
         try
         {
-            BuildModels();
+            _editables = EditablesList.Build(this);
             BuildUI();
         }
         catch (Exception e)
@@ -43,7 +38,7 @@ public class ColliderEditor : MVRScript
     {
         var showPreviews = new JSONStorableBool("showPreviews", false, value =>
         {
-            foreach (var editablePair in _editables)
+            foreach (var editablePair in _editables.All)
                 editablePair.Value.SetShowPreview(value);
         });
         RegisterBool(showPreviews);
@@ -53,7 +48,7 @@ public class ColliderEditor : MVRScript
 
         var xRayPreviews = new JSONStorableBool("xRayPreviews", true, value =>
         {
-            foreach (var editablePair in _editables)
+            foreach (var editablePair in _editables.All)
                 editablePair.Value.SetXRayPreview(value);
         });
         RegisterBool(xRayPreviews);
@@ -63,8 +58,8 @@ public class ColliderEditor : MVRScript
 
         JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", 0.001f, value =>
         {
-            var alpha = ExponentialScale(value, 0.1f, 1f);
-            foreach (var editablePair in _editables)
+            var alpha = value.ExponentialScale(0.1f, 1f);
+            foreach (var editablePair in _editables.All)
                 editablePair.Value.SetPreviewOpacity(alpha);
         }, 0f, 1f);
         RegisterFloat(previewOpacity);
@@ -72,8 +67,8 @@ public class ColliderEditor : MVRScript
 
         JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
         {
-            var alpha = ExponentialScale(value, 0.1f, 1f);
-            foreach (var editablePair in _editables)
+            var alpha = value.ExponentialScale(0.1f, 1f);
+            foreach (var editablePair in _editables.All)
                 editablePair.Value.SetSelectedPreviewOpacity(alpha);
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
@@ -101,7 +96,7 @@ public class ColliderEditor : MVRScript
         var resetAllUI = CreateButton("Reset All");
         resetAllUI.button.onClick.AddListener(() =>
         {
-            foreach (var colliderPair in _colliders)
+            foreach (var colliderPair in _editables.Colliders)
                 colliderPair.Value.ResetToInitial();
         });
 
@@ -118,7 +113,7 @@ public class ColliderEditor : MVRScript
         _editablesJson.setCallbackFunction = id =>
         {
             if (_selected != null) _selected.Selected = false;
-            _editables.TryGetValue(id, out _selected);
+            _editables.All.TryGetValue(id, out _selected);
             if (_selected != null) _selected.Selected = true;
             SyncPopups();
         };
@@ -132,126 +127,11 @@ public class ColliderEditor : MVRScript
         _editablesList.popup.Toggle();
     }
 
-    private void BuildModels()
-    {
-        var groups = containingAtom.type == "Person"
-                 ? new List<Group>
-                 {
-                    new Group("All", @"^.+$"),
-                    new Group("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
-                    new Group("Left arm", @"^l(Shldr|ForeArm)"),
-                    new Group("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-                    new Group("Right arm", @"^r(Shldr|ForeArm)"),
-                    new Group("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-                    new Group("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
-                    new Group("Left breast", @"l((Pectoral)|Nipple)"),
-                    new Group("Right breast", @"r((Pectoral)|Nipple)"),
-                    new Group("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
-                    new Group("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
-                    new Group("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
-                    new Group("Anus", @"^_JointA[rl]"),
-                    new Group("Vagina", @"^_Joint(Gr|Gl|B)"),
-                    new Group("Penis", @"^(Gen[1-3])|Testes"),
-                    new Group("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
-                    new Group("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
-                    new Group("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
-                    new Group("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
-                    new Group("Other", @"^(?!.*).*$")
-                 }
-                 : new List<Group>
-                 {
-                    new Group("All", @"^.+$"),
-                 };
-        var groupsDict = groups.ToDictionary(x => x.Id);
-
-        // AutoColliders
-
-        var autoColliderDuplicates = new HashSet<string>();
-        var autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
-            .Select(autoCollider => new AutoColliderModel(this, autoCollider))
-            .Where(model => { if (!autoColliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
-            .ToList();
-
-        var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
-        var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()).Select(x => x.Collider));
-
-        // Rigidbodies
-
-        var rigidbodyDuplicates = new HashSet<string>();
-        var rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
-            .Where(rigidbody => !autoCollidersRigidBodies.Contains(rigidbody))
-            .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
-            .Select(rigidbody => new RigidbodyModel(this, rigidbody))
-            .Where(model => { if (!rigidbodyDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
-            .ToList();
-        var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
-
-        // Colliders
-
-        var colliderDuplicates = new HashSet<string>();
-        var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
-            .Where(collider => !autoCollidersColliders.Contains(collider))
-            .Where(collider => IsColliderIncluded(collider))
-            .Select(collider => ColliderModel.CreateTyped(this, collider))
-            .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
-            .ToList();
-
-        _colliders = colliders.ToDictionary(x => x.Id);
-
-        // Attach colliders to rigidbodies
-
-        foreach(var colliderModel in colliders)
-        {
-            if (colliderModel.Collider.attachedRigidbody != null)
-            {
-                RigidbodyModel rigidbodyModel;
-                if (rigidbodiesDict.TryGetValue(colliderModel.Collider.attachedRigidbody.Uuid(), out rigidbodyModel))
-                {
-                    colliderModel.RigidbodyModel = rigidbodyModel;
-                    rigidbodyModel.Colliders.Add(colliderModel);
-                }
-            }
-        }
-
-        // All Editables
-
-        _editables = colliders.Cast<IModel>()
-            .Concat(autoColliders.Cast<IModel>())
-            .Concat(rigidbodies.Cast<IModel>())
-            .ToDictionary(x => x.Id, x => x);
-    }
-
-    private static bool IsColliderIncluded(Collider collider)
-    {
-        if (collider.name == "control") return false;
-        if (collider.name == "object") return false;
-        if (collider.name.Contains("Tool")) return false;
-        if (collider.name.EndsWith("Control")) return false;
-        if (collider.name.EndsWith("Link")) return false;
-        if (collider.name.EndsWith("Trigger")) return false;
-        if (collider.name.EndsWith("UI")) return false;
-        if (collider.name.Contains("Ponytail")) return false;
-        return true;
-    }
-
-    private static bool IsRigidbodyIncluded(Rigidbody rigidbody)
-    {
-        if (rigidbody.isKinematic) return false;
-        if (rigidbody.name == "control") return false;
-        if (rigidbody.name == "object") return false;
-        if (rigidbody.name.EndsWith("Control")) return false;
-        if (rigidbody.name.StartsWith("hairTool")) return false;
-        if (rigidbody.name.EndsWith("Trigger")) return false;
-        if (rigidbody.name.EndsWith("UI")) return false;
-        if (rigidbody.name.Contains("Ponytail")) return false;
-        return true;
-    }
-
     private void UpdateFilter()
     {
         try
         {
-            var editables = _editables.Values.OrderBy(e => e.Label).ToList();
+            var editables = _editables.All.Values.OrderBy(e => e.Label).ToList();
             _editablesJson.choices = editables.Select(x => x.Id).ToList();
             _editablesJson.displayChoices = editables.Select(x => x.Label).ToList();
 
@@ -263,7 +143,7 @@ public class ColliderEditor : MVRScript
         }
     }
 
-    private void LogError(string method, string message) => SuperController.LogError($"{nameof(ColliderEditor)}.{method}: {message}");
+    #region Presets
 
     private void HandleLoadPreset(string path)
     {
@@ -272,17 +152,6 @@ public class ColliderEditor : MVRScript
         _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
 
         LoadFromJson((JSONClass)LoadJSON(path));
-    }
-
-    private void LoadFromJson(JSONClass jsonClass)
-    {
-        var editablesJsonClass = jsonClass["editables"].AsObject;
-        foreach (string editableId in editablesJsonClass.Keys)
-        {
-            IModel editableModel;
-            if (_editables.TryGetValue(editableId, out editableModel))
-                editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
-        }
     }
 
     private void HandleSavePreset(string path)
@@ -300,17 +169,32 @@ public class ColliderEditor : MVRScript
         SaveJSON(presetJsonClass, path);
     }
 
-    public void OnDestroy()
+    #endregion
+
+    #region Load / Save JSON
+
+    public override void RestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, JSONArray presetAtoms = null, bool setMissingToDefault = true)
     {
-        if (_editables == null) return;
+        base.RestoreFromJSON(jc, restorePhysical, restoreAppearance, presetAtoms, setMissingToDefault);
+
         try
         {
-            foreach (var editablePair in _editables)
-                editablePair.Value.DestroyPreview();
+            LoadFromJson(jc);
         }
-        catch (Exception e)
+        catch (Exception exc)
         {
-            LogError(nameof(OnDestroy), e.ToString());
+            LogError(nameof(RestoreFromJSON), exc.ToString());
+        }
+    }
+
+    private void LoadFromJson(JSONClass jsonClass)
+    {
+        var editablesJsonClass = jsonClass["editables"].AsObject;
+        foreach (string editableId in editablesJsonClass.Keys)
+        {
+            IModel editableModel;
+            if (_editables.All.TryGetValue(editableId, out editableModel))
+                editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
         }
     }
 
@@ -328,7 +212,7 @@ public class ColliderEditor : MVRScript
     private void AppendJson(JSONClass jsonClass)
     {
         var editablesJsonClass = new JSONClass();
-        foreach (var editablePair in _editables)
+        foreach (var editablePair in _editables.All)
         {
             if (editablePair.Value.IsDuplicate) continue;
             editablePair.Value.AppendJson(editablesJsonClass);
@@ -336,35 +220,36 @@ public class ColliderEditor : MVRScript
         jsonClass.Add("editables", editablesJsonClass);
     }
 
-    private float ExponentialScale(float inputValue, float midValue, float maxValue)
+    #endregion
+
+    #region Unity events
+
+    public void OnDestroy()
     {
-        var m = maxValue / midValue;
-        var c = Mathf.Log(Mathf.Pow(m - 1, 2));
-        var b = maxValue / (Mathf.Exp(c) - 1);
-        var a = -1 * b;
-        return a + b * Mathf.Exp(c * inputValue);
+        if (_editables.All == null) return;
+        try
+        {
+            foreach (var editablePair in _editables.All)
+                editablePair.Value.DestroyPreview();
+        }
+        catch (Exception e)
+        {
+            LogError(nameof(OnDestroy), e.ToString());
+        }
     }
+
 
     private void FixedUpdate()
     {
-        foreach (var colliderPair in _colliders)
+        // TODO: Validate whether this is really necessary. Running code multiple times per frame should be avoided.
+        foreach (var colliderPair in _editables.Colliders)
         {
             colliderPair.Value.UpdateControls();
             colliderPair.Value.UpdatePreview();
         }
     }
 
-    public override void RestoreFromJSON(JSONClass jc, bool restorePhysical = true, bool restoreAppearance = true, JSONArray presetAtoms = null, bool setMissingToDefault = true)
-    {
-        base.RestoreFromJSON(jc, restorePhysical, restoreAppearance, presetAtoms, setMissingToDefault);
+    #endregion
 
-        try
-        {
-            LoadFromJson(jc);
-        }
-        catch (Exception exc)
-        {
-            LogError(nameof(RestoreFromJSON), exc.ToString());
-        }
-    }
+    private void LogError(string method, string message) => SuperController.LogError($"{nameof(ColliderEditor)}.{method}: {message}");
 }

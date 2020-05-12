@@ -68,6 +68,8 @@
     <Compile Include="src\ColliderEditor.cs" />
     <Compile Include="src\ColorExtensions.cs" />
     <Compile Include="src\ComponentExtensions.cs" />
+    <Compile Include="src\EditablesList.cs" />
+    <Compile Include="src\FloatExtensions.cs" />
     <Compile Include="src\Group.cs" />
     <Compile Include="src\JSONStorableFloatExtensions.cs" />
     <Compile Include="src\MaterialHelper.cs" />
