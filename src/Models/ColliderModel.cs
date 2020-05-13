@@ -128,6 +128,15 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected override void CreateControlsInternal()
     {
+        if (RigidbodyModel != null)
+        {
+            var goToRigidbodyButton = Script.CreateButton("Go to Rigidbody", true);
+            goToRigidbodyButton.button.onClick.AddListener(() =>
+            {
+                Script.SendMessage("SelectEditable", RigidbodyModel);
+            });
+            RegisterControl(goToRigidbodyButton);
+        }
         DoCreateControls();
     }
 

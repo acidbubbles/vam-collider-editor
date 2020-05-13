@@ -82,7 +82,7 @@ public class ColliderEditor : MVRScript
             if (!showPreviews.val) showPreviews.val = true;
             var alpha = value.ExponentialScale(0.1f, 1f);
             _config.SelectedPreviewsOpacity = alpha;
-            if(_selected != null)
+            if (_selected != null)
                 _selected.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
@@ -151,13 +151,30 @@ public class ColliderEditor : MVRScript
         _popups.Add(editablesList);
         _editablesJson.setCallbackFunction = id =>
         {
-            if (_selected != null) _selected.Selected = false;
-            _editables.ByUuid.TryGetValue(id, out _selected);
-            if (_selected != null) _selected.Selected = true;
-            SyncPopups();
+            IModel val;
+            if (_editables.ByUuid.TryGetValue(id, out val))
+                SelectEditable(val);
+            else
+                SelectEditable(null);
         };
 
         UpdateFilter();
+    }
+
+    public void SelectEditable(IModel val)
+    {
+        if (_selected != null) _selected.Selected = false;
+        if (val != null)
+        {
+            _selected = val;
+            val.Selected = true;
+            _editablesJson.valNoCallback = val.Label;
+        }
+        else
+        {
+            _editablesJson.valNoCallback = "";
+        }
+        SyncPopups();
     }
 
     private void SyncPopups()
