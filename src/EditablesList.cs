@@ -11,7 +11,6 @@ public class EditablesList
         var groups = containingAtom.type == "Person"
                  ? new List<Group>
                  {
-                    new Group("All", @"^.+$"),
                     new Group("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
                     new Group("Left arm", @"^l(Shldr|ForeArm)"),
                     new Group("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
@@ -36,7 +35,6 @@ public class EditablesList
                  {
                     new Group("All", @"^.+$"),
                  };
-        var groupsDict = groups.ToDictionary(x => x.Id);
 
         // AutoColliders
 
@@ -44,6 +42,7 @@ public class EditablesList
         var autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
             .Select(autoCollider => new AutoColliderModel(script, autoCollider))
             .Where(model => { if (!autoColliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
+            .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.AutoCollider.name)))
             .ToList();
 
         var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
@@ -57,6 +56,7 @@ public class EditablesList
             .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
             .Select(rigidbody => new RigidbodyModel(script, rigidbody))
             .Where(model => { if (!rigidbodyDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
+            .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.Rigidbody.name)))
             .ToList();
         var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
 
@@ -81,6 +81,11 @@ public class EditablesList
                 {
                     colliderModel.RigidbodyModel = rigidbodyModel;
                     rigidbodyModel.Colliders.Add(colliderModel);
+                    colliderModel.Group = rigidbodyModel.Group;
+                }
+                else
+                {
+                    colliderModel.Group = groups.FirstOrDefault(g => g.Test(colliderModel.Collider.name));
                 }
             }
         }
@@ -92,7 +97,7 @@ public class EditablesList
             .Concat(rigidbodies.Cast<IModel>())
             .ToList();
 
-        return new EditablesList(all, colliders);
+        return new EditablesList(groups, all, colliders);
     }
 
     private static bool IsColliderIncluded(Collider collider)
@@ -122,11 +127,13 @@ public class EditablesList
     }
 
     public Dictionary<string, ColliderModel> Colliders { get; }
+    public List<Group> Groups { get; }
     public Dictionary<string, IModel> ByUuid { get; }
     public List<IModel> All { get; }
 
-    public EditablesList(List<IModel> all, List<ColliderModel> colliders)
+    public EditablesList(List<Group> groups, List<IModel> all, List<ColliderModel> colliders)
     {
+        Groups = groups;
         ByUuid = all.ToDictionary(x => x.Id, x => x);
         All = all.OrderBy(a => a.Label).ToList();
         Colliders = colliders.ToDictionary(x => x.Id);

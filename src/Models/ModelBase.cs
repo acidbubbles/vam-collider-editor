@@ -12,6 +12,7 @@ public abstract class ModelBase<T> where T : Component
     protected readonly MVRScript Script;
     protected readonly T Component;
 
+    public Group Group { get; set; }
     public string Id { get; set; }
     public string Label { get; set; }
     public bool IsDuplicate { get; set; }

@@ -10,8 +10,8 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     protected override bool OwnsColliders => false;
 
     public string Type => "Rigidbody";
-    public List<Group> Groups { get; set; }
     public List<ColliderModel> Colliders { get; set; } = new List<ColliderModel>();
+    public Rigidbody Rigidbody => Component;
 
     public RigidbodyModel(MVRScript script, Rigidbody rigidbody)
         : base(script, rigidbody, $"[rb] {Simplify(rigidbody.name)}")

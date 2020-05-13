@@ -18,13 +18,14 @@ public class ColliderEditor : MVRScript
     private const string AllLabel = "All";
     private string _lastBrowseDir = SuperController.singleton.savesDir;
 
+    private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
+    private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
     private readonly List<UIDynamicPopup> _popups = new List<UIDynamicPopup>();
 
     private IModel _selected;
     private EditablesList _editables;
-    private JSONStorableString _textFilterJson;
 
     public override void Init()
     {
@@ -103,10 +104,19 @@ public class ColliderEditor : MVRScript
                 colliderPair.Value.ResetToInitial();
         });
 
+        var groups = new List<string> { NoSelectionLabel };
+        groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
+        groups.Add(AllLabel);
+        _groupsJson = new JSONStorableStringChooser("Group", groups, groups[0], "Group");
+        _groupsJson.setCallbackFunction = _ => UpdateFilter();
+        var groupsList = CreateScrollablePopup(_groupsJson, false);
+        groupsList.popupPanelHeight = 400f;
+        _popups.Add(groupsList);
+
         var types = new List<string> { NoSelectionLabel };
         types.AddRange(_editables.All.Select(e => e.Type).Distinct());
         types.Add(AllLabel);
-        _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Types");
+        _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Type");
         _typesJson.setCallbackFunction = _ => UpdateFilter();
         var typesList = CreateScrollablePopup(_typesJson, false);
         typesList.popupPanelHeight = 400f;
@@ -151,8 +161,13 @@ public class ColliderEditor : MVRScript
         {
             IEnumerable<IModel> filtered = _editables.All;
             var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val);
+
+            if (_groupsJson.val != AllLabel && !(_groupsJson.val == NoSelectionLabel && hasSearchQuery))
+                filtered = filtered.Where(e => e.Group?.Name == _groupsJson.val);
+
             if (_typesJson.val != AllLabel && !(_typesJson.val == NoSelectionLabel && hasSearchQuery))
                 filtered = filtered.Where(e => e.Type == _typesJson.val);
+
             if (hasSearchQuery)
             {
                 var tokens = _textFilterJson.val.Split(' ').Select(t => t.Trim());
@@ -164,6 +179,7 @@ public class ColliderEditor : MVRScript
                     );
                 }
             }
+
             var result = filtered.ToList();
 
             _editablesJson.choices = filtered.Select(x => x.Id).ToList();
