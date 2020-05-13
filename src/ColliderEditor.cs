@@ -26,6 +26,7 @@ public class ColliderEditor : MVRScript
     private JSONStorableStringChooser _editablesJson;
     private readonly List<UIDynamicPopup> _popups = new List<UIDynamicPopup>();
 
+    private readonly ColliderPreviewConfig _config = new ColliderPreviewConfig();
     private IModel _selected;
     private EditablesList _editables;
     private JSONClass _jsonWhenDisabled;
@@ -34,7 +35,7 @@ public class ColliderEditor : MVRScript
     {
         try
         {
-            _editables = EditablesList.Build(this);
+            _editables = EditablesList.Build(this, _config);
             BuildUI();
         }
         catch (Exception e)
@@ -45,40 +46,44 @@ public class ColliderEditor : MVRScript
 
     private void BuildUI()
     {
-        var showPreviews = new JSONStorableBool("showPreviews", false, value =>
+        var showPreviews = new JSONStorableBool("showPreviews", ColliderPreviewConfig.DefaultPreviewsEnabled, value =>
         {
+            _config.PreviewsEnabled = value;
             foreach (var editable in _editables.All)
-                editable.SetShowPreview(value);
+                editable.UpdatePreviewFromConfig();
         });
         RegisterBool(showPreviews);
         var showPreviewsToggle = CreateToggle(showPreviews);
         showPreviewsToggle.label = "Show Previews";
 
-        var xRayPreviews = new JSONStorableBool("xRayPreviews", true, value =>
+        var xRayPreviews = new JSONStorableBool("xRayPreviews", ColliderPreviewConfig.DefaultXRayPreviews, value =>
         {
+            _config.XRayPreviews = value;
             foreach (var editable in _editables.All)
-                editable.SetXRayPreview(value);
+                editable.UpdatePreviewFromConfig();
         });
         RegisterBool(xRayPreviews);
         var xRayPreviewsToggle = CreateToggle(xRayPreviews);
         xRayPreviewsToggle.label = "Use XRay Previews";
 
-        JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", 0.001f, value =>
+        JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
         {
             if (!showPreviews.val) showPreviews.val = true;
             var alpha = value.ExponentialScale(0.1f, 1f);
+            _config.PreviewsOpacity = alpha;
             foreach (var editable in _editables.All)
-                editable.SetPreviewOpacity(alpha);
+                editable.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(previewOpacity);
         CreateSlider(previewOpacity).label = "Preview Opacity";
 
-        JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", 0.3f, value =>
+        JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewOpacity, value =>
         {
             if (!showPreviews.val) showPreviews.val = true;
             var alpha = value.ExponentialScale(0.1f, 1f);
-            foreach (var editable in _editables.All)
-                editable.SetSelectedPreviewOpacity(alpha);
+            _config.SelectedPreviewsOpacity = alpha;
+            if(_selected != null)
+                _selected.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
         CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
@@ -347,11 +352,14 @@ public class ColliderEditor : MVRScript
 
     private void FixedUpdate()
     {
-        // TODO: Validate whether this is really necessary. Running code multiple times per frame should be avoided.
-        foreach (var colliderPair in _editables.Colliders)
+        // TODO: Validate whether this is really necessary. Running code multiple times per frame should be avoided. At least reduce this to every frame.
+        if (_config.PreviewsEnabled)
         {
-            colliderPair.Value.UpdateControls();
-            colliderPair.Value.UpdatePreview();
+            foreach (var colliderPair in _editables.Colliders)
+            {
+                colliderPair.Value.UpdateControls();
+                colliderPair.Value.UpdatePreviewFromCollider();
+            }
         }
     }
 

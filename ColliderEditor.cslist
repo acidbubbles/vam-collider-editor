@@ -8,6 +8,7 @@ src\Models\ModelBase.cs
 src\Models\RigidbodyModel.cs
 src\Models\SphereColliderModel.cs
 src\ColliderEditor.cs
+src\ColliderPreviewConfig.cs
 src\ColorExtensions.cs
 src\ComponentExtensions.cs
 src\EditablesList.cs

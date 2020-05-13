@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class EditablesList
 {
-    public static EditablesList Build(MVRScript script)
+    public static EditablesList Build(MVRScript script, ColliderPreviewConfig config)
     {
         var containingAtom = script.containingAtom;
 
@@ -40,7 +40,7 @@ public class EditablesList
 
         var autoColliderDuplicates = new HashSet<string>();
         var autoColliders = containingAtom.GetComponentsInChildren<AutoCollider>()
-            .Select(autoCollider => new AutoColliderModel(script, autoCollider))
+            .Select(autoCollider => new AutoColliderModel(script, autoCollider, config))
             .Where(model => { if (!autoColliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.AutoCollider.name)))
             .ToList();
@@ -66,7 +66,7 @@ public class EditablesList
         var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
             .Where(collider => !autoCollidersColliders.Contains(collider))
             .Where(collider => IsColliderIncluded(collider))
-            .Select(collider => ColliderModel.CreateTyped(script, collider))
+            .Select(collider => ColliderModel.CreateTyped(script, collider, config))
             .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
 

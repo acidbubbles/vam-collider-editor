@@ -14,14 +14,14 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     public string Type => "Auto Collider";
     public AutoCollider AutoCollider => Component;
 
-    public AutoColliderModel(MVRScript script, AutoCollider autoCollider)
+    public AutoColliderModel(MVRScript script, AutoCollider autoCollider, ColliderPreviewConfig config)
         : base(script, autoCollider, $"[au] {Simplify(autoCollider.name)}")
     {
         _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
         _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
         _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
-        if (Component.hardCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, autoCollider.hardCollider));
-        if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider));
+        if (Component.hardCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, autoCollider.hardCollider, config));
+        if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider, config));
     }
 
     protected override void CreateControlsInternal()

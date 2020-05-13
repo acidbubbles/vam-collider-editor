@@ -8,8 +8,8 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 {
     protected new T Collider { get; }
 
-    protected ColliderModel(MVRScript parent, T collider)
-        : base(parent, collider)
+    protected ColliderModel(MVRScript parent, T collider, ColliderPreviewConfig config)
+        : base(parent, collider, config)
     {
         Collider = collider;
     }
@@ -31,17 +31,14 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 
         Preview = preview;
 
-        DoUpdatePreview();
+        DoUpdatePreviewFromCollider();
         RefreshHighlighted();
     }
 }
 
 public abstract class ColliderModel : ModelBase<Collider>, IModel
 {
-    private bool _showPreview;
-    private float _previewOpacity;
-    private float _selectedPreviewOpacity;
-    private bool _xRayPreview;
+    private readonly ColliderPreviewConfig _config;
     private bool _highlighted;
 
     public string Type => "Collider";
@@ -49,55 +46,61 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public RigidbodyModel RigidbodyModel { get; set; }
     public GameObject Preview { get; protected set; }
 
-    public void SetSelectedPreviewOpacity(float value)
+    public void UpdatePreviewFromConfig()
     {
-        if (Mathf.Approximately(value, _selectedPreviewOpacity))
-            return;
-
-        _selectedPreviewOpacity = value;
-
-        if (Preview != null && _highlighted)
+        if (_config.PreviewsEnabled)
         {
-            var previewRenderer = Preview.GetComponent<Renderer>();
-            var color = previewRenderer.material.color;
-            color.a = _selectedPreviewOpacity;
-            previewRenderer.material.color = color;
-            previewRenderer.enabled = false;
-            previewRenderer.enabled = true;
-        }
-    }
-
-    public void SetPreviewOpacity(float value)
-    {
-        if (Mathf.Approximately(value, _previewOpacity))
-            return;
-
-        _previewOpacity = value;
-
-        if (Preview != null && !_highlighted)
-        {
-            var previewRenderer = Preview.GetComponent<Renderer>();
-            var color = previewRenderer.material.color;
-            color.a = _previewOpacity;
-            previewRenderer.material.color = color;
-
-        }
-    }
-
-    public void SetShowPreview(bool value)
-    {
-        _showPreview = value;
-
-        if (_showPreview)
             CreatePreview();
+
+            var previewRenderer = Preview.GetComponent<Renderer>();
+            var material = previewRenderer.material;
+
+            if (!_highlighted)
+            {
+                var color = previewRenderer.material.color;
+                color.a = _config.PreviewsOpacity;
+                previewRenderer.material.color = color;
+            }
+            else
+            {
+                var color = previewRenderer.material.color;
+                color.a = _config.SelectedPreviewsOpacity;
+                previewRenderer.material.color = color;
+                previewRenderer.enabled = false;
+                previewRenderer.enabled = true;
+            }
+
+            if (_config.XRayPreviews && material.shader.name != "Battlehub/RTGizmos/Handles")
+            {
+                material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
+                material.SetFloat("_Offset", 1f);
+                material.SetFloat("_MinAlpha", 1f);
+                previewRenderer.material = material;
+            }
+            else if (!_config.XRayPreviews & material.shader.name != "Standard")
+            {
+                material.shader = Shader.Find("Standard");
+                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                material.SetInt("_ZWrite", 0);
+                material.DisableKeyword("_ALPHATEST_ON");
+                material.EnableKeyword("_ALPHABLEND_ON");
+                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                material.renderQueue = 3000;
+                previewRenderer.material = material;
+            }
+        }
         else
+        {
             DestroyPreview();
+        }
     }
 
-    protected ColliderModel(MVRScript script, Collider collider)
+    protected ColliderModel(MVRScript script, Collider collider, ColliderPreviewConfig config)
         : base(script, collider, CreateLabel(collider))
     {
         Collider = collider;
+        _config = config;
     }
 
     private static string CreateLabel(Collider collider)
@@ -107,16 +110,16 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         return $"[co] {label}";
     }
 
-    public static ColliderModel CreateTyped(MVRScript script, Collider collider)
+    public static ColliderModel CreateTyped(MVRScript script, Collider collider, ColliderPreviewConfig config)
     {
         ColliderModel typed;
 
         if (collider is SphereCollider)
-            typed = new SphereColliderModel(script, (SphereCollider)collider);
+            typed = new SphereColliderModel(script, (SphereCollider)collider, config);
         else if (collider is BoxCollider)
-            typed = new BoxColliderModel(script, (BoxCollider)collider);
+            typed = new BoxColliderModel(script, (BoxCollider)collider, config);
         else if (collider is CapsuleCollider)
-            typed = new CapsuleColliderModel(script, (CapsuleCollider)collider);
+            typed = new CapsuleColliderModel(script, (CapsuleCollider)collider, config);
         else
             throw new InvalidOperationException("Unsupported collider type");
 
@@ -143,13 +146,12 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected abstract GameObject DoCreatePreview();
 
-    public void UpdatePreview()
+    public void UpdatePreviewFromCollider()
     {
-        if (_showPreview)
-            DoUpdatePreview();
+        DoUpdatePreviewFromCollider();
     }
 
-    protected abstract void DoUpdatePreview();
+    protected abstract void DoUpdatePreviewFromCollider();
 
     public void UpdateControls()
     {
@@ -162,37 +164,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     {
         SetHighlighted(value);
         base.SetSelected(value);
-    }
-
-    public void SetXRayPreview(bool value)
-    {
-        _xRayPreview = value;
-
-        if (Preview != null)
-        {
-            var previewRenderer = Preview.GetComponent<Renderer>();
-            var material = previewRenderer.material;
-
-            if (_xRayPreview)
-            {
-                material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
-                material.SetFloat("_Offset", 1f);
-                material.SetFloat("_MinAlpha", 1f);
-            }
-            else
-            {
-                material.shader = Shader.Find("Standard");
-                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                material.SetInt("_ZWrite", 0);
-                material.DisableKeyword("_ALPHATEST_ON");
-                material.EnableKeyword("_ALPHABLEND_ON");
-                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                material.renderQueue = 3000;
-            }
-
-            previewRenderer.material = material;
-        }
     }
 
     public void SetHighlighted(bool value)
@@ -209,7 +180,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         {
             var previewRenderer = Preview.GetComponent<Renderer>();
             var color = previewRenderer.material.color;
-            color.a = _highlighted ? _selectedPreviewOpacity : _previewOpacity;
+            color.a = _highlighted ? _config.SelectedPreviewsOpacity : _config.PreviewsOpacity;
             previewRenderer.material.color = color;
         }
     }
@@ -217,12 +188,12 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public override void LoadJson(JSONClass jsonClass)
     {
         base.LoadJson(jsonClass);
-        DoUpdatePreview();
+        DoUpdatePreviewFromCollider();
     }
 
     protected override void DoResetToInitial()
     {
-        DoUpdatePreview();
+        DoUpdatePreviewFromCollider();
     }
 
     protected abstract bool DeviatesFromInitial();

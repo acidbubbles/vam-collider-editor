@@ -66,6 +66,7 @@
     <Compile Include="src\Models\RigidbodyModel.cs" />
     <Compile Include="src\Models\SphereColliderModel.cs" />
     <Compile Include="src\ColliderEditor.cs" />
+    <Compile Include="src\ColliderPreviewConfig.cs" />
     <Compile Include="src\ColorExtensions.cs" />
     <Compile Include="src\ComponentExtensions.cs" />
     <Compile Include="src\EditablesList.cs" />

@@ -17,32 +17,11 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
         base.SetSelected(value);
     }
 
-    public void SetXRayPreview(bool value)
+    public void UpdatePreviewFromConfig()
     {
         if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
-            colliderModel.SetXRayPreview(value);
-    }
-
-    public void SetSelectedPreviewOpacity(float value)
-    {
-        if (!OwnsColliders) return;
-        foreach (var colliderModel in GetColliders())
-            colliderModel.SetSelectedPreviewOpacity(value);
-    }
-
-    public void SetPreviewOpacity(float value)
-    {
-        if (!OwnsColliders) return;
-        foreach (var colliderModel in GetColliders())
-            colliderModel.SetPreviewOpacity(value);
-    }
-
-    public void SetShowPreview(bool value)
-    {
-        if (!OwnsColliders) return;
-        foreach (var colliderModel in GetColliders())
-            colliderModel.SetShowPreview(value);
+            colliderModel.UpdatePreviewFromConfig();
     }
 
     public void DestroyPreview()

@@ -10,10 +10,7 @@ public interface IModel
     bool Selected { get; set; }
     bool Modified { get; }
 
-    void SetXRayPreview(bool value);
-    void SetSelectedPreviewOpacity(float value);
-    void SetPreviewOpacity(float value);
-    void SetShowPreview(bool value);
+    void UpdatePreviewFromConfig();
     void DestroyPreview();
     void ResetToInitial();
 
