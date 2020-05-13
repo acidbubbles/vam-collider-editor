@@ -295,17 +295,34 @@ public class ColliderEditor : MVRScript
 
     #region Unity events
 
-    public void OnDestroy()
+    public void OnEnable()
+    {
+        if (_editables?.All == null) return;
+        try
+        {
+            // TODO: Re-apply from current state?
+            SuperController.LogError("Cannot re-enable ColliderEditor after it was disabled");
+        }
+        catch (Exception e)
+        {
+            LogError(nameof(OnEnable), e.ToString());
+        }
+    }
+
+    public void OnDisable()
     {
         if (_editables?.All == null) return;
         try
         {
             foreach (var editable in _editables.All)
+            {
                 editable.DestroyPreview();
+                editable.ResetToInitial();
+            }
         }
         catch (Exception e)
         {
-            LogError(nameof(OnDestroy), e.ToString());
+            LogError(nameof(OnDisable), e.ToString());
         }
     }
 
