@@ -170,10 +170,19 @@ public class ColliderEditor : MVRScript
             IEnumerable<IModel> filtered = _editables.All;
             var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val) && _textFilterJson.val != _searchDefault;
 
-            if (_groupsJson.val != _allLabel && !(_groupsJson.val == _noSelectionLabel && hasSearchQuery))
+            if (!hasSearchQuery && _groupsJson.val == _noSelectionLabel && _typesJson.val == _noSelectionLabel && !_modifiedOnlyJson.val)
+            {
+                _editablesJson.choices = new List<string>();
+                _editablesJson.displayChoices = new List<string>();
+                _editablesJson.val = "";
+                SyncPopups();
+                return;
+            }
+
+            if (_groupsJson.val != _allLabel && _groupsJson.val != _noSelectionLabel)
                 filtered = filtered.Where(e => e.Group?.Name == _groupsJson.val);
 
-            if (_typesJson.val != _allLabel && !(_typesJson.val == _noSelectionLabel && hasSearchQuery))
+            if (_typesJson.val != _allLabel && _typesJson.val != _noSelectionLabel)
                 filtered = filtered.Where(e => e.Type == _typesJson.val);
 
             if (_modifiedOnlyJson.val)
