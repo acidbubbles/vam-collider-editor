@@ -185,8 +185,8 @@ public class ColliderEditor : MVRScript
 
             _editablesJson.choices = filtered.Select(x => x.Id).ToList();
             _editablesJson.displayChoices = filtered.Select(x => x.Label).ToList();
-            if (!_editablesJson.choices.Contains(_editablesJson.val))
-                _editablesJson.val = "";
+            if (!_editablesJson.choices.Contains(_editablesJson.val) || string.IsNullOrEmpty(_editablesJson.val))
+                _editablesJson.val = _editablesJson.choices.FirstOrDefault() ?? "";
 
             SyncPopups();
         }
