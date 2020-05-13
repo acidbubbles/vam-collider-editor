@@ -14,8 +14,9 @@ using SimpleJSON;
 public class ColliderEditor : MVRScript
 {
     private const string _saveExt = "colliders";
-    private const string NoSelectionLabel = "Select...";
-    private const string AllLabel = "All";
+    private const string _noSelectionLabel = "Select...";
+    private const string _allLabel = "All";
+    private const string _searchDefault = "Search...";
     private string _lastBrowseDir = SuperController.singleton.savesDir;
 
     private JSONStorableStringChooser _groupsJson;
@@ -104,25 +105,25 @@ public class ColliderEditor : MVRScript
                 colliderPair.Value.ResetToInitial();
         });
 
-        var groups = new List<string> { NoSelectionLabel };
+        var groups = new List<string> { _noSelectionLabel };
         groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
-        groups.Add(AllLabel);
+        groups.Add(_allLabel);
         _groupsJson = new JSONStorableStringChooser("Group", groups, groups[0], "Group");
         _groupsJson.setCallbackFunction = _ => UpdateFilter();
         var groupsList = CreateScrollablePopup(_groupsJson, false);
         groupsList.popupPanelHeight = 400f;
         _popups.Add(groupsList);
 
-        var types = new List<string> { NoSelectionLabel };
+        var types = new List<string> { _noSelectionLabel };
         types.AddRange(_editables.All.Select(e => e.Type).Distinct());
-        types.Add(AllLabel);
+        types.Add(_allLabel);
         _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Type");
         _typesJson.setCallbackFunction = _ => UpdateFilter();
         var typesList = CreateScrollablePopup(_typesJson, false);
         typesList.popupPanelHeight = 400f;
         _popups.Add(typesList);
 
-        _textFilterJson = new JSONStorableString("Search", "");
+        _textFilterJson = new JSONStorableString("Search", _searchDefault);
         _textFilterJson.setCallbackFunction = _ => UpdateFilter();
         CreateTextInput(_textFilterJson, false);
 
@@ -160,12 +161,12 @@ public class ColliderEditor : MVRScript
         try
         {
             IEnumerable<IModel> filtered = _editables.All;
-            var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val);
+            var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val) && _textFilterJson.val != _searchDefault;
 
-            if (_groupsJson.val != AllLabel && !(_groupsJson.val == NoSelectionLabel && hasSearchQuery))
+            if (_groupsJson.val != _allLabel && !(_groupsJson.val == _noSelectionLabel && hasSearchQuery))
                 filtered = filtered.Where(e => e.Group?.Name == _groupsJson.val);
 
-            if (_typesJson.val != AllLabel && !(_typesJson.val == NoSelectionLabel && hasSearchQuery))
+            if (_typesJson.val != _allLabel && !(_typesJson.val == _noSelectionLabel && hasSearchQuery))
                 filtered = filtered.Where(e => e.Type == _typesJson.val);
 
             if (hasSearchQuery)
