@@ -28,6 +28,7 @@ public class ColliderEditor : MVRScript
 
     private IModel _selected;
     private EditablesList _editables;
+    private JSONClass _jsonWhenDisabled;
 
     public override void Init()
     {
@@ -300,8 +301,11 @@ public class ColliderEditor : MVRScript
         if (_editables?.All == null) return;
         try
         {
-            // TODO: Re-apply from current state?
-            SuperController.LogError("Cannot re-enable ColliderEditor after it was disabled");
+            if (_jsonWhenDisabled != null)
+            {
+                LoadFromJson(_jsonWhenDisabled);
+                _jsonWhenDisabled = null;
+            }
         }
         catch (Exception e)
         {
@@ -314,6 +318,8 @@ public class ColliderEditor : MVRScript
         if (_editables?.All == null) return;
         try
         {
+            _jsonWhenDisabled = new JSONClass();
+            AppendJson(_jsonWhenDisabled);
             foreach (var editable in _editables.All)
             {
                 editable.DestroyPreview();
@@ -326,6 +332,18 @@ public class ColliderEditor : MVRScript
         }
     }
 
+    public void OnDestroy()
+    {
+        if (_editables?.All == null) return;
+        try
+        {
+            _jsonWhenDisabled = null;
+        }
+        catch (Exception e)
+        {
+            LogError(nameof(OnDisable), e.ToString());
+        }
+    }
 
     private void FixedUpdate()
     {
