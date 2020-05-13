@@ -35,7 +35,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
                     {
                         Component.autoLengthBuffer = value;
-                    }, 0f, _initialAutoLengthBuffer * 4f, false)
+                    }, 0f, 0.25f, false)
                     .WithDefault(_initialAutoLengthBuffer)
                 ), "Auto Length Buffer")
         );
@@ -45,7 +45,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
                     {
                         Component.autoRadiusBuffer = value;
-                    }, 0f, _initialAutoRadiusBuffer * 4f, false)
+                    }, 0f, 0.25f, false)
                     .WithDefault(_initialAutoRadiusBuffer)
                 ), "Auto Radius Buffer")
         );
@@ -55,7 +55,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                     {
                         Component.autoRadiusMultiplier = value;
-                    }, 0f, _initialAutoRadiusMultiplier * 4f, false)
+                    }, 0.001f, 2f, false)
                     .WithDefault(_initialAutoRadiusMultiplier)
                 ), "Auto Radius Multiplier")
         );
