@@ -21,6 +21,7 @@ public class ColliderEditor : MVRScript
 
     private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
+    private JSONStorableBool _modifiedOnlyJson;
     private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
     private readonly List<UIDynamicPopup> _popups = new List<UIDynamicPopup>();
@@ -123,6 +124,10 @@ public class ColliderEditor : MVRScript
         typesList.popupPanelHeight = 400f;
         _popups.Add(typesList);
 
+        _modifiedOnlyJson = new JSONStorableBool("Modified Only", false);
+        _modifiedOnlyJson.setCallbackFunction = _ => UpdateFilter();
+        CreateToggle(_modifiedOnlyJson, false);
+
         _textFilterJson = new JSONStorableString("Search", _searchDefault);
         _textFilterJson.setCallbackFunction = _ => UpdateFilter();
         CreateTextInput(_textFilterJson, false);
@@ -168,6 +173,9 @@ public class ColliderEditor : MVRScript
 
             if (_typesJson.val != _allLabel && !(_typesJson.val == _noSelectionLabel && hasSearchQuery))
                 filtered = filtered.Where(e => e.Type == _typesJson.val);
+
+            if (_modifiedOnlyJson.val)
+                filtered = filtered.Where(e => e.Modified);
 
             if (hasSearchQuery)
             {

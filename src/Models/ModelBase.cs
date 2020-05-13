@@ -12,7 +12,7 @@ public abstract class ModelBase<T> where T : Component
 
     protected readonly MVRScript Script;
     protected readonly T Component;
-    protected bool Modified;
+    public bool Modified { get; protected set; }
 
     public Group Group { get; set; }
     public string Id { get; set; }
@@ -112,6 +112,7 @@ public abstract class ModelBase<T> where T : Component
             {
                 if (val)
                 {
+                    // You cannot just enable the Modified flag without actually modifying anything
                     _modifiedJson.valNoCallback = false;
                     return;
                 }
@@ -197,6 +198,7 @@ public abstract class ModelBase<T> where T : Component
             CreateControls();
         }
 
+        Modified = false;
         if (_modifiedJson != null) _modifiedJson.valNoCallback = false;
     }
 

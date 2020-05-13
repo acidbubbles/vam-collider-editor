@@ -8,6 +8,7 @@ public interface IModel
     string Label { get; }
     bool IsDuplicate { get; }
     bool Selected { get; set; }
+    bool Modified { get; }
 
     void SetXRayPreview(bool value);
     void SetSelectedPreviewOpacity(float value);
