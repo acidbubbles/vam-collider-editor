@@ -137,6 +137,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
             });
             RegisterControl(goToRigidbodyButton);
         }
+
         DoCreateControls();
     }
 

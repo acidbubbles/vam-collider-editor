@@ -24,6 +24,20 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     protected override void CreateControlsInternal()
     {
+        if (Colliders.Count > 0)
+        {
+            foreach (var collider in Colliders)
+            {
+                var targetCollider = collider;
+                var goToColliderButton = Script.CreateButton($"Go to collider {targetCollider.Label}", true);
+                goToColliderButton.button.onClick.AddListener(() =>
+                {
+                    Script.SendMessage("SelectEditable", targetCollider);
+                });
+                RegisterControl(goToColliderButton);
+            }
+        }
+
         var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value =>
         {
             Component.detectCollisions = value;
