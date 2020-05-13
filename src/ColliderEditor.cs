@@ -102,8 +102,8 @@ public class ColliderEditor : MVRScript
         var resetAllUI = CreateButton("Reset All");
         resetAllUI.button.onClick.AddListener(() =>
         {
-            foreach (var colliderPair in _editables.Colliders)
-                colliderPair.Value.ResetToInitial();
+            foreach (var editable in _editables.All)
+                editable.ResetToInitial();
         });
 
         var groups = new List<string> { _noSelectionLabel };

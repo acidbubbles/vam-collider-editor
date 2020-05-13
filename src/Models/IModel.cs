@@ -15,6 +15,7 @@ public interface IModel
     void SetPreviewOpacity(float value);
     void SetShowPreview(bool value);
     void DestroyPreview();
+    void ResetToInitial();
 
     void LoadJson(JSONClass jc);
     void AppendJson(JSONClass jc);
