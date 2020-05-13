@@ -275,7 +275,6 @@ public class ColliderEditor : MVRScript
         var editablesJsonClass = new JSONClass();
         foreach (var editable in _editables.All)
         {
-            if (editable.IsDuplicate) continue;
             editable.AppendJson(editablesJsonClass);
         }
         jsonClass.Add("editables", editablesJsonClass);
