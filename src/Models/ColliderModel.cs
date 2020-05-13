@@ -123,12 +123,8 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         return typed;
     }
 
-    protected override void CreateControlsInternals()
+    protected override void CreateControlsInternal()
     {
-        var resetUi = Script.CreateButton("Reset Collider", true);
-        resetUi.button.onClick.AddListener(ResetToInitial);
-        RegisterControl(resetUi);
-
         DoCreateControls();
     }
 
@@ -224,19 +220,11 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         DoUpdatePreview();
     }
 
-    public void ResetToInitial()
+    protected override void DoResetToInitial()
     {
-        DoResetToInitial();
         DoUpdatePreview();
-
-        if (Selected)
-        {
-            DestroyControls();
-            CreateControls();
-        }
     }
 
-    protected abstract void DoResetToInitial();
     protected abstract bool DeviatesFromInitial();
 
     public override string ToString() => Id;

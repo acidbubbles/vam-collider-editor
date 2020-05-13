@@ -6,11 +6,13 @@ using UnityEngine;
 public abstract class ModelBase<T> where T : Component
 {
     private bool _selected;
+    private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
 
     protected readonly MVRScript Script;
     protected readonly T Component;
+    protected bool Modified;
 
     public Group Group { get; set; }
     public string Id { get; set; }
@@ -50,16 +52,26 @@ public abstract class ModelBase<T> where T : Component
             DestroyControls();
     }
 
+    protected void SetModified()
+    {
+        Modified = true;
+        if (_modifiedJson != null) _modifiedJson.valNoCallback = true;
+    }
+
     public void AppendJson(JSONClass parent)
     {
         if (IsDuplicate) return;
+        if (!Modified) return;
         parent.Add(Id, DoGetJson());
     }
 
     public virtual void LoadJson(JSONClass jsonClass)
     {
         if (!IsDuplicate)
+        {
             DoLoadJson(jsonClass);
+            if (Modified && _modifiedJson != null) _modifiedJson.valNoCallback = true;
+        }
 
         if (Selected)
         {
@@ -94,10 +106,27 @@ public abstract class ModelBase<T> where T : Component
         }
         else
         {
-            CreateControlsInternals();
+            _modifiedJson = new JSONStorableBool("This item has been modified", false);
+            _modifiedJson.valNoCallback = Modified;
+            _modifiedJson.setCallbackFunction = (bool val) =>
+            {
+                if (val)
+                {
+                    _modifiedJson.valNoCallback = false;
+                    return;
+                }
+
+                ResetToInitial();
+            };
+            var resetUi = Script.CreateToggle(_modifiedJson, true);
+            RegisterControl(resetUi);
+
+            CreateControlsInternal();
         }
     }
-    protected abstract void CreateControlsInternals();
+
+    protected abstract void CreateControlsInternal();
+
     protected void DestroyControls()
     {
         foreach (var storable in _controlsStorables)
@@ -154,8 +183,52 @@ public abstract class ModelBase<T> where T : Component
         }
 
         _controlDynamics.Clear();
+
+        _modifiedJson = null;
     }
 
+    public void ResetToInitial()
+    {
+        DoResetToInitial();
+
+        if (Selected)
+        {
+            DestroyControls();
+            CreateControls();
+        }
+
+        if (_modifiedJson != null) _modifiedJson.valNoCallback = false;
+    }
+
+    protected void LoadJsonField(JSONClass jsonClass, string name, Action<bool> setValue)
+    {
+        if (!jsonClass.HasKey(name)) return;
+        Modified = true;
+        setValue(jsonClass[name].AsBool);
+    }
+
+    protected void LoadJsonField(JSONClass jsonClass, string name, Action<float> setValue)
+    {
+        if (!jsonClass.HasKey(name)) return;
+        Modified = true;
+        setValue(jsonClass[name].AsFloat);
+    }
+
+    protected void LoadJsonField(JSONClass jsonClass, string name, Action<Vector3> setValue)
+    {
+        var nameX = $"{name}X";
+        var nameY = $"{name}Y";
+        var nameZ = $"{name}Z";
+        if (!jsonClass.HasKey(nameX)) return;
+        Modified = true;
+        Vector3 value;
+        value.x = jsonClass["sizeX"].AsFloat;
+        value.y = jsonClass["sizeY"].AsFloat;
+        value.z = jsonClass["sizeZ"].AsFloat;
+        setValue(value);
+    }
+
+    protected abstract void DoResetToInitial();
     protected abstract void DoLoadJson(JSONClass jsonClass);
     protected abstract JSONClass DoGetJson();
 

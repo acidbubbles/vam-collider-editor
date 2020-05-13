@@ -27,12 +27,14 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(_radiusStorableFloat = new JSONStorableFloat("radius", Collider.radius, value =>
         {
             Collider.radius = value;
+            SetModified();
             DoUpdatePreview();
         }, 0f, _initialRadius * 4f, false)).WithDefault(_initialRadius), "Radius"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(_heightStorableFloat = new JSONStorableFloat("height", Collider.height, value =>
         {
             Collider.height = value;
+            SetModified();
             DoUpdatePreview();
         }, 0f, _initialHeight * 4f, false)).WithDefault(_initialHeight), "Height"));
 
@@ -41,6 +43,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
 
@@ -49,6 +52,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
 
@@ -57,20 +61,16 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        Collider.radius = jsonClass["radius"].AsFloat;
-        Collider.height = jsonClass["height"].AsFloat;
-
-        var center = Collider.center;
-        center.x = jsonClass["centerX"].AsFloat;
-        center.y = jsonClass["centerY"].AsFloat;
-        center.z = jsonClass["centerZ"].AsFloat;
-        Collider.center = center;
+        LoadJsonField(jsonClass, "radius", val => Collider.radius = val);
+        LoadJsonField(jsonClass, "height", val => Collider.height = val);
+        LoadJsonField(jsonClass, "center", val => Collider.center = val);
     }
 
     protected override JSONClass DoGetJson()
@@ -86,6 +86,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     protected override void DoResetToInitial()
     {
+        base.DoResetToInitial();
         Collider.radius = _initialRadius;
         Collider.height = _initialHeight;
         Collider.center = _initialCenter;

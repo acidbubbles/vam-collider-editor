@@ -49,17 +49,8 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        var size = Collider.size;
-        size.x = jsonClass["sizeX"].AsFloat;
-        size.y = jsonClass["sizeY"].AsFloat;
-        size.z = jsonClass["sizeZ"].AsFloat;
-        Collider.size = size;
-
-        var center = Collider.center;
-        center.x = jsonClass["centerX"].AsFloat;
-        center.y = jsonClass["centerY"].AsFloat;
-        center.z = jsonClass["centerZ"].AsFloat;
-        Collider.center = center;
+        LoadJsonField(jsonClass, "size", val => Collider.size = val);
+        LoadJsonField(jsonClass, "center", val => Collider.center = val);
     }
 
     protected override JSONClass DoGetJson()
@@ -79,6 +70,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override void DoResetToInitial()
     {
+        base.DoResetToInitial();
         Collider.size = _initialSize;
         Collider.center = _initialCenter;
     }
@@ -90,6 +82,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             var size = Collider.size;
             size.x = value;
             Collider.size = size;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.x), "Size.X"));
 
@@ -98,6 +91,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             var size = Collider.size;
             size.y = value;
             Collider.size = size;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.y), "Size.Y"));
 
@@ -106,6 +100,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             var size = Collider.size;
             size.z = value;
             Collider.size = size;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.z), "Size.Z"));
 
@@ -114,6 +109,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             var center = Collider.center;
             center.x = value;
             Collider.center = center;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
 
@@ -122,6 +118,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             var center = Collider.center;
             center.y = value;
             Collider.center = center;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
 
@@ -130,6 +127,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             var center = Collider.center;
             center.z = value;
             Collider.center = center;
+            SetModified();
             DoUpdatePreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
     }

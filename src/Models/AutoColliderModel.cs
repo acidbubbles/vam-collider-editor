@@ -24,17 +24,14 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider));
     }
 
-    protected override void CreateControlsInternals()
+    protected override void CreateControlsInternal()
     {
-        var resetUi = Script.CreateButton("Reset AutoCollider", true);
-        resetUi.button.onClick.AddListener(ResetToInitial);
-        RegisterControl(resetUi);
-
         RegisterControl(
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
                     {
                         Component.autoLengthBuffer = value;
+                        SetModified();
                     }, 0f, 0.25f, false)
                     .WithDefault(_initialAutoLengthBuffer)
                 ), "Auto Length Buffer")
@@ -45,6 +42,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
                     {
                         Component.autoRadiusBuffer = value;
+                        SetModified();
                     }, 0f, 0.25f, false)
                     .WithDefault(_initialAutoRadiusBuffer)
                 ), "Auto Radius Buffer")
@@ -55,6 +53,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                     {
                         Component.autoRadiusMultiplier = value;
+                        SetModified();
                     }, 0.001f, 2f, false)
                     .WithDefault(_initialAutoRadiusMultiplier)
                 ), "Auto Radius Multiplier")
@@ -69,9 +68,9 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        Component.autoLengthBuffer = jsonClass["autoLengthBuffer"].AsFloat;
-        Component.autoRadiusBuffer = jsonClass["autoRadiusBuffer"].AsFloat;
-        Component.autoRadiusMultiplier = jsonClass["autoRadiusMultiplier"].AsFloat;
+        LoadJsonField(jsonClass, "autoLengthBuffer", val => Component.autoLengthBuffer = val);
+        LoadJsonField(jsonClass, "autoRadiusBuffer", val => Component.autoRadiusBuffer = val);
+        LoadJsonField(jsonClass, "autoRadiusMultiplier", val => Component.autoRadiusMultiplier = val);
     }
 
     protected override JSONClass DoGetJson()
@@ -83,18 +82,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         return jsonClass;
     }
 
-    public void ResetToInitial()
-    {
-        DoResetToInitial();
-
-        if (Selected)
-        {
-            DestroyControls();
-            CreateControls();
-        }
-    }
-
-    protected void DoResetToInitial()
+    protected override void DoResetToInitial()
     {
         Component.autoRadiusBuffer = _initialAutoRadiusBuffer;
     }

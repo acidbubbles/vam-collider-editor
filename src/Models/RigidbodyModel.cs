@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
@@ -21,23 +22,22 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     public override IEnumerable<ColliderModel> GetColliders() => Colliders;
 
-    protected override void CreateControlsInternals()
+    protected override void CreateControlsInternal()
     {
-        var resetUi = Script.CreateButton("Reset Rigidbody", true);
-        resetUi.button.onClick.AddListener(ResetToInitial);
-        RegisterControl(resetUi);
-
-        var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value => { Component.detectCollisions = value; });
+        var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value =>
+        {
+            Component.detectCollisions = value;
+            SetModified();
+        });
         RegisterStorable(detectCollisionsJsf);
         var detectCollisionsToggle = Script.CreateToggle(detectCollisionsJsf, true);
         detectCollisionsToggle.label = "Detect Collisions";
         RegisterControl(detectCollisionsToggle);
     }
 
-
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        Component.detectCollisions = jsonClass["detectCollisions"].AsBool;
+        LoadJsonField(jsonClass, "detectCollisions", val => Component.detectCollisions = val);
     }
 
     protected override JSONClass DoGetJson()
@@ -47,18 +47,7 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
         return jsonClass;
     }
 
-    public void ResetToInitial()
-    {
-        DoResetToInitial();
-
-        if (Selected)
-        {
-            DestroyControls();
-            CreateControls();
-        }
-    }
-
-    protected void DoResetToInitial()
+    protected override void DoResetToInitial()
     {
         Component.detectCollisions = _initialDetectCollisions;
     }
