@@ -59,7 +59,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.autoLengthBuffer = value;
                             RecalculateAutoCollider();
                             SetModified();
-                        }, 0f, 0.25f, false)
+                        }, -0.25f, 0.25f, false)
                         .WithDefault(_initialAutoLengthBuffer)
                     ), "Auto Length Buffer")
             );
@@ -88,7 +88,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.autoRadiusBuffer = value;
                             RecalculateAutoCollider();
                             SetModified();
-                        }, 0f, 0.25f, false)
+                        }, -0.25f, 0.25f, false)
                         .WithDefault(_initialAutoRadiusBuffer)
                     ), "Auto Radius Buffer")
             );
