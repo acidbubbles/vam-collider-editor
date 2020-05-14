@@ -125,6 +125,13 @@ public abstract class ModelBase<T> where T : Component
             RegisterControl(resetUi);
 
             CreateControlsInternal();
+
+            /*
+            var debugJson = new JSONStorableString("Debug", Id);
+            RegisterStorable(debugJson);
+            var debugTextField = Script.CreateTextField(debugJson, true);
+            RegisterControl(debugTextField);
+            */
         }
     }
 
