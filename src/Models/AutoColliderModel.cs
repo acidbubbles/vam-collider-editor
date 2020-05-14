@@ -269,6 +269,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderLookOffset = _initialColliderLookOffset;
         Component.colliderUpOffset = _initialColliderUpOffset;
         Component.colliderRightOffset = _initialColliderRightOffset;
+
+        RecalculateAutoCollider();
     }
 
     public override IEnumerable<ColliderModel> GetColliders() => _ownedColliders;
