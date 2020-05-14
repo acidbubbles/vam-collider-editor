@@ -24,7 +24,7 @@ public class EditablesList
                     new Group("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
                     new Group("Anus", @"^_JointA[rl]"),
                     new Group("Vagina", @"^_Joint(Gr|Gl|B)"),
-                    new Group("Penis", @"^(Gen[1-3])|Testes"),
+                    new Group("Penis", @"^((AutoCollider)?Gen[1-3])|Testes"),
                     new Group("Left leg", @"^(AutoCollider(FemaleAutoColliders)?)?l(Thigh|Shin)"),
                     new Group("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
                     new Group("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
