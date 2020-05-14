@@ -101,8 +101,13 @@ public class EditablesList
                 }
                 else
                 {
+                    SuperController.LogError($"Could not find a matching rigidbody for collider '{colliderModel.Id}', rigidbody '{colliderModel.Collider.attachedRigidbody.Uuid()}'.");
                     colliderModel.Group = groups.FirstOrDefault(g => g.Test(colliderModel.Collider.name));
                 }
+            }
+            else
+            {
+                colliderModel.Group = groups.FirstOrDefault(g => g.Test(colliderModel.Collider.name));
             }
         }
 
@@ -127,6 +132,8 @@ public class EditablesList
         if (collider.name.EndsWith("Trigger")) return false;
         if (collider.name.EndsWith("UI")) return false;
         if (collider.name.Contains("Ponytail")) return false;
+        if (collider.name.StartsWith("PhysicsMeshJoint")) return false;
+        if (collider.name.EndsWith("Joint")) return false;
         return true;
     }
 
@@ -140,6 +147,7 @@ public class EditablesList
         if (rigidbody.name.EndsWith("Trigger")) return false;
         if (rigidbody.name.EndsWith("UI")) return false;
         if (rigidbody.name.Contains("Ponytail")) return false;
+        if (rigidbody.name.StartsWith("PhysicsMeshJoint")) return false;
         return true;
     }
 
