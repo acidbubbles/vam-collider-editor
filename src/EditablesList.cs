@@ -67,8 +67,10 @@ public class EditablesList
         // Rigidbodies
 
         var rigidbodyDuplicates = new HashSet<string>();
+        var controllerRigidbodies = new HashSet<Rigidbody>(containingAtom.freeControllers.SelectMany(fc => fc.GetComponents<Rigidbody>()));
         var rigidbodies = containingAtom.GetComponentsInChildren<Rigidbody>(true)
             .Where(rigidbody => !autoCollidersRigidBodies.Contains(rigidbody))
+            .Where(rigidbody => !controllerRigidbodies.Contains(rigidbody))
             .Where(rigidbody => IsRigidbodyIncluded(rigidbody))
             .Select(rigidbody => new RigidbodyModel(script, rigidbody))
             .Where(model => { if (!rigidbodyDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
