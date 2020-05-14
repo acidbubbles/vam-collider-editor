@@ -21,12 +21,23 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
 
     protected override void CreateControlsInternal()
     {
+        foreach (var autoCollider in _autoColliders)
+        {
+            var targetAutoCollider = autoCollider;
+            var goToAutoColliderButton = Script.CreateButton($"Go to autocollider {targetAutoCollider.Label}", true);
+            goToAutoColliderButton.button.onClick.AddListener(() =>
+            {
+                Script.SendMessage("SelectEditable", targetAutoCollider);
+            });
+            RegisterControl(goToAutoColliderButton);
+        }
+
         RegisterControl(
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                     {
                         Component.autoRadiusMultiplier = value;
-                        foreach(var autoCollider in _autoColliders)
+                        foreach (var autoCollider in _autoColliders)
                             autoCollider.UpdateValuesFromActual();
                         SetModified();
                     }, 0.001f, 2f, false)

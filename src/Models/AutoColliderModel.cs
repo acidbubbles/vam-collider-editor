@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
@@ -15,6 +14,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     public string Type => "Auto Collider";
     public AutoCollider AutoCollider => Component;
+    public AutoColliderGroupModel AutoColliderGroup { get; set; }
 
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider, ColliderPreviewConfig config)
         : base(script, autoCollider, $"[au] {Simplify(autoCollider.name)}")
@@ -28,6 +28,16 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override void CreateControlsInternal()
     {
+        if (AutoColliderGroup != null)
+        {
+            var goToAutoColliderGroupButton = Script.CreateButton($"Go to autocollider group {AutoColliderGroup.Label}", true);
+            goToAutoColliderGroupButton.button.onClick.AddListener(() =>
+            {
+                Script.SendMessage("SelectEditable", AutoColliderGroup);
+            });
+            RegisterControl(goToAutoColliderGroupButton);
+        }
+
         RegisterControl(
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>

@@ -53,7 +53,13 @@ public class EditablesList
 
         var autoColliderGroupDuplicates = new HashSet<string>();
         var autoColliderGroups = containingAtom.GetComponentsInChildren<AutoColliderGroup>()
-            .Select(autoColliderGroup => new AutoColliderGroupModel(script, autoColliderGroup, autoColliderGroup.GetAutoColliders().Where(acg => autoCollidersMap.ContainsKey(acg)).Select(acg => autoCollidersMap[acg]).ToList()))
+            .Select(autoColliderGroup =>
+            {
+                var childAutoColliders = autoColliderGroup.GetAutoColliders().Where(acg => autoCollidersMap.ContainsKey(acg)).Select(acg => autoCollidersMap[acg]).ToList();
+                var model = new AutoColliderGroupModel(script, autoColliderGroup, childAutoColliders);
+                childAutoColliders.ForEach(ac => ac.AutoColliderGroup = model);
+                return model;
+            })
             .Where(model => { if (!autoColliderGroupDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.AutoColliderGroup.name)))
             .ToList();
