@@ -4,6 +4,8 @@ Configures and customizes collisions (rigidbodies and colliders).
 
 [Download](https://github.com/acidbubbles/vam-collider-editor/releases) and put the `.var` file in your `AddonPackages` folder.
 
+![Collider Editor Screenshot](https://repository-images.githubusercontent.com/255064702/269db680-956f-11ea-888c-4b4f1cd70b11)
+
 ## How to use
 
 Once the plugin has been added to an atom, you will be able to configure the collider. Here's a minimal explanation on the terminology:
