@@ -372,9 +372,9 @@ public class ColliderEditor : MVRScript
     {
         if (_config.PreviewsEnabled && Time.time > _nextUpdate)
         {
-            foreach (var colliderPair in _editables.Colliders)
+            foreach (var editable in _editables.All)
             {
-                colliderPair.Value.UpdatePreviewFromCollider();
+                editable.UpdatePreviewFromCollider();
             }
 
             _nextUpdate = Time.time + 1f;

@@ -31,7 +31,7 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 
         Preview = preview;
 
-        DoUpdatePreviewFromCollider();
+        UpdatePreviewFromCollider();
         RefreshHighlighted();
     }
 }
@@ -156,13 +156,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected abstract GameObject DoCreatePreview();
 
-    public void UpdatePreviewFromCollider()
-    {
-        DoUpdatePreviewFromCollider();
-    }
-
-    protected abstract void DoUpdatePreviewFromCollider();
-
     protected override void SetSelected(bool value)
     {
         SetHighlighted(value);
@@ -191,12 +184,12 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public override void LoadJson(JSONClass jsonClass)
     {
         base.LoadJson(jsonClass);
-        DoUpdatePreviewFromCollider();
+        UpdatePreviewFromCollider();
     }
 
     protected override void DoResetToInitial()
     {
-        DoUpdatePreviewFromCollider();
+        UpdatePreviewFromCollider();
     }
 
     protected abstract bool DeviatesFromInitial();

@@ -17,6 +17,13 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
         base.SetSelected(value);
     }
 
+    public override void UpdatePreviewFromCollider()
+    {
+        if (!OwnsColliders) return;
+        foreach (var colliderModel in GetColliders())
+            colliderModel.UpdatePreviewFromCollider();
+    }
+
     public void UpdatePreviewFromConfig()
     {
         if (!OwnsColliders) return;

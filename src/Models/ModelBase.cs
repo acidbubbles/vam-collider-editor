@@ -52,6 +52,8 @@ public abstract class ModelBase<T> where T : Component
             DestroyControls();
     }
 
+    public abstract void UpdatePreviewFromCollider();
+
     protected void SetModified()
     {
         Modified = true;
