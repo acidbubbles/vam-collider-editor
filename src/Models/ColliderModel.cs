@@ -163,13 +163,6 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected abstract void DoUpdatePreviewFromCollider();
 
-    public void UpdateControls()
-    {
-        DoUpdateControls();
-    }
-
-    protected abstract void DoUpdateControls();
-
     protected override void SetSelected(bool value)
     {
         SetHighlighted(value);

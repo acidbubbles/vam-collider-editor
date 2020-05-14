@@ -367,16 +367,17 @@ public class ColliderEditor : MVRScript
         }
     }
 
-    private void FixedUpdate()
+    private float _nextUpdate = Time.time;
+    private void Update()
     {
-        // TODO: Validate whether this is really necessary. Running code multiple times per frame should be avoided. At least reduce this to every frame.
-        if (_config.PreviewsEnabled)
+        if (_config.PreviewsEnabled && Time.time > _nextUpdate)
         {
             foreach (var colliderPair in _editables.Colliders)
             {
-                colliderPair.Value.UpdateControls();
                 colliderPair.Value.UpdatePreviewFromCollider();
             }
+
+            _nextUpdate = Time.time + 1f;
         }
     }
 
