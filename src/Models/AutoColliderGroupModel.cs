@@ -26,6 +26,8 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
                     new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                     {
                         Component.autoRadiusMultiplier = value;
+                        foreach(var autoCollider in _autoColliders)
+                            autoCollider.UpdateValuesFromActual();
                         SetModified();
                     }, 0.001f, 2f, false)
                     .WithDefault(_initialAutoRadiusMultiplier)

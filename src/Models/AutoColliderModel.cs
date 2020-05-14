@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
@@ -8,6 +9,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     private readonly float _initialAutoRadiusBuffer;
     private readonly float _initialAutoRadiusMultiplier;
     private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
+    private float _lastAutoRadiusMultiplier;
 
     protected override bool OwnsColliders => true;
 
@@ -19,7 +21,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     {
         _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
         _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
-        _initialAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
+        _initialAutoRadiusMultiplier = _lastAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
         if (Component.hardCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, autoCollider.hardCollider, config));
         if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider, config));
     }
@@ -52,12 +54,22 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                     {
-                        Component.autoRadiusMultiplier = value;
+                        Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = value;
                         SetModified();
                     }, 0.001f, 2f, false)
                     .WithDefault(_initialAutoRadiusMultiplier)
                 ), "Auto Radius Multiplier")
         );
+    }
+
+    public void UpdateValuesFromActual()
+    {
+        if (Modified)
+        {
+            if (Component.autoRadiusMultiplier != _lastAutoRadiusMultiplier)
+                Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier;
+            return;
+        }
     }
 
     protected override void SetSelected(bool value)
@@ -70,7 +82,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     {
         LoadJsonField(jsonClass, "autoLengthBuffer", val => Component.autoLengthBuffer = val);
         LoadJsonField(jsonClass, "autoRadiusBuffer", val => Component.autoRadiusBuffer = val);
-        LoadJsonField(jsonClass, "autoRadiusMultiplier", val => Component.autoRadiusMultiplier = val);
+        LoadJsonField(jsonClass, "autoRadiusMultiplier", val => Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = val);
     }
 
     protected override JSONClass DoGetJson()
@@ -86,7 +98,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     {
         Component.autoLengthBuffer = _initialAutoLengthBuffer;
         Component.autoRadiusBuffer = _initialAutoRadiusBuffer;
-        Component.autoRadiusMultiplier = _initialAutoRadiusMultiplier;
+        Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = _initialAutoRadiusMultiplier;
     }
 
     public override IEnumerable<ColliderModel> GetColliders() => _ownedColliders;
