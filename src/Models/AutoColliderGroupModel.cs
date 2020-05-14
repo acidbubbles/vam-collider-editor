@@ -13,7 +13,7 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
     public AutoColliderGroup AutoColliderGroup => Component;
 
     public AutoColliderGroupModel(MVRScript script, AutoColliderGroup autoColliderGroup, List<AutoColliderModel> autoColliders)
-        : base(script, autoColliderGroup, $"[ag] {Simplify(autoColliderGroup.name)}")
+        : base(script, autoColliderGroup, $"[ag] {NameHelper.Simplify(autoColliderGroup.name)}")
     {
         _initialAutoRadiusMultiplier = autoColliderGroup.autoRadiusMultiplier;
         _autoColliders = autoColliders;

@@ -76,6 +76,7 @@
     <Compile Include="src\Group.cs" />
     <Compile Include="src\JSONStorableFloatExtensions.cs" />
     <Compile Include="src\MaterialHelper.cs" />
+    <Compile Include="src\NameHelper.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

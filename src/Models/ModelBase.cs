@@ -11,13 +11,14 @@ public abstract class ModelBase<T> where T : Component
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
 
     protected readonly MVRScript Script;
-    protected readonly T Component;
-    public bool Modified { get; protected set; }
 
+    public readonly T Component;
     public Group Group { get; set; }
+    public ModelBase<T> Mirror { get; set; }
     public string Id { get; set; }
     public string Label { get; set; }
     public bool IsDuplicate { get; set; }
+    public bool Modified { get; protected set; }
 
     public bool Selected
     {
@@ -123,6 +124,16 @@ public abstract class ModelBase<T> where T : Component
             };
             var resetUi = Script.CreateToggle(_modifiedJson, true);
             RegisterControl(resetUi);
+
+            if (Mirror != null)
+            {
+                var goToMirrorButton = Script.CreateButton("Go to mirror", true);
+                goToMirrorButton.button.onClick.AddListener(() =>
+                {
+                    Script.SendMessage("SelectEditable", Mirror);
+                });
+                RegisterControl(goToMirrorButton);
+            }
 
             CreateControlsInternal();
 
@@ -242,17 +253,4 @@ public abstract class ModelBase<T> where T : Component
     protected abstract void DoResetToInitial();
     protected abstract void DoLoadJson(JSONClass jsonClass);
     protected abstract JSONClass DoGetJson();
-
-    protected static string Simplify(string label)
-    {
-        if (label.StartsWith("AutoColliderAutoColliders"))
-            return label.Substring("AutoColliderAutoColliders".Length);
-        if (label.StartsWith("AutoColliderFemaleAutoColliders"))
-            return label.Substring("AutoColliderFemaleAutoColliders".Length);
-        if (label.StartsWith("AutoCollider"))
-            return label.Substring("AutoCollider".Length);
-        if (label.StartsWith("_"))
-            return label.Substring(1);
-        return label;
-    }
 }

@@ -106,7 +106,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     private static string CreateLabel(Collider collider)
     {
         var parent = collider.attachedRigidbody != null ? collider.attachedRigidbody.name : collider.transform.parent.name;
-        var label = parent == collider.name ? Simplify(collider.name) : $"{Simplify(parent)}/{Simplify(collider.name)}";
+        var label = parent == collider.name ? NameHelper.Simplify(collider.name) : $"{NameHelper.Simplify(parent)}/{NameHelper.Simplify(collider.name)}";
         return $"[co] {label}";
     }
 

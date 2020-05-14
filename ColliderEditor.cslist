@@ -18,3 +18,4 @@ src\FloatExtensions.cs
 src\Group.cs
 src\JSONStorableFloatExtensions.cs
 src\MaterialHelper.cs
+src\NameHelper.cs

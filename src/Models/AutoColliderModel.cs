@@ -23,7 +23,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     public AutoColliderGroupModel AutoColliderGroup { get; set; }
 
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider, ColliderPreviewConfig config)
-        : base(script, autoCollider, $"[au] {Simplify(autoCollider.name)}")
+        : base(script, autoCollider, $"[au] {NameHelper.Simplify(autoCollider.name)}")
     {
         _initialColliderLength = autoCollider.colliderLength;
         _initialColliderRadius = autoCollider.colliderRadius;

@@ -14,7 +14,7 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     public Rigidbody Rigidbody => Component;
 
     public RigidbodyModel(MVRScript script, Rigidbody rigidbody)
-        : base(script, rigidbody, $"[rb] {Simplify(rigidbody.name)}")
+        : base(script, rigidbody, $"[rb] {NameHelper.Simplify(rigidbody.name)}")
     {
         _initialDetectCollisions = rigidbody.detectCollisions;
     }

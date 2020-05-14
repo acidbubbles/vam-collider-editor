@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class EditablesList
@@ -48,6 +50,7 @@ public class EditablesList
         var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
         var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()).Select(x => x.Collider));
         var autoCollidersMap = autoColliders.ToDictionary(x => x.AutoCollider);
+        MatchMirror<AutoColliderModel, AutoCollider>(autoColliders);
 
         // AutoColliderGroups
 
@@ -63,6 +66,7 @@ public class EditablesList
             .Where(model => { if (!autoColliderGroupDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.AutoColliderGroup.name)))
             .ToList();
+        MatchMirror<AutoColliderGroupModel, AutoColliderGroup>(autoColliderGroups);
 
         // Rigidbodies
 
@@ -77,6 +81,7 @@ public class EditablesList
             .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.Rigidbody.name)))
             .ToList();
         var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
+        MatchMirror<RigidbodyModel, Rigidbody>(rigidbodies);
 
         // Colliders
 
@@ -87,6 +92,7 @@ public class EditablesList
             .Select(collider => ColliderModel.CreateTyped(script, collider, config))
             .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
+        MatchMirror<ColliderModel, Collider>(colliders);
 
         // Attach colliders to rigidbodies
 
@@ -121,7 +127,37 @@ public class EditablesList
             .Concat(rigidbodies.Cast<IModel>())
             .ToList();
 
-        return new EditablesList(groups, all, colliders);
+        return new EditablesList(groups, all);
+    }
+
+    private static void MatchMirror<TModel, TComponent>(List<TModel> items)
+        where TModel : ModelBase<TComponent>
+        where TComponent : Component
+    {
+        var excludedNames = new HashSet<string>();
+        var itemsByName = new Dictionary<string, TModel>();
+        foreach (var item in items)
+        {
+            var name = NameHelper.Simplify(item.Component.name);
+            if (excludedNames.Contains(name)) continue;
+            if (itemsByName.ContainsKey(name))
+            {
+                excludedNames.Add(name);
+                itemsByName.Remove(name);
+                continue;
+            }
+            itemsByName.Add(name, item);
+        }
+        var leftItems = itemsByName.Where(x => x.Key.StartsWith("l"));
+        foreach (var left in leftItems)
+        {
+            TModel right;
+            if (itemsByName.TryGetValue("r" + left.Key.Substring(1), out right))
+            {
+                left.Value.Mirror = right;
+                right.Mirror = left.Value;
+            }
+        }
     }
 
     private static bool IsColliderIncluded(Collider collider)
@@ -153,16 +189,14 @@ public class EditablesList
         return true;
     }
 
-    public Dictionary<string, ColliderModel> Colliders { get; }
     public List<Group> Groups { get; }
     public Dictionary<string, IModel> ByUuid { get; }
     public List<IModel> All { get; }
 
-    public EditablesList(List<Group> groups, List<IModel> all, List<ColliderModel> colliders)
+    public EditablesList(List<Group> groups, List<IModel> all)
     {
         Groups = groups;
         ByUuid = all.ToDictionary(x => x.Id, x => x);
         All = all.OrderBy(a => a.Label).ToList();
-        Colliders = colliders.ToDictionary(x => x.Id);
     }
 }
