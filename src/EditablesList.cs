@@ -47,6 +47,16 @@ public class EditablesList
 
         var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
         var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()).Select(x => x.Collider));
+        var autoCollidersMap = autoColliders.ToDictionary(x => x.AutoCollider);
+
+        // AutoColliderGroups
+
+        var autoColliderGroupDuplicates = new HashSet<string>();
+        var autoColliderGroups = containingAtom.GetComponentsInChildren<AutoColliderGroup>()
+            .Select(autoColliderGroup => new AutoColliderGroupModel(script, autoColliderGroup, autoColliderGroup.GetAutoColliders().Where(acg => autoCollidersMap.ContainsKey(acg)).Select(acg => autoCollidersMap[acg]).ToList()))
+            .Where(model => { if (!autoColliderGroupDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
+            .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.AutoColliderGroup.name)))
+            .ToList();
 
         // Rigidbodies
 
@@ -93,6 +103,7 @@ public class EditablesList
         // All Editables
 
         var all = colliders.Cast<IModel>()
+            .Concat(autoColliderGroups.Cast<IModel>())
             .Concat(autoColliders.Cast<IModel>())
             .Concat(rigidbodies.Cast<IModel>())
             .ToList();

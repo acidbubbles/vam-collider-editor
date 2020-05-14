@@ -1,3 +1,4 @@
+src\Models\AutoColliderGroupModel.cs
 src\Models\AutoColliderModel.cs
 src\Models\BoxColliderModel.cs
 src\Models\CapsuleColliderModel.cs

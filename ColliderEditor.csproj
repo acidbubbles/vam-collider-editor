@@ -56,6 +56,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="src\Models\AutoColliderGroupModel.cs" />
     <Compile Include="src\Models\AutoColliderModel.cs" />
     <Compile Include="src\Models\BoxColliderModel.cs" />
     <Compile Include="src\Models\CapsuleColliderModel.cs" />
