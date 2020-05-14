@@ -84,7 +84,9 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override void DoResetToInitial()
     {
+        Component.autoLengthBuffer = _initialAutoLengthBuffer;
         Component.autoRadiusBuffer = _initialAutoRadiusBuffer;
+        Component.autoRadiusMultiplier = _initialAutoRadiusMultiplier;
     }
 
     public override IEnumerable<ColliderModel> GetColliders() => _ownedColliders;
