@@ -11,16 +11,16 @@ public class EditablesList
         var groups = containingAtom.type == "Person"
                  ? new List<Group>
                  {
-                    new Group("Head / Ears", @"^(head|lowerJaw|tongue|neck)"),
+                    new Group("Head / Ears", @"^((AutoCollider(Female)?)?AutoColliders)?(s?[Hh]ead|lowerJaw|[Tt]ongue|neck|s?Face|_?Collider(Lip|Ear|Nose))"),
                     new Group("Left arm", @"^l(Shldr|ForeArm)"),
                     new Group("Left hand", @"^l(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
                     new Group("Right arm", @"^r(Shldr|ForeArm)"),
                     new Group("Right hand", @"^r(Index|Mid|Ring|Pinky|Thumb|Carpal|Hand)[0-9]?$"),
-                    new Group("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest)"),
+                    new Group("Chest", @"^(chest|AutoColliderFemaleAutoColliderschest|MaleAutoColliderschest)"),
                     new Group("Left breast", @"l((Pectoral)|Nipple)"),
                     new Group("Right breast", @"r((Pectoral)|Nipple)"),
                     new Group("Abdomen / Belly / Back", @"^(AutoColliderFemaleAutoColliders)?abdomen"),
-                    new Group("Hip / Pelvis", @"^(AutoCollider)?(hip|pelvis)"),
+                    new Group("Hip / Pelvis", @"^(AutoCollider|MaleAutoColliders)?(hip|pelvis)"),
                     new Group("Glute", @"^(AutoColliderFemaleAutoColliders)?[LR]Glute"),
                     new Group("Anus", @"^_JointA[rl]"),
                     new Group("Vagina", @"^_Joint(Gr|Gl|B)"),
@@ -29,7 +29,7 @@ public class EditablesList
                     new Group("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
                     new Group("Right leg", @"^(AutoCollider(FemaleAutoColliders)?)?r(Thigh|Shin)"),
                     new Group("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
-                    new Group("Other", @"^(?!.*).*$")
+                    new Group("Other", @"^.+$")
                  }
                  : new List<Group>
                  {
