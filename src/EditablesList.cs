@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class EditablesList
@@ -118,6 +116,8 @@ public class EditablesList
                 colliderModel.Group = groups.FirstOrDefault(g => g.Test(colliderModel.Collider.name));
             }
         }
+
+        rigidbodies.RemoveAll(model => model.Colliders.Count == 0);
 
         // All Editables
 
