@@ -284,24 +284,31 @@ public class ColliderEditor : MVRScript
 
     private void LoadFromJson(JSONClass jsonClass)
     {
-        var editablesJsonClass = jsonClass["editables"].AsObject;
-        var errorsCounter = 0;
-        var maxErrors = 100;
-        foreach (string editableId in editablesJsonClass.Keys)
+        try
         {
-            IModel editableModel;
-            if (_editables.ByUuid.TryGetValue(editableId, out editableModel))
+            var editablesJsonClass = jsonClass["editables"].AsObject;
+            var errorsCounter = 0;
+            var maxErrors = 100;
+            foreach (string editableId in editablesJsonClass.Keys)
             {
-                editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
+                IModel editableModel;
+                if (_editables.ByUuid.TryGetValue(editableId, out editableModel))
+                {
+                    editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
+                }
+                else
+                {
+                    if (++errorsCounter < maxErrors)
+                        SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{editableId}' defined in save file.");
+                }
             }
-            else
-            {
-                if (++errorsCounter < maxErrors)
-                    SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{editableId}' defined in save file.");
-            }
+            if (errorsCounter >= maxErrors)
+                SuperController.LogError($"{nameof(ColliderEditor)}: ... {errorsCounter} total missing items found.");
         }
-        if (errorsCounter >= maxErrors)
-            SuperController.LogError($"{nameof(ColliderEditor)}: ... {errorsCounter} total missing items found.");
+        catch (Exception e)
+        {
+            LogError(nameof(LoadFromJson), e.ToString());
+        }
     }
 
     public override JSONClass GetJSON(bool includePhysical = true, bool includeAppearance = true, bool forceStore = false)
@@ -381,14 +388,22 @@ public class ColliderEditor : MVRScript
     private float _nextUpdate = Time.time;
     private void Update()
     {
-        if (_config.PreviewsEnabled && Time.time > _nextUpdate)
+        if (_editables == null) return;
+        try
         {
-            foreach (var editable in _editables.All)
+            if (_config.PreviewsEnabled && Time.time > _nextUpdate)
             {
-                editable.SyncPreview();
-            }
+                foreach (var editable in _editables.All)
+                {
+                    editable.SyncPreview();
+                }
 
-            _nextUpdate = Time.time + 1f;
+                _nextUpdate = Time.time + 1f;
+            }
+        }
+        catch (Exception e)
+        {
+            LogError(nameof(Update), e.ToString());
         }
     }
 
