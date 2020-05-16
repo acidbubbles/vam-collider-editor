@@ -57,7 +57,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
                         {
                             Component.autoLengthBuffer = value;
-                            RecalculateAutoCollider();
+                            RefreshAutoCollider();
                             SetModified();
                         }, -0.25f, 0.25f, false)
                         .WithDefault(_initialAutoLengthBuffer)
@@ -71,7 +71,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         new JSONStorableFloat("colliderLength", Component.colliderLength, value =>
                         {
                             Component.colliderLength = value;
-                            RecalculateAutoCollider();
+                            RefreshAutoCollider();
                             SetModified();
                         }, 0f, 0.25f, false)
                         .WithDefault(_initialColliderLength)
@@ -86,7 +86,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
                         {
                             Component.autoRadiusBuffer = value;
-                            RecalculateAutoCollider();
+                            RefreshAutoCollider();
                             SetModified();
                         }, -0.25f, 0.25f, false)
                         .WithDefault(_initialAutoRadiusBuffer)
@@ -98,7 +98,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                         {
                             Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = value;
-                            RecalculateAutoCollider();
+                            RefreshAutoCollider();
                             SetModified();
                         }, 0.001f, 2f, false)
                         .WithDefault(_initialAutoRadiusMultiplier)
@@ -112,7 +112,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         new JSONStorableFloat("colliderRadius", Component.colliderRadius, value =>
                         {
                             Component.colliderRadius = value;
-                            RecalculateAutoCollider();
+                            RefreshAutoCollider();
                             SetModified();
                         }, 0f, 0.25f, false)
                         .WithDefault(_initialColliderRadius)
@@ -125,7 +125,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("hardColliderBuffer", Component.hardColliderBuffer, value =>
                     {
                         Component.hardColliderBuffer = value;
-                        RecalculateAutoCollider();
+                        RefreshAutoCollider();
                         SetModified();
                     }, 0f, 0.25f, false)
                     .WithDefault(_initialHardColliderBuffer)
@@ -137,7 +137,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("colliderLookOffset", Component.colliderLookOffset, value =>
                     {
                         Component.colliderLookOffset = value;
-                        RecalculateAutoCollider();
+                        RefreshAutoCollider();
                         SetModified();
                     }, -0.25f, 0.25f, false)
                     .WithDefault(_initialColliderLookOffset)
@@ -149,7 +149,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("colliderUpOffset", Component.colliderUpOffset, value =>
                     {
                         Component.colliderUpOffset = value;
-                        RecalculateAutoCollider();
+                        RefreshAutoCollider();
                         SetModified();
                     }, -0.25f, 0.25f, false)
                     .WithDefault(_initialColliderUpOffset)
@@ -161,7 +161,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     new JSONStorableFloat("colliderRightOffset", Component.colliderRightOffset, value =>
                     {
                         Component.colliderRightOffset = value;
-                        RecalculateAutoCollider();
+                        RefreshAutoCollider();
                         SetModified();
                     }, -0.25f, 0.25f, false)
                     .WithDefault(_initialColliderRightOffset)
@@ -169,16 +169,16 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         );
     }
 
-    private void RecalculateAutoCollider()
+    public void RefreshAutoCollider()
     {
         var previousResizeTrigger = AutoCollider.resizeTrigger;
         AutoCollider.resizeTrigger = AutoCollider.ResizeTrigger.Always;
         AutoCollider.AutoColliderSizeSet(true);
         AutoCollider.resizeTrigger = previousResizeTrigger;
-        UpdatePreviewFromCollider();
+        SyncPreview();
     }
 
-    public void UpdateValuesFromActual()
+    public void SyncToCollider()
     {
         if (Modified)
         {
@@ -270,7 +270,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderUpOffset = _initialColliderUpOffset;
         Component.colliderRightOffset = _initialColliderRightOffset;
 
-        RecalculateAutoCollider();
+        RefreshAutoCollider();
     }
 
     public override IEnumerable<ColliderModel> GetColliders() => _ownedColliders;

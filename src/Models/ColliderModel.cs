@@ -31,7 +31,7 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
 
         Preview = preview;
 
-        UpdatePreviewFromCollider();
+        SyncPreview();
         RefreshHighlighted();
     }
 }
@@ -184,12 +184,12 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public override void LoadJson(JSONClass jsonClass)
     {
         base.LoadJson(jsonClass);
-        UpdatePreviewFromCollider();
+        SyncPreview();
     }
 
     protected override void DoResetToInitial()
     {
-        UpdatePreviewFromCollider();
+        SyncPreview();
     }
 
     protected abstract bool DeviatesFromInitial();

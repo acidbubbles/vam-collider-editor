@@ -11,7 +11,7 @@ public interface IModel
     bool Modified { get; }
 
     void UpdatePreviewFromConfig();
-    void UpdatePreviewFromCollider();
+    void SyncPreview();
     void DestroyPreview();
     void ResetToInitial();
 

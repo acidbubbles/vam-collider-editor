@@ -15,7 +15,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Sphere);
 
-    public override void UpdatePreviewFromCollider()
+    public override void SyncPreview()
     {
         if (Preview == null) return;
 
@@ -55,7 +55,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
         {
             Collider.radius = value;
             SetModified();
-            UpdatePreviewFromCollider();
+            SyncPreview();
         }, 0f, _initialRadius * 4f, false)).WithDefault(_initialRadius), "Radius"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerX", Collider.center.x, value =>
@@ -64,7 +64,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.x = value;
             Collider.center = center;
             SetModified();
-            UpdatePreviewFromCollider();
+            SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerY", Collider.center.y, value =>
@@ -73,7 +73,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.y = value;
             Collider.center = center;
             SetModified();
-            UpdatePreviewFromCollider();
+            SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerZ", Collider.center.z, value =>
@@ -82,7 +82,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             center.z = value;
             Collider.center = center;
             SetModified();
-            UpdatePreviewFromCollider();
+            SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
 

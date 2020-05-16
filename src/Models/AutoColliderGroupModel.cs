@@ -38,7 +38,7 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
                     {
                         Component.autoRadiusMultiplier = value;
                         foreach (var autoCollider in _autoColliders)
-                            autoCollider.UpdateValuesFromActual();
+                            autoCollider.SyncToCollider();
                         SetModified();
                     }, 0.001f, 2f, false)
                     .WithDefault(_initialAutoRadiusMultiplier)

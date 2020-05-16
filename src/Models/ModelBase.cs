@@ -53,7 +53,7 @@ public abstract class ModelBase<T> where T : Component
             DestroyControls();
     }
 
-    public abstract void UpdatePreviewFromCollider();
+    public abstract void SyncPreview();
 
     protected void SetModified()
     {
@@ -137,12 +137,10 @@ public abstract class ModelBase<T> where T : Component
 
             CreateControlsInternal();
 
-            /*
             var debugJson = new JSONStorableString("Debug", Id);
             RegisterStorable(debugJson);
             var debugTextField = Script.CreateTextField(debugJson, true);
             RegisterControl(debugTextField);
-            */
         }
     }
 

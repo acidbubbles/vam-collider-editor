@@ -17,11 +17,11 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
         base.SetSelected(value);
     }
 
-    public override void UpdatePreviewFromCollider()
+    public override void SyncPreview()
     {
         if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
-            colliderModel.UpdatePreviewFromCollider();
+            colliderModel.SyncPreview();
     }
 
     public void UpdatePreviewFromConfig()
