@@ -285,12 +285,23 @@ public class ColliderEditor : MVRScript
     private void LoadFromJson(JSONClass jsonClass)
     {
         var editablesJsonClass = jsonClass["editables"].AsObject;
+        var errorsCounter = 0;
+        var maxErrors = 100;
         foreach (string editableId in editablesJsonClass.Keys)
         {
             IModel editableModel;
             if (_editables.ByUuid.TryGetValue(editableId, out editableModel))
+            {
                 editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
+            }
+            else
+            {
+                if (++errorsCounter < maxErrors)
+                    SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{editableId}' defined in save file.");
+            }
         }
+        if (errorsCounter >= maxErrors)
+            SuperController.LogError($"{nameof(ColliderEditor)}: ... {errorsCounter} total missing items found.");
     }
 
     public override JSONClass GetJSON(bool includePhysical = true, bool includeAppearance = true, bool forceStore = false)
