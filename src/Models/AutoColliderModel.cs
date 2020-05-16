@@ -202,7 +202,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         }
         else
         {
-            LoadJsonField(jsonClass, "autoCollider.colliderLength", val => Component.colliderLength = val);
+            LoadJsonField(jsonClass, "colliderLength", val => Component.colliderLength = val);
         }
         if (Component.useAutoRadius)
         {
@@ -211,12 +211,13 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         }
         else
         {
-            LoadJsonField(jsonClass, "autoCollider.colliderRadius", val => Component.colliderRadius = val);
+            LoadJsonField(jsonClass, "colliderRadius", val => Component.colliderRadius = val);
         }
-        LoadJsonField(jsonClass, "autoCollider.hardColliderBuffer", val => Component.hardColliderBuffer = val);
-        LoadJsonField(jsonClass, "autoCollider.colliderLookOffset", val => Component.colliderLookOffset = val);
-        LoadJsonField(jsonClass, "autoCollider.colliderUpOffset", val => Component.colliderUpOffset = val);
-        LoadJsonField(jsonClass, "autoCollider.colliderRightOffset", val => Component.colliderRightOffset = val);
+
+        LoadJsonField(jsonClass, "hardColliderBuffer", val => Component.hardColliderBuffer = val);
+        LoadJsonField(jsonClass, "colliderLookOffset", val => Component.colliderLookOffset = val);
+        LoadJsonField(jsonClass, "colliderUpOffset", val => Component.colliderUpOffset = val);
+        LoadJsonField(jsonClass, "colliderRightOffset", val => Component.colliderRightOffset = val);
     }
 
     protected override JSONClass DoGetJson()
