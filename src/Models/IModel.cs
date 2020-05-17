@@ -7,6 +7,7 @@ public interface IModel
     string Id { get; }
     string Label { get; }
     bool IsDuplicate { get; }
+    bool Shown { get; set; }
     bool Selected { get; set; }
     bool Modified { get; }
 

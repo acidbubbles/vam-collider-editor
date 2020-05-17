@@ -53,6 +53,7 @@ public abstract class ModelBase<T> where T : Component
             DestroyControls();
     }
 
+    public virtual void UpdatePreviewFromConfig() { }
     public abstract void SyncPreview();
 
     protected void SetModified()

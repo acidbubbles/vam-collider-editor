@@ -4,8 +4,8 @@ public class ColliderPreviewConfig
 
     public const bool DefaultPreviewsEnabled = false;
     public const bool DefaultXRayPreviews = true;
-    public const float DefaultPreviewsOpacity = 0.1f;
-    public const float DefaultSelectedPreviewOpacity = 0.6f;
+    public const float DefaultPreviewsOpacity = 0.2f;
+    public const float DefaultSelectedPreviewOpacity = 0.7f;
 
     public bool PreviewsEnabled { get; set; } = DefaultPreviewsEnabled;
     public bool XRayPreviews { get; set; } = DefaultXRayPreviews;

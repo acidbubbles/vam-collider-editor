@@ -7,7 +7,7 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
     private readonly float _initialAutoRadiusMultiplier;
     private readonly List<AutoColliderModel> _autoColliders;
 
-    protected override bool OwnsColliders => false;
+    protected override bool OwnsColliders => true;
 
     public string Type => "Auto Collider Group";
     public AutoColliderGroup AutoColliderGroup => Component;

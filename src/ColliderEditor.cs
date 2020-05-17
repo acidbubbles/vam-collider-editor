@@ -192,6 +192,8 @@ public class ColliderEditor : MVRScript
     {
         try
         {
+            HideCurrentFilteredEditables();
+
             IEnumerable<IModel> filtered = _editables.All;
             var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val) && _textFilterJson.val != _searchDefault;
 
@@ -232,11 +234,27 @@ public class ColliderEditor : MVRScript
             if (!_editablesJson.choices.Contains(_editablesJson.val) || string.IsNullOrEmpty(_editablesJson.val))
                 _editablesJson.val = _editablesJson.choices.FirstOrDefault() ?? "";
 
+            foreach (var e in result)
+            {
+                e.Shown = true;
+                e.UpdatePreviewFromConfig();
+            }
+
             SyncPopups();
         }
         catch (Exception e)
         {
             LogError(nameof(UpdateFilter), e.ToString());
+        }
+    }
+
+    private void HideCurrentFilteredEditables()
+    {
+        var previous = _editablesJson.choices.Where(x => _editables.ByUuid.ContainsKey(x)).Select(x => _editables.ByUuid[x]);
+        foreach (var e in previous)
+        {
+            e.Shown = false;
+            e.UpdatePreviewFromConfig();
         }
     }
 

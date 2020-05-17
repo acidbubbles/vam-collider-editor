@@ -3,7 +3,27 @@ using UnityEngine;
 
 public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Component
 {
+    private bool _shown;
+
     protected abstract bool OwnsColliders { get; }
+    public bool Shown
+    {
+        get
+        {
+            return _shown;
+        }
+        set
+        {
+            _shown = value;
+            if (OwnsColliders)
+            {
+                foreach (var c in GetColliders())
+                {
+                    c.Shown = value;
+                }
+            }
+        }
+    }
 
     protected ColliderContainerModelBase(MVRScript script, T component, string label)
         : base(script, component, label)
@@ -24,7 +44,7 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
             colliderModel.SyncPreview();
     }
 
-    public void UpdatePreviewFromConfig()
+    public override void UpdatePreviewFromConfig()
     {
         if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())

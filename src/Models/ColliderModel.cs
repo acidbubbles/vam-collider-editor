@@ -45,10 +45,11 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public Collider Collider { get; set; }
     public RigidbodyModel RigidbodyModel { get; set; }
     public GameObject Preview { get; protected set; }
+    public bool Shown { get; set; }
 
-    public void UpdatePreviewFromConfig()
+    public override void UpdatePreviewFromConfig()
     {
-        if (_config.PreviewsEnabled)
+        if (_config.PreviewsEnabled && Shown)
         {
             CreatePreview();
 
