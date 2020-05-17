@@ -16,6 +16,6 @@ src\EditablesList.cs
 src\EnumerableExtensions.cs
 src\FloatExtensions.cs
 src\Group.cs
-src\JSONStorableFloatExtensions.cs
+src\JSONStorableExtensions.cs
 src\MaterialHelper.cs
 src\NameHelper.cs

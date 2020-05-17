@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IModel
 {
+    private readonly bool _initialCollisionEnabled;
     private readonly float _initialColliderLength;
     private readonly float _initialColliderRadius;
     private readonly float _initialHardColliderBuffer;
@@ -25,6 +26,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider, ColliderPreviewConfig config)
         : base(script, autoCollider, $"[au] {NameHelper.Simplify(autoCollider.name)}")
     {
+        _initialCollisionEnabled = autoCollider.collisionEnabled;
         _initialColliderLength = autoCollider.colliderLength;
         _initialColliderRadius = autoCollider.colliderRadius;
         _initialHardColliderBuffer = autoCollider.hardColliderBuffer;
@@ -49,6 +51,18 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
             });
             RegisterControl(goToAutoColliderGroupButton);
         }
+
+        RegisterControl(
+                Script.CreateToggle(RegisterStorable(
+                    new JSONStorableBool("collisionEnabled", Component.collisionEnabled, value =>
+                    {
+                        Component.collisionEnabled = value;
+                        RefreshAutoCollider();
+                        SetModified();
+                    })
+                    .WithDefault(_initialCollisionEnabled)
+                ), "Collision Enabled")
+        );
 
         if (Component.useAutoLength)
         {
@@ -196,6 +210,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
+        LoadJsonField(jsonClass, "collisionEnabled", val => Component.collisionEnabled = val);
+
         if (Component.useAutoLength)
         {
             LoadJsonField(jsonClass, "autoLengthBuffer", val => Component.autoLengthBuffer = val);
@@ -223,6 +239,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
+        jsonClass["collisionEnabled"].AsBool = Component.collisionEnabled;
         if (Component.useAutoLength)
         {
             jsonClass["autoLengthBuffer"].AsFloat = Component.autoLengthBuffer;
@@ -249,6 +266,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override void DoResetToInitial()
     {
+        Component.collisionEnabled = _initialCollisionEnabled;
         if (Component.useAutoLength)
         {
             Component.autoLengthBuffer = _initialAutoLengthBuffer;

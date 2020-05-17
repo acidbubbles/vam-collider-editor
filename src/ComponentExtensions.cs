@@ -51,4 +51,11 @@ public static class ComponentExtensions
         control.label = label;
         return control;
     }
+
+    public static UIDynamic CreateToggle(this MVRScript script, JSONStorableBool jsb, string label, bool rightSide = true)
+    {
+        var control = script.CreateToggle(jsb, rightSide);
+        control.label = label;
+        return control;
+    }
 }
