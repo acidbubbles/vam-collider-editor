@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SimpleJSON;
+using MVR.FileManagementSecure;
 
 /// <summary>
 /// Collider Editor
@@ -17,7 +18,7 @@ public class ColliderEditor : MVRScript
     private const string _noSelectionLabel = "Select...";
     private const string _allLabel = "All";
     private const string _searchDefault = "Search...";
-    private string _lastBrowseDir = SuperController.singleton.savesDir;
+    private const string _collidersSavePath = "Saves\\colliders";
 
     private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
@@ -91,15 +92,16 @@ public class ColliderEditor : MVRScript
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
         {
-            if (_lastBrowseDir != null) SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-            SuperController.singleton.GetMediaPathDialog(HandleLoadPreset, _saveExt);
+            FileManagerSecure.CreateDirectory(_collidersSavePath);
+            var shortcuts = FileManagerSecure.GetShortCutsForDirectory(_collidersSavePath);
+            SuperController.singleton.GetMediaPathDialog(HandleLoadPreset, _saveExt, _collidersSavePath, false, true, false, null, false, shortcuts);
         });
 
         var savePresetUI = CreateButton("Save Preset");
         savePresetUI.button.onClick.AddListener(() =>
         {
-            SuperController.singleton.NormalizeMediaPath(_lastBrowseDir);
-            SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt);
+            FileManagerSecure.CreateDirectory(_collidersSavePath);
+            SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt, _collidersSavePath, false);
 
             var browser = SuperController.singleton.mediaFileBrowserUI;
             browser.SetTextEntry(true);
@@ -244,7 +246,6 @@ public class ColliderEditor : MVRScript
     {
         if (string.IsNullOrEmpty(path))
             return;
-        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
 
         LoadFromJson((JSONClass)LoadJSON(path));
     }
@@ -253,8 +254,6 @@ public class ColliderEditor : MVRScript
     {
         if (string.IsNullOrEmpty(path))
             return;
-
-        _lastBrowseDir = path.Substring(0, path.LastIndexOfAny(new[] { '/', '\\' })) + @"\";
 
         if (!path.ToLower().EndsWith($".{_saveExt}"))
             path += $".{_saveExt}";
