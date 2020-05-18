@@ -18,18 +18,16 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
     {
         if (Preview != null) return;
 
-        var preview = DoCreatePreview();
+        Preview = DoCreatePreview();
 
-        preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial();
-        foreach (var c in preview.GetComponents<Collider>())
+        Preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial(Id.GetHashCode());
+        foreach (var c in Preview.GetComponents<Collider>())
         {
             c.enabled = false;
             Object.Destroy(c);
         }
 
-        preview.transform.SetParent(Collider.transform, false);
-
-        Preview = preview;
+        Preview.transform.SetParent(Collider.transform, false);
 
         SyncPreview();
         RefreshHighlighted();
