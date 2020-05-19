@@ -101,7 +101,18 @@ public class ColliderEditor : MVRScript
         savePresetUI.button.onClick.AddListener(() =>
         {
             FileManagerSecure.CreateDirectory(_collidersSavePath);
-            SuperController.singleton.GetMediaPathDialog(HandleSavePreset, _saveExt, _collidersSavePath, false);
+            var fileBrowserUI = SuperController.singleton.fileBrowserUI;
+            fileBrowserUI.SetTitle("Save colliders preset");
+            fileBrowserUI.fileRemovePrefix = null;
+            fileBrowserUI.hideExtension = false;
+            fileBrowserUI.keepOpen = false;
+            fileBrowserUI.fileFormat = _saveExt;
+            fileBrowserUI.defaultPath = _collidersSavePath;
+            fileBrowserUI.showDirs = true;
+            fileBrowserUI.shortCuts = null;
+            fileBrowserUI.browseVarFilesAsDirectories = false;
+            fileBrowserUI.SetTextEntry(true);
+            fileBrowserUI.Show(HandleSavePreset);
 
             var browser = SuperController.singleton.mediaFileBrowserUI;
             browser.SetTextEntry(true);
@@ -270,8 +281,8 @@ public class ColliderEditor : MVRScript
 
     private void HandleSavePreset(string path)
     {
-        if (string.IsNullOrEmpty(path))
-            return;
+        if (string.IsNullOrEmpty(path)) return;
+        if (!path.EndsWith($".{_saveExt}")) path += $".{_saveExt}";
 
         if (!path.ToLower().EndsWith($".{_saveExt}"))
             path += $".{_saveExt}";
