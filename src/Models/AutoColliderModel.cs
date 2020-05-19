@@ -132,19 +132,19 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         .WithDefault(_initialColliderRadius)
                     ), "Radius")
             );
-        }
 
-        RegisterControl(
-                Script.CreateFloatSlider(RegisterStorable(
-                    new JSONStorableFloat("hardColliderBuffer", Component.hardColliderBuffer, value =>
-                    {
-                        Component.hardColliderBuffer = value;
-                        RefreshAutoCollider();
-                        SetModified();
-                    }, 0f, 0.25f, false)
-                    .WithDefault(_initialHardColliderBuffer)
-                ), "Hard Collider Buffer")
-        );
+            RegisterControl(
+                    Script.CreateFloatSlider(RegisterStorable(
+                        new JSONStorableFloat("hardColliderBuffer", Component.hardColliderBuffer, value =>
+                        {
+                            Component.hardColliderBuffer = value;
+                            RefreshAutoCollider();
+                            SetModified();
+                        }, 0f, 0.25f, false)
+                        .WithDefault(_initialHardColliderBuffer)
+                    ), "Hard Collider Buffer")
+            );
+        }
 
         RegisterControl(
                 Script.CreateFloatSlider(RegisterStorable(
@@ -228,9 +228,9 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         else
         {
             LoadJsonField(jsonClass, "colliderRadius", val => Component.colliderRadius = val);
+            LoadJsonField(jsonClass, "hardColliderBuffer", val => Component.hardColliderBuffer = val);
         }
 
-        LoadJsonField(jsonClass, "hardColliderBuffer", val => Component.hardColliderBuffer = val);
         LoadJsonField(jsonClass, "colliderLookOffset", val => Component.colliderLookOffset = val);
         LoadJsonField(jsonClass, "colliderUpOffset", val => Component.colliderUpOffset = val);
         LoadJsonField(jsonClass, "colliderRightOffset", val => Component.colliderRightOffset = val);
@@ -256,8 +256,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         else
         {
             jsonClass["colliderRadius"].AsFloat = Component.colliderRadius;
+            jsonClass["hardColliderBuffer"].AsFloat = Component.hardColliderBuffer;
         }
-        jsonClass["hardColliderBuffer"].AsFloat = Component.hardColliderBuffer;
         jsonClass["colliderLookOffset"].AsFloat = Component.colliderLookOffset;
         jsonClass["colliderUpOffset"].AsFloat = Component.colliderUpOffset;
         jsonClass["colliderRightOffset"].AsFloat = Component.colliderRightOffset;
@@ -283,8 +283,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         else
         {
             Component.colliderRadius = _initialColliderRadius;
+            Component.hardColliderBuffer = _initialHardColliderBuffer;
         }
-        Component.hardColliderBuffer = _initialHardColliderBuffer;
         Component.colliderLookOffset = _initialColliderLookOffset;
         Component.colliderUpOffset = _initialColliderUpOffset;
         Component.colliderRightOffset = _initialColliderRightOffset;
