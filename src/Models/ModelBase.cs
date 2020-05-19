@@ -245,9 +245,9 @@ public abstract class ModelBase<T> where T : Component
         if (!jsonClass.HasKey(nameX)) return;
         Modified = true;
         Vector3 value;
-        value.x = jsonClass["sizeX"].AsFloat;
-        value.y = jsonClass["sizeY"].AsFloat;
-        value.z = jsonClass["sizeZ"].AsFloat;
+        value.x = jsonClass[nameX].AsFloat;
+        value.y = jsonClass[nameY].AsFloat;
+        value.z = jsonClass[nameZ].AsFloat;
         setValue(value);
     }
 
