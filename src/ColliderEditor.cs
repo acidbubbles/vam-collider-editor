@@ -282,7 +282,7 @@ public class ColliderEditor : MVRScript
     private void HandleSavePreset(string path)
     {
         if (string.IsNullOrEmpty(path)) return;
-        if (!path.EndsWith($".{_saveExt}")) path += $".{_saveExt}";
+        if (!path.ToLower().EndsWith($".{_saveExt}")) path += $".{_saveExt}";
 
         if (!path.ToLower().EndsWith($".{_saveExt}"))
             path += $".{_saveExt}";
