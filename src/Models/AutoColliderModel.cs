@@ -102,7 +102,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.autoRadiusBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
-                        }, -0.25f, 0.25f, false)
+                        }, -0.025f, 0.025f, false)
                         .WithDefault(_initialAutoRadiusBuffer)
                     ), "Auto Radius Buffer")
             );
