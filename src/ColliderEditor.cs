@@ -113,11 +113,8 @@ public class ColliderEditor : MVRScript
             fileBrowserUI.browseVarFilesAsDirectories = false;
             fileBrowserUI.SetTextEntry(true);
             fileBrowserUI.Show(HandleSavePreset);
-
-            var browser = SuperController.singleton.mediaFileBrowserUI;
-            browser.SetTextEntry(true);
-            browser.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
-            browser.ActivateFileNameField();
+            fileBrowserUI.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
+            fileBrowserUI.ActivateFileNameField();
         });
 
         var resetAllUI = CreateButton("Reset All");
