@@ -278,6 +278,7 @@ public class ColliderEditor : MVRScript
 
     private void HandleSavePreset(string path)
     {
+        SuperController.singleton.fileBrowserUI.fileFormat = null;
         if (string.IsNullOrEmpty(path)) return;
         if (!path.ToLower().EndsWith($".{_saveExt}")) path += $".{_saveExt}";
 
