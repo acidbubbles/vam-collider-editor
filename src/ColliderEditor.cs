@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SimpleJSON;
-using MVR.FileManagementSecure;
+//using MVR.FileManagementSecure;
 
 /// <summary>
 /// Collider Editor
@@ -89,6 +89,7 @@ public class ColliderEditor : MVRScript
         RegisterFloat(selectedPreviewOpacity);
         CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
 
+        /*
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
         {
@@ -116,6 +117,7 @@ public class ColliderEditor : MVRScript
             fileBrowserUI.fileEntryField.text = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds + "." + _saveExt;
             fileBrowserUI.ActivateFileNameField();
         });
+        */
 
         var resetAllUI = CreateButton("Reset All");
         resetAllUI.button.onClick.AddListener(() =>
