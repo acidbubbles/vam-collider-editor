@@ -2,6 +2,8 @@
 
 Configures and customizes collisions (rigidbodies and colliders).
 
+> Check out [Collider Editor on Virt-A-Mate Hub](https://hub.virtamate.com/resources/collider-editor.183/)
+
 [Download](https://github.com/acidbubbles/vam-collider-editor/releases) and put the `.var` file in your `AddonPackages` folder.
 
 ![Collider Editor Screenshot](https://repository-images.githubusercontent.com/255064702/269db680-956f-11ea-888c-4b4f1cd70b11)
