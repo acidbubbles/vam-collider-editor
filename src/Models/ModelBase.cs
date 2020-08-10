@@ -103,6 +103,15 @@ public abstract class ModelBase<T> where T : Component
     protected void CreateControls()
     {
         DestroyControls();
+
+        /*
+        var debugJson = new JSONStorableString("Debug", Id);
+        RegisterStorable(debugJson);
+        var debugTextField = Script.CreateTextField(debugJson, true);
+        debugTextField.height = 80f;
+        RegisterControl(debugTextField);
+        */
+
         if (IsDuplicate)
         {
             var jss = RegisterStorable(new JSONStorableString("Duplicate", "This item has duplicates and cannot be edited."));
@@ -137,13 +146,6 @@ public abstract class ModelBase<T> where T : Component
             }
 
             CreateControlsInternal();
-
-            /*
-            var debugJson = new JSONStorableString("Debug", Id);
-            RegisterStorable(debugJson);
-            var debugTextField = Script.CreateTextField(debugJson, true);
-            RegisterControl(debugTextField);
-            */
         }
     }
 
