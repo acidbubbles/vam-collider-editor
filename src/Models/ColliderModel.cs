@@ -45,6 +45,8 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public GameObject Preview { get; protected set; }
     public bool Shown { get; set; }
 
+    public abstract bool SyncOverrides();
+
     public override void UpdatePreviewFromConfig()
     {
         if (_config.PreviewsEnabled && Shown)

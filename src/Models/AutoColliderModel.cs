@@ -5,17 +5,26 @@ using UnityEngine;
 public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IModel
 {
     private readonly bool _initialCollisionEnabled;
+    private bool _collisionEnabled;
     private readonly float _initialColliderLength;
+    private float _colliderLength;
     private readonly float _initialColliderRadius;
+    private float _colliderRadius;
     private readonly float _initialHardColliderBuffer;
+    private float _hardColliderBuffer;
     private readonly float _initialColliderLookOffset;
+    private float _colliderLookOffset;
     private readonly float _initialColliderUpOffset;
+    private float _colliderUpOffset;
     private readonly float _initialColliderRightOffset;
+    private float _colliderRightOffset;
     private readonly float _initialAutoLengthBuffer;
+    private float _autoLengthBuffer;
     private readonly float _initialAutoRadiusBuffer;
+    private float _autoRadiusBuffer;
     private readonly float _initialAutoRadiusMultiplier;
+    private float _autoRadiusMultiplier;
     private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
-    private float _lastAutoRadiusMultiplier;
 
     protected override bool OwnsColliders => true;
 
@@ -26,18 +35,87 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider, ColliderPreviewConfig config)
         : base(script, autoCollider, $"[au] {NameHelper.Simplify(autoCollider.name)}")
     {
-        _initialCollisionEnabled = autoCollider.collisionEnabled;
-        _initialColliderLength = autoCollider.colliderLength;
-        _initialColliderRadius = autoCollider.colliderRadius;
-        _initialHardColliderBuffer = autoCollider.hardColliderBuffer;
-        _initialColliderLookOffset = autoCollider.colliderLookOffset;
-        _initialColliderUpOffset = autoCollider.colliderUpOffset;
-        _initialColliderRightOffset = autoCollider.colliderRightOffset;
-        _initialAutoLengthBuffer = autoCollider.autoLengthBuffer;
-        _initialAutoRadiusBuffer = autoCollider.autoRadiusBuffer;
-        _initialAutoRadiusMultiplier = _lastAutoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
+        _initialCollisionEnabled = _collisionEnabled = autoCollider.collisionEnabled;
+        _initialColliderLength = _colliderLength = autoCollider.colliderLength;
+        _initialColliderRadius = _colliderRadius = autoCollider.colliderRadius;
+        _initialHardColliderBuffer = _hardColliderBuffer = autoCollider.hardColliderBuffer;
+        _initialColliderLookOffset = _colliderLookOffset = autoCollider.colliderLookOffset;
+        _initialColliderUpOffset = _colliderUpOffset = autoCollider.colliderUpOffset;
+        _initialColliderRightOffset = _colliderRightOffset = autoCollider.colliderRightOffset;
+        _initialAutoLengthBuffer = _autoLengthBuffer = autoCollider.autoLengthBuffer;
+        _initialAutoRadiusBuffer = _autoRadiusBuffer = autoCollider.autoRadiusBuffer;
+        _initialAutoRadiusMultiplier = _autoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
         if (Component.hardCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, autoCollider.hardCollider, config));
         if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider, config));
+    }
+
+    public bool SyncOverrides()
+    {
+        if (!Modified) return false;
+        bool changed = false;
+        if (Component.collisionEnabled != _collisionEnabled)
+        {
+            Component.collisionEnabled = _collisionEnabled;
+            changed = true;
+        }
+        if (Component.useAutoLength)
+        {
+            if (Component.autoLengthBuffer != _autoLengthBuffer)
+            {
+                Component.autoLengthBuffer = _autoLengthBuffer;
+                changed = true;
+            }
+        }
+        else
+        {
+            if (Component.colliderLength != _colliderLength)
+            {
+                Component.colliderLength = _colliderLength;
+                changed = true;
+            }
+        }
+        if (Component.useAutoRadius)
+        {
+            if (Component.autoRadiusBuffer != _autoRadiusBuffer)
+            {
+                Component.autoRadiusBuffer = _autoRadiusBuffer;
+                changed = true;
+            }
+            if (Component.autoRadiusMultiplier != _autoRadiusMultiplier)
+            {
+                Component.autoRadiusMultiplier = _autoRadiusMultiplier;
+                changed = true;
+            }
+        }
+        else
+        {
+            if (Component.colliderRadius != _colliderRadius)
+            {
+                Component.colliderRadius = _colliderRadius;
+                changed = true;
+            }
+            if (Component.hardColliderBuffer != _hardColliderBuffer)
+            {
+                Component.hardColliderBuffer = _hardColliderBuffer;
+                changed = true;
+            }
+        }
+        if (Component.colliderLookOffset != _colliderLookOffset)
+        {
+            Component.colliderLookOffset = _colliderLookOffset;
+            changed = true;
+        }
+        if (Component.colliderUpOffset != _colliderUpOffset)
+        {
+            Component.colliderUpOffset = _colliderUpOffset;
+            changed = true;
+        }
+        if (Component.colliderRightOffset != _colliderRightOffset)
+        {
+            Component.colliderRightOffset = _colliderRightOffset;
+            changed = true;
+        }
+        return changed;
     }
 
     protected override void CreateControlsInternal()
@@ -56,7 +134,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                 Script.CreateToggle(RegisterStorable(
                     new JSONStorableBool("collisionEnabled", Component.collisionEnabled, value =>
                     {
-                        Component.collisionEnabled = value;
+                        Component.collisionEnabled = _collisionEnabled = value;
                         RefreshAutoCollider();
                         SetModified();
                     })
@@ -70,7 +148,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     Script.CreateFloatSlider(RegisterStorable(
                         new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
                         {
-                            Component.autoLengthBuffer = value;
+                            Component.autoLengthBuffer = _autoLengthBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
                         }, -0.25f, 0.25f, false)
@@ -84,7 +162,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     Script.CreateFloatSlider(RegisterStorable(
                         new JSONStorableFloat("colliderLength", Component.colliderLength, value =>
                         {
-                            Component.colliderLength = value;
+                            Component.colliderLength = _colliderLength = value;
                             RefreshAutoCollider();
                             SetModified();
                         }, 0f, 0.25f, false)
@@ -99,7 +177,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     Script.CreateFloatSlider(RegisterStorable(
                         new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
                         {
-                            Component.autoRadiusBuffer = value;
+                            Component.autoRadiusBuffer = _autoRadiusBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
                         }, -0.025f, 0.025f, false)
@@ -111,7 +189,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     Script.CreateFloatSlider(RegisterStorable(
                         new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
                         {
-                            Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = value;
+                            Component.autoRadiusMultiplier = _autoRadiusMultiplier = value;
                             RefreshAutoCollider();
                             SetModified();
                         }, 0.001f, 2f, false)
@@ -125,7 +203,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     Script.CreateFloatSlider(RegisterStorable(
                         new JSONStorableFloat("colliderRadius", Component.colliderRadius, value =>
                         {
-                            Component.colliderRadius = value;
+                            Component.colliderRadius = _colliderRadius = value;
                             RefreshAutoCollider();
                             SetModified();
                         }, 0f, 0.25f, false)
@@ -137,7 +215,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                     Script.CreateFloatSlider(RegisterStorable(
                         new JSONStorableFloat("hardColliderBuffer", Component.hardColliderBuffer, value =>
                         {
-                            Component.hardColliderBuffer = value;
+                            Component.hardColliderBuffer = _hardColliderBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
                         }, 0f, 0.25f, false)
@@ -150,7 +228,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("colliderLookOffset", Component.colliderLookOffset, value =>
                     {
-                        Component.colliderLookOffset = value;
+                        Component.colliderLookOffset = _colliderLookOffset = value;
                         RefreshAutoCollider();
                         SetModified();
                     }, -0.25f, 0.25f, false)
@@ -162,7 +240,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("colliderUpOffset", Component.colliderUpOffset, value =>
                     {
-                        Component.colliderUpOffset = value;
+                        Component.colliderUpOffset = _colliderUpOffset = value;
                         RefreshAutoCollider();
                         SetModified();
                     }, -0.25f, 0.25f, false)
@@ -174,7 +252,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                 Script.CreateFloatSlider(RegisterStorable(
                     new JSONStorableFloat("colliderRightOffset", Component.colliderRightOffset, value =>
                     {
-                        Component.colliderRightOffset = value;
+                        Component.colliderRightOffset = _colliderRightOffset = value;
                         RefreshAutoCollider();
                         SetModified();
                     }, -0.25f, 0.25f, false)
@@ -192,12 +270,12 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         SyncPreview();
     }
 
-    public void SyncToCollider()
+    public void ReapplyMultiplier()
     {
         if (Modified)
         {
-            if (Component.autoRadiusMultiplier != _lastAutoRadiusMultiplier)
-                Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier;
+            if (Component.autoRadiusMultiplier != _autoRadiusMultiplier)
+                Component.autoRadiusMultiplier = _autoRadiusMultiplier;
             return;
         }
     }
@@ -210,84 +288,84 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        LoadJsonField(jsonClass, "collisionEnabled", val => Component.collisionEnabled = val);
+        LoadJsonField(jsonClass, "collisionEnabled", val => Component.collisionEnabled = _collisionEnabled = val);
 
         if (Component.useAutoLength)
         {
-            LoadJsonField(jsonClass, "autoLengthBuffer", val => Component.autoLengthBuffer = val);
+            LoadJsonField(jsonClass, "autoLengthBuffer", val => Component.autoLengthBuffer = _autoLengthBuffer = val);
         }
         else
         {
-            LoadJsonField(jsonClass, "colliderLength", val => Component.colliderLength = val);
+            LoadJsonField(jsonClass, "colliderLength", val => Component.colliderLength = _colliderLength = val);
         }
         if (Component.useAutoRadius)
         {
-            LoadJsonField(jsonClass, "autoRadiusBuffer", val => Component.autoRadiusBuffer = val);
-            LoadJsonField(jsonClass, "autoRadiusMultiplier", val => Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = val);
+            LoadJsonField(jsonClass, "autoRadiusBuffer", val => Component.autoRadiusBuffer = _autoRadiusBuffer = val);
+            LoadJsonField(jsonClass, "autoRadiusMultiplier", val => Component.autoRadiusMultiplier = _autoRadiusMultiplier = val);
         }
         else
         {
-            LoadJsonField(jsonClass, "colliderRadius", val => Component.colliderRadius = val);
-            LoadJsonField(jsonClass, "hardColliderBuffer", val => Component.hardColliderBuffer = val);
+            LoadJsonField(jsonClass, "colliderRadius", val => Component.colliderRadius = _colliderRadius = val);
+            LoadJsonField(jsonClass, "hardColliderBuffer", val => Component.hardColliderBuffer = _hardColliderBuffer = val);
         }
 
-        LoadJsonField(jsonClass, "colliderLookOffset", val => Component.colliderLookOffset = val);
-        LoadJsonField(jsonClass, "colliderUpOffset", val => Component.colliderUpOffset = val);
-        LoadJsonField(jsonClass, "colliderRightOffset", val => Component.colliderRightOffset = val);
+        LoadJsonField(jsonClass, "colliderLookOffset", val => Component.colliderLookOffset = _colliderLookOffset = val);
+        LoadJsonField(jsonClass, "colliderUpOffset", val => Component.colliderUpOffset = _colliderUpOffset = val);
+        LoadJsonField(jsonClass, "colliderRightOffset", val => Component.colliderRightOffset = _colliderRightOffset = val);
     }
 
     protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
-        jsonClass["collisionEnabled"].AsBool = Component.collisionEnabled;
+        jsonClass["collisionEnabled"].AsBool = _collisionEnabled;
         if (Component.useAutoLength)
         {
-            jsonClass["autoLengthBuffer"].AsFloat = Component.autoLengthBuffer;
+            jsonClass["autoLengthBuffer"].AsFloat = _autoLengthBuffer;
         }
         else
         {
-            jsonClass["colliderLength"].AsFloat = Component.colliderLength;
+            jsonClass["colliderLength"].AsFloat = _colliderLength;
         }
         if (Component.useAutoRadius)
         {
-            jsonClass["autoRadiusBuffer"].AsFloat = Component.autoRadiusBuffer;
-            jsonClass["autoRadiusMultiplier"].AsFloat = Component.autoRadiusMultiplier;
+            jsonClass["autoRadiusBuffer"].AsFloat = _autoRadiusBuffer;
+            jsonClass["autoRadiusMultiplier"].AsFloat = _autoRadiusMultiplier;
         }
         else
         {
-            jsonClass["colliderRadius"].AsFloat = Component.colliderRadius;
-            jsonClass["hardColliderBuffer"].AsFloat = Component.hardColliderBuffer;
+            jsonClass["colliderRadius"].AsFloat = _colliderRadius;
+            jsonClass["hardColliderBuffer"].AsFloat = _hardColliderBuffer;
         }
-        jsonClass["colliderLookOffset"].AsFloat = Component.colliderLookOffset;
-        jsonClass["colliderUpOffset"].AsFloat = Component.colliderUpOffset;
-        jsonClass["colliderRightOffset"].AsFloat = Component.colliderRightOffset;
+        jsonClass["colliderLookOffset"].AsFloat = _colliderLookOffset;
+        jsonClass["colliderUpOffset"].AsFloat = _colliderUpOffset;
+        jsonClass["colliderRightOffset"].AsFloat = _colliderRightOffset;
         return jsonClass;
     }
 
     protected override void DoResetToInitial()
     {
-        Component.collisionEnabled = _initialCollisionEnabled;
+        Component.collisionEnabled = _collisionEnabled = _initialCollisionEnabled;
         if (Component.useAutoLength)
         {
-            Component.autoLengthBuffer = _initialAutoLengthBuffer;
+            Component.autoLengthBuffer = _autoLengthBuffer = _initialAutoLengthBuffer;
         }
         else
         {
-            Component.colliderLength = _initialColliderLength;
+            Component.colliderLength = _colliderLength = _initialColliderLength;
         }
         if (Component.useAutoRadius)
         {
-            Component.autoRadiusBuffer = _initialAutoRadiusBuffer;
-            Component.autoRadiusMultiplier = _lastAutoRadiusMultiplier = _initialAutoRadiusMultiplier;
+            Component.autoRadiusBuffer = _autoRadiusBuffer = _initialAutoRadiusBuffer;
+            Component.autoRadiusMultiplier = _autoRadiusMultiplier = _initialAutoRadiusMultiplier;
         }
         else
         {
-            Component.colliderRadius = _initialColliderRadius;
-            Component.hardColliderBuffer = _initialHardColliderBuffer;
+            Component.colliderRadius = _colliderRadius = _initialColliderRadius;
+            Component.hardColliderBuffer = _hardColliderBuffer = _initialHardColliderBuffer;
         }
-        Component.colliderLookOffset = _initialColliderLookOffset;
-        Component.colliderUpOffset = _initialColliderUpOffset;
-        Component.colliderRightOffset = _initialColliderRightOffset;
+        Component.colliderLookOffset = _colliderLookOffset = _initialColliderLookOffset;
+        Component.colliderUpOffset = _colliderUpOffset = _initialColliderUpOffset;
+        Component.colliderRightOffset = _colliderRightOffset = _initialColliderRightOffset;
 
         RefreshAutoCollider();
     }

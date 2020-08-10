@@ -4,13 +4,32 @@ using UnityEngine;
 public class BoxColliderModel : ColliderModel<BoxCollider>
 {
     private readonly Vector3 _initialSize;
+    private Vector3 _size;
     private readonly Vector3 _initialCenter;
+    private Vector3 _center;
 
     public BoxColliderModel(MVRScript parent, BoxCollider collider, ColliderPreviewConfig config)
         : base(parent, collider, config)
     {
-        _initialSize = collider.size;
-        _initialCenter = collider.center;
+        _initialSize = _size = collider.size;
+        _initialCenter = _center = collider.center;
+    }
+
+    public override bool SyncOverrides()
+    {
+        if (!Modified) return false;
+        bool changed = false;
+        if (Collider.size != _size)
+        {
+            Collider.size = _size;
+            changed = true;
+        }
+        if (Collider.center != _center)
+        {
+            Collider.center = _center;
+            changed = true;
+        }
+        return changed;
     }
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -25,21 +44,21 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        LoadJsonField(jsonClass, "size", val => Collider.size = val);
-        LoadJsonField(jsonClass, "center", val => Collider.center = val);
+        LoadJsonField(jsonClass, "size", val => Collider.size = _size = val);
+        LoadJsonField(jsonClass, "center", val => Collider.center = _center = val);
     }
 
     protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
 
-        jsonClass["sizeX"].AsFloat = Collider.size.x;
-        jsonClass["sizeY"].AsFloat = Collider.size.y;
-        jsonClass["sizeZ"].AsFloat = Collider.size.z;
+        jsonClass["sizeX"].AsFloat = _size.x;
+        jsonClass["sizeY"].AsFloat = _size.y;
+        jsonClass["sizeZ"].AsFloat = _size.z;
 
-        jsonClass["centerX"].AsFloat = Collider.center.x;
-        jsonClass["centerY"].AsFloat = Collider.center.y;
-        jsonClass["centerZ"].AsFloat = Collider.center.z;
+        jsonClass["centerX"].AsFloat = _center.x;
+        jsonClass["centerY"].AsFloat = _center.y;
+        jsonClass["centerZ"].AsFloat = _center.z;
 
         return jsonClass;
     }
@@ -47,62 +66,62 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
     protected override void DoResetToInitial()
     {
         base.DoResetToInitial();
-        Collider.size = _initialSize;
-        Collider.center = _initialCenter;
+        Collider.size = _size = _initialSize;
+        Collider.center = _center = _initialCenter;
     }
 
     public override void DoCreateControls()
     {
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("sizeX", Collider.size.x, value =>
         {
-            var size = Collider.size;
+            var size = _size;
             size.x = value;
-            Collider.size = size;
+            Collider.size = _size = size;
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.x), "Size.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("sizeY", Collider.size.y, value =>
         {
-            var size = Collider.size;
+            var size = _size;
             size.y = value;
-            Collider.size = size;
+            Collider.size = _size = size;
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.y), "Size.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("sizeZ", Collider.size.z, value =>
         {
-            var size = Collider.size;
+            var size = _size;
             size.z = value;
-            Collider.size = size;
+            Collider.size = _size = size;
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.z), "Size.Z"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
-            var center = Collider.center;
+            var center = _center;
             center.x = value;
-            Collider.center = center;
+            Collider.center = _center = center;
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
-            var center = Collider.center;
+            var center = _center;
             center.y = value;
-            Collider.center = center;
+            Collider.center = _center = center;
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
-            var center = Collider.center;
+            var center = _center;
             center.z = value;
-            Collider.center = center;
+            Collider.center = _center = center;
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));

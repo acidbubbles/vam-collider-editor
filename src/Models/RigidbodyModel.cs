@@ -6,6 +6,7 @@ using UnityEngine;
 public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 {
     private readonly bool _initialDetectCollisions;
+    private bool _detectCollisions;
 
     protected override bool OwnsColliders => false;
 
@@ -16,7 +17,19 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     public RigidbodyModel(MVRScript script, Rigidbody rigidbody)
         : base(script, rigidbody, $"[rb] {NameHelper.Simplify(rigidbody.name)}")
     {
-        _initialDetectCollisions = rigidbody.detectCollisions;
+        _initialDetectCollisions = _detectCollisions = rigidbody.detectCollisions;
+    }
+
+    public bool SyncOverrides()
+    {
+        if (!Modified) return false;
+        bool changed = false;
+        if (Component.detectCollisions != _detectCollisions)
+        {
+            Component.detectCollisions = _detectCollisions;
+            changed = true;
+        }
+        return changed;
     }
 
     public override IEnumerable<ColliderModel> GetColliders() => Colliders;
@@ -39,7 +52,7 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
         var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value =>
         {
-            Component.detectCollisions = value;
+            Component.detectCollisions = _detectCollisions = value;
             SetModified();
         });
         RegisterStorable(detectCollisionsJsf);
@@ -50,19 +63,19 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     protected override void DoLoadJson(JSONClass jsonClass)
     {
-        LoadJsonField(jsonClass, "detectCollisions", val => Component.detectCollisions = val);
+        LoadJsonField(jsonClass, "detectCollisions", val => Component.detectCollisions = _detectCollisions = val);
     }
 
     protected override JSONClass DoGetJson()
     {
         var jsonClass = new JSONClass();
-        jsonClass["detectCollisions"].AsBool = Component.detectCollisions;
+        jsonClass["detectCollisions"].AsBool = _detectCollisions;
         return jsonClass;
     }
 
     protected override void DoResetToInitial()
     {
-        Component.detectCollisions = _initialDetectCollisions;
+        Component.detectCollisions = _detectCollisions = _initialDetectCollisions;
     }
 
     protected bool DeviatesFromInitial() => Component.detectCollisions != _initialDetectCollisions;

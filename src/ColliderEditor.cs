@@ -417,10 +417,11 @@ public class ColliderEditor : MVRScript
         if (_editables == null) return;
         try
         {
-            if (_config.PreviewsEnabled && Time.time > _nextUpdate)
+            if (Time.time > _nextUpdate)
             {
                 foreach (var editable in _editables.All)
                 {
+                    editable.SyncOverrides();
                     editable.SyncPreview();
                 }
 

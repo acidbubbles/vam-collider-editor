@@ -15,6 +15,7 @@ public interface IModel
     void SyncPreview();
     void DestroyPreview();
     void ResetToInitial();
+    bool SyncOverrides();
 
     void LoadJson(JSONClass jc);
     void AppendJson(JSONClass jc);
