@@ -129,7 +129,7 @@ public class ColliderEditor : MVRScript
         groups.Add(_allLabel);
         _groupsJson = new JSONStorableStringChooser("Group", groups, groups[0], "Group");
         _groupsJson.setCallbackFunction = _ => UpdateFilter();
-        var groupsList = CreateScrollablePopup(_groupsJson, false);
+        var groupsList = CreatePopupAuto(_groupsJson, false);
         groupsList.popupPanelHeight = 400f;
         _popups.Add(groupsList);
 
@@ -138,7 +138,7 @@ public class ColliderEditor : MVRScript
         types.Add(_allLabel);
         _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Type");
         _typesJson.setCallbackFunction = _ => UpdateFilter();
-        var typesList = CreateScrollablePopup(_typesJson, false);
+        var typesList = CreatePopupAuto(_typesJson, false);
         typesList.popupPanelHeight = 400f;
         _popups.Add(typesList);
 
@@ -156,7 +156,7 @@ public class ColliderEditor : MVRScript
             new List<string>(),
             "",
             "Edit");
-        var editablesList = CreateScrollablePopup(_editablesJson, true);
+        var editablesList = CreatePopupAuto(_editablesJson, true);
         editablesList.popupPanelHeight = 1000f;
         _popups.Add(editablesList);
         _editablesJson.setCallbackFunction = id =>
@@ -169,6 +169,15 @@ public class ColliderEditor : MVRScript
         };
 
         UpdateFilter();
+    }
+
+    public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false)
+    {
+#if (VAM_1_20)
+        return CreateFilterablePopup(jssc, rightSide);
+#else
+        return CreateScrollablePopup(jssc, rightSide);
+#endif
     }
 
     public void SelectEditable(IModel val)
