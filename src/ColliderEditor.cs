@@ -173,7 +173,7 @@ public class ColliderEditor : MVRScript
 
     public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false)
     {
-#if (VAM_1_20)
+#if (VAM_GT_1_20)
         return CreateFilterablePopup(jssc, rightSide);
 #else
         return CreateScrollablePopup(jssc, rightSide);
