@@ -172,6 +172,7 @@ public class EditablesList
         if (collider.name.Contains("Ponytail")) return false;
         if (collider.name.StartsWith("PhysicsMeshJoint")) return false;
         if (collider.name.EndsWith("Joint")) return false;
+        if (collider is MeshCollider) return false;
         return true;
     }
 
