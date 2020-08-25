@@ -337,7 +337,10 @@ public class ColliderEditor : MVRScript
                 {
                     if (++errorsCounter < maxErrors)
                     {
-                        SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{migratedEditableId}' defined in save file.");
+                        if (migratedEditableId != editableId)
+                            SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{migratedEditableId}' (originally '{editableId}') defined in save file.");
+                        else
+                            SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{editableId}' defined in save file.");
                     }
                 }
             }
