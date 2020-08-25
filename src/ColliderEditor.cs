@@ -324,17 +324,21 @@ public class ColliderEditor : MVRScript
             var editablesJsonClass = jsonClass["editables"].AsObject;
             var errorsCounter = 0;
             var maxErrors = 100;
-            foreach (string editableId in editablesJsonClass.Keys)
+            foreach (var editableId in editablesJsonClass.Keys)
             {
+                var migratedEditableId = MigrationHelper.Migrate(editableId);
+
                 IModel editableModel;
-                if (_editables.ByUuid.TryGetValue(editableId, out editableModel))
+                if (_editables.ByUuid.TryGetValue(migratedEditableId, out editableModel))
                 {
                     editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
                 }
                 else
                 {
                     if (++errorsCounter < maxErrors)
-                        SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{editableId}' defined in save file.");
+                    {
+                        SuperController.LogError($"{nameof(ColliderEditor)}: Did not find '{migratedEditableId}' defined in save file.");
+                    }
                 }
             }
             if (errorsCounter >= maxErrors)
