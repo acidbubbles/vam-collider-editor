@@ -193,7 +193,5 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         SyncPreview();
     }
 
-    protected abstract bool DeviatesFromInitial();
-
     public override string ToString() => Id;
 }

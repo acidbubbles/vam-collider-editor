@@ -126,6 +126,4 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
-
-    protected override bool DeviatesFromInitial() => _initialSize != Collider.size || _initialCenter != Collider.center; // Vector3 has built in epsilon equality checks
 }

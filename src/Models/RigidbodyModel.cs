@@ -77,6 +77,4 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     {
         Component.detectCollisions = _detectCollisions = _initialDetectCollisions;
     }
-
-    protected bool DeviatesFromInitial() => Component.detectCollisions != _initialDetectCollisions;
 }

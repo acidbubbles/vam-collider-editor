@@ -1,3 +1,4 @@
+using GPUTools.Physics.Scripts.Behaviours;
 using SimpleJSON;
 using UnityEngine;
 
@@ -6,13 +7,21 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
     private readonly float _initialRadius;
     private float _radius;
     private readonly Vector3 _initialCenter;
+    private readonly float _initialFriction;
+    private readonly GpuSphereCollider _gpu;
     private Vector3 _center;
+    private float _friction;
 
     public SphereColliderModel(MVRScript parent, SphereCollider collider, ColliderPreviewConfig config)
         : base(parent, collider, config)
     {
         _initialRadius = _radius = collider.radius;
         _initialCenter = _center = collider.center;
+        _gpu = collider.gameObject.GetComponent<GpuSphereCollider>();
+        if (_gpu != null)
+        {
+            _initialFriction = _friction = _gpu.friction;
+        }
     }
 
     public override bool SyncOverrides()
@@ -29,43 +38,12 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             Collider.center = _center;
             changed = true;
         }
+        if (_gpu?.friction != _friction)
+        {
+            _gpu.friction = _friction;
+            changed = true;
+        }
         return changed;
-    }
-
-    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Sphere);
-
-    public override void SyncPreview()
-    {
-        if (Preview == null) return;
-
-        Preview.transform.localScale = Vector3.one * (Collider.radius * 2);
-        Preview.transform.localPosition = Collider.center;
-    }
-
-    protected override void DoLoadJson(JSONClass jsonClass)
-    {
-        LoadJsonField(jsonClass, "radius", val => Collider.radius = _radius = val);
-        LoadJsonField(jsonClass, "center", val => Collider.center = _center = val);
-    }
-
-    protected override JSONClass DoGetJson()
-    {
-        var jsonClass = new JSONClass();
-
-        jsonClass["radius"].AsFloat = _radius;
-
-        jsonClass["centerX"].AsFloat = _center.x;
-        jsonClass["centerY"].AsFloat = _center.y;
-        jsonClass["centerZ"].AsFloat = _center.z;
-
-        return jsonClass;
-    }
-
-    protected override void DoResetToInitial()
-    {
-        base.DoResetToInitial();
-        Collider.radius = _radius = _initialRadius;
-        Collider.center = _center = _initialCenter;
     }
 
     public override void DoCreateControls()
@@ -103,9 +81,62 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
             SetModified();
             SyncPreview();
         }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
+
+        if (_gpu != null)
+        {
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("friction", _gpu.friction, value =>
+            {
+                _gpu.friction = _friction = value;
+                SetModified();
+            }, 0f, Mathf.Ceil(_initialFriction) * 2f, false)).WithDefault(_gpu.friction), "Friction"));
+        }
     }
 
-    protected override bool DeviatesFromInitial() =>
-        !Mathf.Approximately(_initialRadius, Collider.radius) ||
-        _initialCenter != Collider.center; // Vector3 has built in epsilon equality checks
+    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+    public override void SyncPreview()
+    {
+        if (Preview == null) return;
+
+        Preview.transform.localScale = Vector3.one * (Collider.radius * 2);
+        Preview.transform.localPosition = Collider.center;
+    }
+
+    protected override void DoLoadJson(JSONClass jsonClass)
+    {
+        LoadJsonField(jsonClass, "radius", val => Collider.radius = _radius = val);
+        LoadJsonField(jsonClass, "center", val => Collider.center = _center = val);
+        if (_gpu != null)
+        {
+            LoadJsonField(jsonClass, "friction", val => _gpu.friction = _friction = val);
+        }
+    }
+
+    protected override JSONClass DoGetJson()
+    {
+        var jsonClass = new JSONClass();
+
+        jsonClass["radius"].AsFloat = _radius;
+
+        jsonClass["centerX"].AsFloat = _center.x;
+        jsonClass["centerY"].AsFloat = _center.y;
+        jsonClass["centerZ"].AsFloat = _center.z;
+        if (_gpu != null)
+        {
+            jsonClass["friction"].AsFloat = _friction;
+        }
+
+        return jsonClass;
+    }
+
+    protected override void DoResetToInitial()
+    {
+        base.DoResetToInitial();
+        Collider.radius = _radius = _initialRadius;
+        Collider.center = _center = _initialCenter;
+        if (_gpu != null)
+        {
+            _gpu.friction = _friction = _initialFriction;
+        }
+    }
 }
