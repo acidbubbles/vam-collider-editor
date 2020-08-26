@@ -17,7 +17,9 @@ public class ColliderEditor : MVRScript
     private const string _saveExt = "colliders";
     private const string _noSelectionLabel = "Select...";
     private const string _allLabel = "All";
+#if (!VAM_GT_1_20)
     private const string _searchDefault = "Search...";
+#endif
     private const string _collidersSavePath = "Saves\\colliders";
 
     private JSONStorableStringChooser _groupsJson;
@@ -146,9 +148,11 @@ public class ColliderEditor : MVRScript
         _modifiedOnlyJson.setCallbackFunction = _ => UpdateFilter();
         CreateToggle(_modifiedOnlyJson, false);
 
+#if (!VAM_GT_1_20)
         _textFilterJson = new JSONStorableString("Search", _searchDefault);
         _textFilterJson.setCallbackFunction = _ => UpdateFilter();
         CreateTextInput(_textFilterJson, false);
+#endif
 
         _editablesJson = new JSONStorableStringChooser(
             "Edit",
@@ -212,9 +216,9 @@ public class ColliderEditor : MVRScript
             HideCurrentFilteredEditables();
 
             IEnumerable<IModel> filtered = _editables.All;
+#if (!VAM_GT_1_20)
             var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val) && _textFilterJson.val != _searchDefault;
 
-#if (!VAM_GT_1_20)
             if (!hasSearchQuery && _groupsJson.val == _noSelectionLabel && _typesJson.val == _noSelectionLabel && !_modifiedOnlyJson.val)
             {
                 _editablesJson.choices = new List<string>();
@@ -234,6 +238,7 @@ public class ColliderEditor : MVRScript
             if (_modifiedOnlyJson.val)
                 filtered = filtered.Where(e => e.Modified);
 
+#if (!VAM_GT_1_20)
             if (hasSearchQuery)
             {
                 var tokens = _textFilterJson.val.Split(' ').Select(t => t.Trim());
@@ -245,6 +250,7 @@ public class ColliderEditor : MVRScript
                     );
                 }
             }
+#endif
 
             var result = filtered.ToList();
 
