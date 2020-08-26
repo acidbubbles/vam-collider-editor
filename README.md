@@ -16,6 +16,7 @@ Once the plugin has been added to an atom, you will be able to configure the col
 - A _collider_ is the bounds against which something will collide. While usually attached to a rigidbody to give it a shape, sometimes they are used for custom collisions and are not attached to any rigidbody.
 - An _autocollider_ is a custom concept in VaM that allows creating a series of rigidbodies and colliders automatically. This is used for breast and glutes, for example.
 - An _autocollidergroup_ is also a custom concept in VaM that drives multiple _autocolliders_ together.
+- A _GPU collider_ is a collider that affects hair and clothes.
 
 ## Articles
 
