@@ -9,10 +9,12 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
     private readonly float _initialHeight;
     private float _height;
     private readonly Vector3 _initialCenter;
-    private readonly float _initialFriction;
+    private readonly float _initialGpuFriction;
+    private readonly bool _initialGpuEnabled;
     private readonly CapsuleLineSphereCollider _gpu;
     private Vector3 _center;
-    private float _friction;
+    private float _gpuFriction;
+    private bool _gpuEnabled;
 
     public CapsuleColliderModel(MVRScript parent, CapsuleCollider collider, ColliderPreviewConfig config)
         : base(parent, collider, config)
@@ -23,7 +25,8 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu = collider.gameObject.GetComponent<CapsuleLineSphereCollider>();
         if (_gpu != null)
         {
-            _initialFriction = _friction = _gpu.friction;
+            _initialGpuFriction = _gpuFriction = _gpu.friction;
+            _initialGpuEnabled = _gpuEnabled = _gpu.enabled;
         }
     }
 
@@ -46,9 +49,14 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             Collider.center = _center;
             changed = true;
         }
-        if (_gpu?.friction != _friction)
+        if (_gpu?.friction != _gpuFriction)
         {
-            _gpu.friction = _friction;
+            _gpu.friction = _gpuFriction;
+            changed = true;
+        }
+        if (_gpu?.enabled != _gpuEnabled)
+        {
+            _gpu.enabled = _gpuEnabled;
             changed = true;
         }
         if (changed) _gpu?.UpdateData();
@@ -105,11 +113,17 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
         if (_gpu != null)
         {
-            RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("friction", _gpu.friction, value =>
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("gpu.friction", _gpu.friction, value =>
             {
-                _gpu.friction = _friction = value;
+                _gpu.friction = _gpuFriction = value;
                 SetModified();
-            }, 0f, Mathf.Ceil(_initialFriction) * 2f, false)).WithDefault(_gpu.friction), "Friction"));
+            }, 0f, Mathf.Ceil(_initialGpuFriction) * 2f, false)).WithDefault(_gpu.friction), "GPU Friction"));
+
+            RegisterControl(Script.CreateToggle(RegisterStorable(new JSONStorableBool("gpu.enabled", _gpu.enabled, (bool value) =>
+            {
+                _gpu.enabled = _gpuEnabled = value;
+                SetModified();
+            }).WithDefault(_initialGpuEnabled)), "GPU Collider Enabled"));
         }
     }
 
@@ -120,7 +134,8 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         LoadJsonField(jsonClass, "center", val => Collider.center = _center = val);
         if (_gpu != null)
         {
-            LoadJsonField(jsonClass, "friction", val => _gpu.friction = _friction = val);
+            LoadJsonField(jsonClass, "gpuFriction", val => _gpu.friction = _gpuFriction = val);
+            LoadJsonField(jsonClass, "gpuEnabled", val => _gpu.enabled = _gpuEnabled = val);
         }
         _gpu?.UpdateData();
     }
@@ -135,7 +150,8 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         jsonClass["centerZ"].AsFloat = _center.z;
         if (_gpu != null)
         {
-            jsonClass["friction"].AsFloat = _friction;
+            jsonClass["gpuFriction"].AsFloat = _gpuFriction;
+            jsonClass["gpuEnabled"].AsBool = _gpuEnabled;
         }
         return jsonClass;
     }
@@ -148,7 +164,8 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.center = _center = _initialCenter;
         if (_gpu != null)
         {
-            _gpu.friction = _friction = _initialFriction;
+            _gpu.friction = _gpuFriction = _initialGpuFriction;
+            _gpu.enabled = _gpuEnabled = _initialGpuEnabled;
             _gpu.UpdateData();
         }
     }
