@@ -178,7 +178,50 @@ public class ColliderEditor : MVRScript
     public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false)
     {
 #if (VAM_GT_1_20)
-        return CreateFilterablePopup(jssc, rightSide);
+        var popup = CreateFilterablePopup(jssc, rightSide);
+
+        popup.popup.labelText.alignment = TextAnchor.UpperCenter;
+        popup.popup.labelText.GetComponent<RectTransform>().anchorMax = new Vector2(0, 0.89f);
+
+        {
+            var btn = Instantiate(manager.configurableButtonPrefab);
+            btn.SetParent(popup.transform, false);
+            Destroy(btn.GetComponent<LayoutElement>());
+            btn.GetComponent<UIDynamicButton>().label = "<";
+            btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
+            {
+                popup.popup.SetPreviousValue();
+            });
+            var prevBtnRect = btn.GetComponent<RectTransform>();
+            prevBtnRect.pivot = new Vector2(0, 0);
+            prevBtnRect.anchoredPosition = new Vector2(10f, 0);
+            prevBtnRect.sizeDelta = new Vector2(0f, 0f);
+            prevBtnRect.offsetMin = new Vector2(5f, 5f);
+            prevBtnRect.offsetMax = new Vector2(80f, 70f);
+            prevBtnRect.anchorMin = new Vector2(0f, 0f);
+            prevBtnRect.anchorMax = new Vector2(0f, 0f);
+        }
+
+        {
+            var btn = Instantiate(manager.configurableButtonPrefab);
+            btn.SetParent(popup.transform, false);
+            Destroy(btn.GetComponent<LayoutElement>());
+            btn.GetComponent<UIDynamicButton>().label = ">";
+            btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
+            {
+                popup.popup.SetNextValue();
+            });
+            var prevBtnRect = btn.GetComponent<RectTransform>();
+            prevBtnRect.pivot = new Vector2(0, 0);
+            prevBtnRect.anchoredPosition = new Vector2(10f, 0);
+            prevBtnRect.sizeDelta = new Vector2(0f, 0f);
+            prevBtnRect.offsetMin = new Vector2(82f, 5f);
+            prevBtnRect.offsetMax = new Vector2(157f, 70f);
+            prevBtnRect.anchorMin = new Vector2(0f, 0f);
+            prevBtnRect.anchorMax = new Vector2(0f, 0f);
+        }
+
+        return popup;
 #else
         return CreateScrollablePopup(jssc, rightSide);
 #endif
@@ -191,21 +234,11 @@ public class ColliderEditor : MVRScript
         {
             _selected = val;
             val.Selected = true;
-            _editablesJson.valNoCallback = val.Label;
+            _editablesJson.valNoCallback = val.Id;
         }
         else
         {
             _editablesJson.valNoCallback = "";
-        }
-        SyncPopups();
-    }
-
-    private void SyncPopups()
-    {
-        foreach (var popup in _popups)
-        {
-            popup.popup.Toggle();
-            popup.popup.Toggle();
         }
     }
 
@@ -224,7 +257,6 @@ public class ColliderEditor : MVRScript
                 _editablesJson.choices = new List<string>();
                 _editablesJson.displayChoices = new List<string>();
                 _editablesJson.val = "";
-                SyncPopups();
                 return;
             }
 #endif
@@ -264,8 +296,6 @@ public class ColliderEditor : MVRScript
                 e.Shown = true;
                 e.UpdatePreviewFromConfig();
             }
-
-            SyncPopups();
         }
         catch (Exception e)
         {
