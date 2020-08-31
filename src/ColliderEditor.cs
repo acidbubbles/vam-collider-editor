@@ -475,8 +475,8 @@ public class ColliderEditor : MVRScript
             {
                 foreach (var editable in _editables.All)
                 {
-                    editable.SyncOverrides();
-                    editable.SyncPreview();
+                    if(editable.SyncOverrides())
+                        editable.SyncPreview();
                 }
 
                 _nextUpdate = Time.time + 1f;
