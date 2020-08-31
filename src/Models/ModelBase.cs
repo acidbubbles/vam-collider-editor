@@ -109,6 +109,9 @@ public abstract class ModelBase<T> where T : Component
         RegisterStorable(debugJson);
         var debugTextField = Script.CreateTextField(debugJson, true);
         debugTextField.height = 80f;
+        var debugTextInputField = debugTextField.gameObject.AddComponent<UnityEngine.UI.InputField>();
+        debugTextInputField.textComponent = debugTextField.UItext;
+        debugJson.inputField = debugTextInputField;
         RegisterControl(debugTextField);
         */
 
