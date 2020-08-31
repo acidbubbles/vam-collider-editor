@@ -85,6 +85,7 @@ public class EditablesList
 
         var colliderDuplicates = new HashSet<string>();
         var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
+            .Where(collider => collider.gameObject.activeInHierarchy)
             .Where(collider => !autoCollidersColliders.Contains(collider))
             .Where(collider => IsColliderIncluded(collider))
             .Select(collider => ColliderModel.CreateTyped(script, collider, config))
