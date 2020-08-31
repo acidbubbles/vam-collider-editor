@@ -49,17 +49,20 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
             Collider.center = _center;
             changed = true;
         }
-        if (_gpu?.friction != _gpuFriction)
+        if (_gpu != null)
         {
-            _gpu.friction = _gpuFriction;
-            changed = true;
+            if (_gpu.friction != _gpuFriction)
+            {
+                _gpu.friction = _gpuFriction;
+                changed = true;
+            }
+            if (_gpu.enabled != _gpuEnabled)
+            {
+                _gpu.enabled = _gpuEnabled;
+                changed = true;
+            }
+            if (changed) _gpu.UpdateData();
         }
-        if (_gpu?.enabled != _gpuEnabled)
-        {
-            _gpu.enabled = _gpuEnabled;
-            changed = true;
-        }
-        if (changed) _gpu?.UpdateData();
         return changed;
     }
 
