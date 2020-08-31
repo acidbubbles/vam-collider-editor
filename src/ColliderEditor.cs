@@ -484,7 +484,8 @@ public class ColliderEditor : MVRScript
         }
         catch (Exception e)
         {
-            LogError(nameof(Update), e.ToString());
+            LogError(nameof(Update), $"{containingAtom.name}'s Collider Editor will be disabled.\r\n" + e.ToString());
+            enabled = false;
         }
     }
 
