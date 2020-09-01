@@ -5,6 +5,43 @@ using System.Collections.Generic;
 using System.Linq;
 using SimpleJSON;
 using MVR.FileManagementSecure;
+using System.Text.RegularExpressions;
+
+
+// from https://stackoverflow.com/questions/248603
+public class NaturalStringComparer : IComparer<string>
+{
+    private static readonly Regex _re = new Regex(@"(?<=\D)(?=\d)|(?<=\d)(?=\D)", RegexOptions.Compiled);
+
+    public int Compare(string x, string y)
+    {
+        x = x.ToLower();
+        y = y.ToLower();
+        if(string.Compare(x, 0, y, 0, Math.Min(x.Length, y.Length)) == 0)
+        {
+            if(x.Length == y.Length) return 0;
+            return x.Length < y.Length ? -1 : 1;
+        }
+        var a = _re.Split(x);
+        var b = _re.Split(y);
+        int i = 0;
+        while(true)
+        {
+            int r = PartCompare(a[i], b[i]);
+            if(r != 0) return r;
+            ++i;
+        }
+    }
+
+    private static int PartCompare(string x, string y)
+    {
+        int a, b;
+        if(int.TryParse(x, out a) && int.TryParse(y, out b))
+            return a.CompareTo(b);
+        return x.CompareTo(y);
+    }
+}
+
 
 /// <summary>
 /// Collider Editor
@@ -284,10 +321,10 @@ public class ColliderEditor : MVRScript
             }
 #endif
 
-            var result = filtered.ToList();
+            var result = filtered.ToList().OrderBy(x => x.Label, new NaturalStringComparer());
 
-            _editablesJson.choices = filtered.Select(x => x.Id).ToList();
-            _editablesJson.displayChoices = filtered.Select(x => x.Label).ToList();
+            _editablesJson.choices = result.Select(x => x.Id).ToList();
+            _editablesJson.displayChoices = result.Select(x => x.Label).ToList();
             if (!_editablesJson.choices.Contains(_editablesJson.val) || string.IsNullOrEmpty(_editablesJson.val))
                 _editablesJson.val = _editablesJson.choices.FirstOrDefault() ?? "";
 
