@@ -87,6 +87,7 @@ public class EditablesList
         var colliders = containingAtom.GetComponentsInChildren<Collider>(true)
             .Where(collider => collider.gameObject.activeInHierarchy)
             .Where(collider => !autoCollidersColliders.Contains(collider))
+            .Where(collider => collider.attachedRigidbody == null || IsRigidbodyIncluded(collider.attachedRigidbody))
             .Where(collider => IsColliderIncluded(collider))
             .Select(collider => ColliderModel.CreateTyped(script, collider, config))
             .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
