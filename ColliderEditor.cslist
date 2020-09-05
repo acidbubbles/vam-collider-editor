@@ -20,3 +20,4 @@ src\JSONStorableExtensions.cs
 src\MaterialHelper.cs
 src\MigrationHelper.cs
 src\NameHelper.cs
+src\NaturalStringComparer.cs

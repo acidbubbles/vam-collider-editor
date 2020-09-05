@@ -78,6 +78,7 @@
     <Compile Include="src\MaterialHelper.cs" />
     <Compile Include="src\MigrationHelper.cs" />
     <Compile Include="src\NameHelper.cs" />
+    <Compile Include="src\NaturalStringComparer.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
