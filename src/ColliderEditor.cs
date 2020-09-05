@@ -6,6 +6,7 @@ using System.Linq;
 using SimpleJSON;
 using MVR.FileManagementSecure;
 using System.Text.RegularExpressions;
+using System.Collections;
 
 
 // from https://stackoverflow.com/questions/248603
@@ -17,18 +18,18 @@ public class NaturalStringComparer : IComparer<string>
     {
         x = x.ToLower();
         y = y.ToLower();
-        if(string.Compare(x, 0, y, 0, Math.Min(x.Length, y.Length)) == 0)
+        if (string.Compare(x, 0, y, 0, Math.Min(x.Length, y.Length)) == 0)
         {
-            if(x.Length == y.Length) return 0;
+            if (x.Length == y.Length) return 0;
             return x.Length < y.Length ? -1 : 1;
         }
         var a = _re.Split(x);
         var b = _re.Split(y);
         int i = 0;
-        while(true)
+        while (true)
         {
             int r = PartCompare(a[i], b[i]);
-            if(r != 0) return r;
+            if (r != 0) return r;
             ++i;
         }
     }
@@ -36,7 +37,7 @@ public class NaturalStringComparer : IComparer<string>
     private static int PartCompare(string x, string y)
     {
         int a, b;
-        if(int.TryParse(x, out a) && int.TryParse(y, out b))
+        if (int.TryParse(x, out a) && int.TryParse(y, out b))
             return a.CompareTo(b);
         return x.CompareTo(y);
     }
@@ -70,6 +71,7 @@ public class ColliderEditor : MVRScript
     private IModel _selected;
     private EditablesList _editables;
     private JSONClass _jsonWhenDisabled;
+    private bool _restored;
 
     public override void Init()
     {
@@ -77,10 +79,25 @@ public class ColliderEditor : MVRScript
         {
             _editables = EditablesList.Build(this, _config);
             BuildUI();
+            SuperController.singleton.StartCoroutine(DeferredInit());
         }
         catch (Exception e)
         {
             SuperController.LogError($"{nameof(ColliderEditor)}.{nameof(Init)}: {e}");
+        }
+    }
+
+    private IEnumerator DeferredInit()
+    {
+        yield return new WaitForEndOfFrame();
+        if (_restored) yield break;
+        try
+        {
+            containingAtom.RestoreFromLast(this);
+        }
+        catch (Exception e)
+        {
+            SuperController.LogError($"{nameof(ColliderEditor)}.{nameof(DeferredInit)}: {e}");
         }
     }
 
@@ -384,6 +401,7 @@ public class ColliderEditor : MVRScript
 
         try
         {
+            _restored = true;
             LoadFromJson(jc);
         }
         catch (Exception exc)
@@ -503,6 +521,7 @@ public class ColliderEditor : MVRScript
     }
 
     private float _nextUpdate = Time.time;
+
     private void Update()
     {
         if (_editables == null) return;
@@ -512,7 +531,7 @@ public class ColliderEditor : MVRScript
             {
                 foreach (var editable in _editables.All)
                 {
-                    if(editable.SyncOverrides())
+                    if (editable.SyncOverrides())
                         editable.SyncPreview();
                 }
 
