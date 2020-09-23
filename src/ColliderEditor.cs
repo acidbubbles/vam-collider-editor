@@ -72,7 +72,11 @@ public class ColliderEditor : MVRScript
             _config.PreviewsEnabled = value;
             foreach (var editable in _editables.All)
                 editable.UpdatePreviewFromConfig();
-        });
+        })
+        {
+            isStorable = false,
+            isRestorable = false
+        };
         RegisterBool(showPreviews);
         var showPreviewsToggle = CreateToggle(showPreviews);
         showPreviewsToggle.label = "Show Previews";
@@ -147,8 +151,12 @@ public class ColliderEditor : MVRScript
         var groups = new List<string> { _noSelectionLabel };
         groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
         groups.Add(_allLabel);
-        _groupsJson = new JSONStorableStringChooser("Group", groups, groups[0], "Group");
-        _groupsJson.setCallbackFunction = _ => UpdateFilter();
+        _groupsJson = new JSONStorableStringChooser("Group", groups, groups[0], "Group")
+        {
+            setCallbackFunction = _ => UpdateFilter(),
+            isStorable = false,
+            isRestorable = false
+        };
         var groupsList = CreatePopupAuto(_groupsJson, false);
         groupsList.popupPanelHeight = 400f;
         _popups.Add(groupsList);
@@ -156,19 +164,31 @@ public class ColliderEditor : MVRScript
         var types = new List<string> { _noSelectionLabel };
         types.AddRange(_editables.All.Select(e => e.Type).Distinct());
         types.Add(_allLabel);
-        _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Type");
-        _typesJson.setCallbackFunction = _ => UpdateFilter();
+        _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Type")
+        {
+            setCallbackFunction = _ => UpdateFilter(),
+            isStorable = false,
+            isRestorable = false
+        };
         var typesList = CreatePopupAuto(_typesJson, false);
         typesList.popupPanelHeight = 400f;
         _popups.Add(typesList);
 
-        _modifiedOnlyJson = new JSONStorableBool("Modified Only", false);
-        _modifiedOnlyJson.setCallbackFunction = _ => UpdateFilter();
+        _modifiedOnlyJson = new JSONStorableBool("Modified Only", false)
+        {
+            setCallbackFunction = _ => UpdateFilter(),
+            isStorable = false,
+            isRestorable = false
+        };
         CreateToggle(_modifiedOnlyJson, false);
 
 #if (!VAM_GT_1_20)
-        _textFilterJson = new JSONStorableString("Search", _searchDefault);
-        _textFilterJson.setCallbackFunction = _ => UpdateFilter();
+        _textFilterJson = new JSONStorableString("Search", _searchDefault)
+        {
+            setCallbackFunction = _ => UpdateFilter(),
+            isStorable = false,
+            isRestorable = false
+        };
         CreateTextInput(_textFilterJson, false);
 #endif
 
@@ -177,7 +197,11 @@ public class ColliderEditor : MVRScript
             new List<string>(),
             new List<string>(),
             "",
-            "Edit");
+            "Edit")
+        {
+            isStorable = false,
+            isRestorable = false
+        };
         var editablesList = CreatePopupAuto(_editablesJson, true);
         editablesList.popupPanelHeight = 1000f;
         _popups.Add(editablesList);
