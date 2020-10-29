@@ -20,6 +20,26 @@ public abstract class ModelBase<T> where T : Component
     public bool IsDuplicate { get; set; }
     public bool Modified { get; protected set; }
 
+	public static float MakeMinOffset(float val)
+	{
+		return val - 0.025f;
+	}
+
+	public static float MakeMaxOffset(float val)
+	{
+		return val + 0.025f;
+	}
+
+	public static float MakeMinPosition(float val)
+	{
+		return val - 0.025f;
+	}
+
+	public static float MakeMaxPosition(float val)
+	{
+		return val + 0.025f;
+	}
+
     public bool Selected
     {
         get { return _selected; }

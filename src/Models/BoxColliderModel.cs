@@ -106,7 +106,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             Collider.center = _center = center;
             SetModified();
             SyncPreview();
-        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.x), "Center.X"));
+        }, MakeMinPosition(Collider.center.x), MakeMaxPosition(Collider.center.x), false)).WithDefault(_initialCenter.x), "Center.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
@@ -115,7 +115,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             Collider.center = _center = center;
             SetModified();
             SyncPreview();
-        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.y), "Center.Y"));
+        }, MakeMinPosition(Collider.center.y), MakeMaxPosition(Collider.center.y), false)).WithDefault(_initialCenter.y), "Center.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
@@ -124,6 +124,6 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             Collider.center = _center = center;
             SetModified();
             SyncPreview();
-        }, -0.25f, 0.25f, false)).WithDefault(_initialCenter.z), "Center.Z"));
+        }, MakeMinPosition(Collider.center.z), MakeMaxPosition(Collider.center.z), false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
 }
