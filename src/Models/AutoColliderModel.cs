@@ -231,7 +231,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.colliderLookOffset = _colliderLookOffset = value;
                         RefreshAutoCollider();
                         SetModified();
-                    }, -0.25f, 0.25f, false)
+                    }, MakeMinOffset(Component.colliderLookOffset), MakeMaxOffset(Component.colliderLookOffset), false)
                     .WithDefault(_initialColliderLookOffset)
                 ), "Look Offset")
         );
@@ -243,7 +243,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.colliderUpOffset = _colliderUpOffset = value;
                         RefreshAutoCollider();
                         SetModified();
-                    }, -0.25f, 0.25f, false)
+                    }, MakeMinOffset(Component.colliderUpOffset), MakeMaxOffset(Component.colliderUpOffset), false)
                     .WithDefault(_initialColliderUpOffset)
                 ), "Up Offset")
         );
@@ -255,7 +255,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.colliderRightOffset = _colliderRightOffset = value;
                         RefreshAutoCollider();
                         SetModified();
-                    }, -0.25f, 0.25f, false)
+                    }, MakeMinOffset(Component.colliderRightOffset), MakeMaxOffset(Component.colliderRightOffset), false)
                     .WithDefault(_initialColliderRightOffset)
                 ), "Right Offset")
         );
