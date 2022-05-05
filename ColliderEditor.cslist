@@ -14,6 +14,7 @@ src\ColorExtensions.cs
 src\ComponentExtensions.cs
 src\EditablesList.cs
 src\EnumerableExtensions.cs
+src\Filters.cs
 src\FloatExtensions.cs
 src\Group.cs
 src\JSONStorableExtensions.cs

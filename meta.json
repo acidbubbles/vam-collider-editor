@@ -9,7 +9,31 @@
    "promotionalLink" : "https://github.com/acidbubbles/vam-collider-editor", 
    "programVersion" : "1.19.2.0", 
    "contentList" : [ 
-      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\ColliderEditor.cs"
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\ColliderEditor.cslist",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\AutoColliderGroupModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\AutoColliderModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\BoxColliderModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\CapsuleColliderModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\ColliderContainerModelBase.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\ColliderModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\IModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\ModelBase.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\RigidbodyModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Models\\SphereColliderModel.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\ColliderEditor.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\ColliderPreviewConfig.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\ColorExtensions.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\ComponentExtensions.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\EditablesList.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\EnumerableExtensions.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Filters.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\FloatExtensions.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Group.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\JSONStorableExtensions.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\MaterialHelper.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\MigrationHelper.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\NameHelper.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\NaturalStringComparer.cs"
    ], 
    "dependencies" : { 
    }

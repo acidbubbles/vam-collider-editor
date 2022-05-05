@@ -26,7 +26,7 @@ public class ColliderEditor : MVRScript
 
     private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
-    private JSONStorableBool _modifiedOnlyJson;
+    private JSONStorableStringChooser _filterJson;
     private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
     private readonly List<UIDynamicPopup> _popups = new List<UIDynamicPopup>();
@@ -171,16 +171,18 @@ public class ColliderEditor : MVRScript
             isRestorable = false
         };
         var typesList = CreatePopupAuto(_typesJson, false);
-        typesList.popupPanelHeight = 400f;
+        typesList.popupPanelHeight = 360f;
         _popups.Add(typesList);
 
-        _modifiedOnlyJson = new JSONStorableBool("Modified Only", false)
+        _filterJson = new JSONStorableStringChooser("Filter", Filters.List, Filters.None, "Filter")
         {
             setCallbackFunction = _ => UpdateFilter(),
             isStorable = false,
             isRestorable = false
         };
-        CreateToggle(_modifiedOnlyJson, false);
+        var filterList = CreatePopupAuto(_filterJson, false);
+        filterList.popupPanelHeight = 200f;
+        _popups.Add(filterList);
 
 #if (!VAM_GT_1_20)
         _textFilterJson = new JSONStorableString("Search", _searchDefault)
@@ -294,7 +296,7 @@ public class ColliderEditor : MVRScript
 #if (!VAM_GT_1_20)
             var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val) && _textFilterJson.val != _searchDefault;
 
-            if (!hasSearchQuery && _groupsJson.val == _noSelectionLabel && _typesJson.val == _noSelectionLabel && !_modifiedOnlyJson.val)
+            if (!hasSearchQuery && _groupsJson.val == _noSelectionLabel && _typesJson.val == _noSelectionLabel && _filterJson.val == Filters.None)
             {
                 _editablesJson.choices = new List<string>();
                 _editablesJson.displayChoices = new List<string>();
@@ -309,8 +311,10 @@ public class ColliderEditor : MVRScript
             if (_typesJson.val != _allLabel && _typesJson.val != _noSelectionLabel)
                 filtered = filtered.Where(e => e.Type == _typesJson.val);
 
-            if (_modifiedOnlyJson.val)
+            if (_filterJson.val == Filters.ModifiedOnly)
                 filtered = filtered.Where(e => e.Modified);
+            else if (_filterJson.val == Filters.ModifiedOnly)
+                filtered = filtered.Where(e => !e.Modified);
 
 #if (!VAM_GT_1_20)
             if (hasSearchQuery)
