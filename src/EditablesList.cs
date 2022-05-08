@@ -29,6 +29,7 @@ public class EditablesList
                     new Group("Left foot", @"^l(Foot|Toe|BigToe|SmallToe)"),
                     new Group("Right leg", @"^((AutoCollider)?(FemaleAutoColliders)?)?r(Thigh|Shin)"),
                     new Group("Right foot", @"^r(Foot|Toe|BigToe|SmallToe)"),
+                    new Group("Physics mesh joints", @"^PhysicsMeshJoint.+$"),
                     new Group("Other", @"^.+$")
                  }
                  : new List<Group>
@@ -123,13 +124,13 @@ public class EditablesList
 
         // All Editables
 
-        var all = colliders.Cast<IModel>()
-            .Concat(autoColliderGroups.Cast<IModel>())
-            .Concat(autoColliders.Cast<IModel>())
-            .Concat(rigidbodies.Cast<IModel>())
-            .ToList();
-
-        return new EditablesList(groups, all);
+        return new EditablesList(
+            groups,
+            colliders,
+            autoColliders,
+            autoColliderGroups,
+            rigidbodies
+        );
     }
 
     private static void MatchMirror<TModel, TComponent>(List<TModel> items)
@@ -172,7 +173,6 @@ public class EditablesList
         if (collider.name.EndsWith("Trigger")) return false;
         if (collider.name.EndsWith("UI")) return false;
         if (collider.name.Contains("Ponytail")) return false;
-        if (collider.name.StartsWith("PhysicsMeshJoint")) return false;
         if (collider.name.EndsWith("Joint")) return false;
         if (collider is MeshCollider) return false;
         return true;
@@ -188,18 +188,32 @@ public class EditablesList
         if (rigidbody.name.EndsWith("Trigger")) return false;
         if (rigidbody.name.EndsWith("UI")) return false;
         if (rigidbody.name.Contains("Ponytail")) return false;
-        if (rigidbody.name.StartsWith("PhysicsMeshJoint")) return false;
         return true;
     }
 
     public List<Group> Groups { get; }
-    public Dictionary<string, IModel> ByUuid { get; }
+    public readonly List<ColliderModel> Colliders;
+    public readonly List<AutoColliderModel> AutoColliders;
+    public readonly List<AutoColliderGroupModel> AutoColliderGroups;
+    public readonly List<RigidbodyModel> Rigidbodies;
     public List<IModel> All { get; }
+    public Dictionary<string, IModel> ByUuid { get; }
 
-    public EditablesList(List<Group> groups, List<IModel> all)
+    private EditablesList(List<Group> groups, List<ColliderModel> colliders, List<AutoColliderModel> autoColliders, List<AutoColliderGroupModel> autoColliderGroups, List<RigidbodyModel> rigidbodies)
     {
         Groups = groups;
-        ByUuid = all.ToDictionary(x => x.Id, x => x);
-        All = all.OrderBy(a => a.Label).ToList();
+        Colliders = colliders;
+        AutoColliders = autoColliders;
+        AutoColliderGroups = autoColliderGroups;
+        Rigidbodies = rigidbodies;
+
+        All = colliders.Cast<IModel>()
+            .Concat(autoColliderGroups.Cast<IModel>())
+            .Concat(autoColliders.Cast<IModel>())
+            .Concat(rigidbodies.Cast<IModel>())
+            .OrderBy(a => a.Label)
+            .ToList();
+
+        ByUuid = All.ToDictionary(x => x.Id, x => x);
     }
 }

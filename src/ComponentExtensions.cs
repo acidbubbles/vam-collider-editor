@@ -6,6 +6,18 @@ public static class ComponentExtensions
 {
     public static string Uuid(this Component component)
     {
+        var paths = BuildStack(component);
+        return component.GetTypeName() + ":" + string.Join(".", paths.ToArray());
+    }
+
+    public static string Hierarchy(this Component component)
+    {
+        var paths = BuildStack(component);
+        return string.Join("\r\n", paths.ToArray());
+    }
+
+    private static Stack<string> BuildStack(Component component)
+    {
         var paths = new Stack<string>(new[] { $"{component.name}" });
         var current = component.gameObject.transform;
 
@@ -15,7 +27,7 @@ public static class ComponentExtensions
             current = current.transform.parent;
         }
 
-        return component.GetTypeName() + ":" + string.Join(".", paths.ToArray());
+        return paths;
     }
 
     private static bool CanNavigateUp(Transform current)

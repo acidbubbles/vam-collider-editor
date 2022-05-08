@@ -30,7 +30,6 @@ public class ColliderEditor : MVRScript
     private JSONStorableStringChooser _filterJson;
     private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
-    private readonly List<UIDynamicPopup> _popups = new List<UIDynamicPopup>();
 
     private readonly ColliderPreviewConfig _config = new ColliderPreviewConfig();
     private IModel _selected;
@@ -149,20 +148,6 @@ public class ColliderEditor : MVRScript
                 editable.ResetToInitial();
         });
 
-        _presetsJson = new JSONStorableStringChooser("Presets", Presets.List, Presets.None, "Apply Preset...")
-        {
-            setCallbackFunction = v =>
-            {
-                _presetsJson.valNoCallback = Presets.None;
-                Presets.Apply(v, containingAtom, _editables);
-            },
-            isStorable = false,
-            isRestorable = false
-        };
-        var presetsList = CreatePopupAuto(_presetsJson, false);
-        presetsList.popupPanelHeight = 200f;
-        _popups.Add(presetsList);
-
         var groups = new List<string> { _noSelectionLabel };
         groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
         groups.Add(_allLabel);
@@ -172,9 +157,7 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        var groupsList = CreatePopupAuto(_groupsJson, false);
-        groupsList.popupPanelHeight = 400f;
-        _popups.Add(groupsList);
+        CreatePopupAuto(_groupsJson, false, 400f);
 
         var types = new List<string> { _noSelectionLabel };
         types.AddRange(_editables.All.Select(e => e.Type).Distinct());
@@ -185,9 +168,7 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        var typesList = CreatePopupAuto(_typesJson, false);
-        typesList.popupPanelHeight = 360f;
-        _popups.Add(typesList);
+        CreatePopupAuto(_typesJson, false, 360f);
 
         _filterJson = new JSONStorableStringChooser("Filter", Filters.List, Filters.None, "Filter")
         {
@@ -195,9 +176,19 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        var filterList = CreatePopupAuto(_filterJson, false, true);
-        filterList.popupPanelHeight = 200f;
-        _popups.Add(filterList);
+        CreatePopupAuto(_filterJson, false, 400, true);
+
+        _presetsJson = new JSONStorableStringChooser("Presets", Presets.List, Presets.None, "Presets...")
+        {
+            setCallbackFunction = v =>
+            {
+                _presetsJson.valNoCallback = Presets.None;
+                Presets.Apply(v, _filteredEditables);
+            },
+            isStorable = false,
+            isRestorable = false
+        };
+        CreatePopupAuto(_presetsJson, false, 500, true);
 
 #if (!VAM_GT_1_20)
         _textFilterJson = new JSONStorableString("Search", _searchDefault)
@@ -221,7 +212,6 @@ public class ColliderEditor : MVRScript
         };
         var editablesList = CreatePopupAuto(_editablesJson, true);
         editablesList.popupPanelHeight = 1000f;
-        _popups.Add(editablesList);
         _editablesJson.setCallbackFunction = id =>
         {
             IModel val;
@@ -234,7 +224,7 @@ public class ColliderEditor : MVRScript
         UpdateFilter();
     }
 
-    public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false, bool upwards = false)
+    public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false, float popupPanelHeight = 0f, bool upwards = false)
     {
 #if (VAM_GT_1_20)
         var popup = CreateFilterablePopup(jssc, rightSide);
@@ -280,8 +270,16 @@ public class ColliderEditor : MVRScript
             prevBtnRect.anchorMax = new Vector2(0f, 0f);
         }
 
-        popup.popup.popupPanel.offsetMin += new Vector2(0, popup.popupPanelHeight + 60);
-        popup.popup.popupPanel.offsetMax += new Vector2(0, popup.popupPanelHeight + 60);
+        if(popupPanelHeight > 0f)
+        {
+            popup.popupPanelHeight = popupPanelHeight;
+        }
+
+        if(upwards)
+        {
+            popup.popup.popupPanel.offsetMin += new Vector2(0, popup.popupPanelHeight + 60);
+            popup.popup.popupPanel.offsetMax += new Vector2(0, popup.popupPanelHeight + 60);
+        }
 
         return popup;
 #else
@@ -348,14 +346,14 @@ public class ColliderEditor : MVRScript
             }
 #endif
 
-            var result = filtered.ToList().OrderBy(x => x.Label, new NaturalStringComparer());
+            _filteredEditables = filtered.OrderBy(x => x.Label, new NaturalStringComparer()).ToList();
 
-            _editablesJson.choices = result.Select(x => x.Id).ToList();
-            _editablesJson.displayChoices = result.Select(x => x.Label).ToList();
+            _editablesJson.choices = _filteredEditables.Select(x => x.Id).ToList();
+            _editablesJson.displayChoices = _filteredEditables.Select(x => x.Label).ToList();
             if (!_editablesJson.choices.Contains(_editablesJson.val) || string.IsNullOrEmpty(_editablesJson.val))
                 _editablesJson.val = _editablesJson.choices.FirstOrDefault() ?? "";
 
-            foreach (var e in result)
+            foreach (var e in _filteredEditables)
             {
                 e.Shown = true;
                 e.UpdatePreviewFromConfig();
@@ -531,6 +529,7 @@ public class ColliderEditor : MVRScript
     }
 
     private float _nextUpdate = Time.time;
+    private List<IModel> _filteredEditables;
 
     private void Update()
     {
@@ -550,7 +549,7 @@ public class ColliderEditor : MVRScript
         }
         catch (Exception e)
         {
-            LogError(nameof(Update), $"{containingAtom.name}'s Collider Editor will be disabled.\r\n" + e.ToString());
+            LogError(nameof(Update), $"{containingAtom.name}'s Collider Editor will be disabled.\r\n{e}");
             enabled = false;
         }
     }
@@ -565,7 +564,7 @@ public class ColliderEditor : MVRScript
         textfield.height = 20f;
         textfield.backgroundColor = Color.white;
         var input = textfield.gameObject.AddComponent<InputField>();
-        var rect = input.GetComponent<RectTransform>().sizeDelta = new Vector2(1f, 0.4f);
+        input.GetComponent<RectTransform>().sizeDelta = new Vector2(1f, 0.4f);
         input.textComponent = textfield.UItext;
         jss.inputField = input;
         return textfield;

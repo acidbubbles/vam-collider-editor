@@ -124,17 +124,6 @@ public abstract class ModelBase<T> where T : Component
     {
         DestroyControls();
 
-        /*
-        var debugJson = new JSONStorableString("Debug", Id);
-        RegisterStorable(debugJson);
-        var debugTextField = Script.CreateTextField(debugJson, true);
-        debugTextField.height = 80f;
-        var debugTextInputField = debugTextField.gameObject.AddComponent<UnityEngine.UI.InputField>();
-        debugTextInputField.textComponent = debugTextField.UItext;
-        debugJson.inputField = debugTextInputField;
-        RegisterControl(debugTextField);
-        */
-
         if (IsDuplicate)
         {
             var jss = RegisterStorable(new JSONStorableString("Duplicate", "This item has duplicates and cannot be edited."));
@@ -170,6 +159,16 @@ public abstract class ModelBase<T> where T : Component
 
             CreateControlsInternal();
         }
+
+        var hierarchyJson = new JSONStorableString("Identity", Component.Hierarchy());
+        RegisterStorable(hierarchyJson);
+        var hierarchyTextField = Script.CreateTextField(hierarchyJson, true);
+        hierarchyTextField.height = 80f;
+        hierarchyJson.dynamicText = hierarchyTextField;
+        // var debugTextInputField = debugTextField.gameObject.AddComponent<UnityEngine.UI.InputField>();
+        // debugTextInputField.textComponent = debugTextField.UItext;
+        // uuidJson.inputField = debugTextInputField;
+        RegisterControl(hierarchyTextField);
     }
 
     protected abstract void CreateControlsInternal();

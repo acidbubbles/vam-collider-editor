@@ -1,46 +1,45 @@
 ﻿using System;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Linq;
 
 public static class Presets
 {
     public const string None = "";
-    public const string DisableAllCollisions = "Disable All Collisions";
-    public const string Debug = "Debug";
+    private const string _enableAllCollisions = "Enable All Collisions";
+    private const string _disableAllCollisions = "Disable All Collisions";
 
     public static readonly List<string> List = new List<string>
     {
         None,
-        DisableAllCollisions,
-        Debug
+        _enableAllCollisions,
+        _disableAllCollisions,
     };
 
-    public static void Apply(string presetName, Atom containingAtom, EditablesList editables)
+    public static void Apply(string presetName, List<IModel> editables)
     {
         switch (presetName)
         {
-            case DisableAllCollisions:
-                ApplyDisableAllCollisions(containingAtom, editables);
+            case _enableAllCollisions:
+                ApplyCollisions(editables, true);
                 break;
-            case Debug:
-                ApplyDebug(containingAtom, editables);
+            case _disableAllCollisions:
+                ApplyCollisions(editables, false);
                 break;
             default:
                 throw new NotSupportedException($"Preset '{presetName}' is not supported");
         }
     }
 
-    private static void ApplyDisableAllCollisions(Atom containingAtom, EditablesList editablesList)
+    private static void ApplyCollisions(List<IModel> editables, bool collisionEnabled)
     {
-        throw new NotImplementedException();
-    }
-
-    private static void ApplyDebug(Atom containingAtom, EditablesList editablesList)
-    {
-        foreach (var rb in containingAtom.GetComponentsInChildren<Rigidbody>())
+        foreach (var editable in editables.OfType<AutoColliderModel>())
         {
-            if(rb.detectCollisions)
-                SuperController.LogMessage($"- {rb.Uuid()}");
+            editable.AutoCollider.collisionEnabled = collisionEnabled;
+        }
+
+        foreach (var editable in editables.OfType<RigidbodyModel>())
+        {
+            editable.Rigidbody.detectCollisions = collisionEnabled;
         }
     }
 }
