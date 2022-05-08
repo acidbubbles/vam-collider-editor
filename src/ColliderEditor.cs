@@ -24,6 +24,7 @@ public class ColliderEditor : MVRScript
 #endif
     private const string _collidersSavePath = "Saves\\colliders";
 
+    private JSONStorableStringChooser _presetsJson;
     private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
     private JSONStorableStringChooser _filterJson;
@@ -148,6 +149,20 @@ public class ColliderEditor : MVRScript
                 editable.ResetToInitial();
         });
 
+        _presetsJson = new JSONStorableStringChooser("Presets", Presets.List, Presets.None, "Apply Preset...")
+        {
+            setCallbackFunction = v =>
+            {
+                _presetsJson.valNoCallback = Presets.None;
+                Presets.Apply(v, containingAtom, _editables);
+            },
+            isStorable = false,
+            isRestorable = false
+        };
+        var presetsList = CreatePopupAuto(_presetsJson, false);
+        presetsList.popupPanelHeight = 200f;
+        _popups.Add(presetsList);
+
         var groups = new List<string> { _noSelectionLabel };
         groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
         groups.Add(_allLabel);
@@ -180,7 +195,7 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        var filterList = CreatePopupAuto(_filterJson, false);
+        var filterList = CreatePopupAuto(_filterJson, false, true);
         filterList.popupPanelHeight = 200f;
         _popups.Add(filterList);
 
@@ -219,7 +234,7 @@ public class ColliderEditor : MVRScript
         UpdateFilter();
     }
 
-    public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false)
+    public UIDynamicPopup CreatePopupAuto(JSONStorableStringChooser jssc, bool rightSide = false, bool upwards = false)
     {
 #if (VAM_GT_1_20)
         var popup = CreateFilterablePopup(jssc, rightSide);
@@ -264,6 +279,9 @@ public class ColliderEditor : MVRScript
             prevBtnRect.anchorMin = new Vector2(0f, 0f);
             prevBtnRect.anchorMax = new Vector2(0f, 0f);
         }
+
+        popup.popup.popupPanel.offsetMin += new Vector2(0, popup.popupPanelHeight + 60);
+        popup.popup.popupPanel.offsetMax += new Vector2(0, popup.popupPanelHeight + 60);
 
         return popup;
 #else
