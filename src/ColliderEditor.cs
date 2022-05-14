@@ -178,12 +178,15 @@ public class ColliderEditor : MVRScript
         };
         CreatePopupAuto(_filterJson, false, 400, true);
 
-        _presetsJson = new JSONStorableStringChooser("Presets", Presets.List, Presets.None, "Presets...")
+        _presetsJson = new JSONStorableStringChooser("Apply", Presets.List, Presets.None, "Apply to...")
         {
             setCallbackFunction = v =>
             {
                 _presetsJson.valNoCallback = Presets.None;
                 Presets.Apply(v, _filteredEditables);
+                var selected = _selected;
+                SelectEditable(null);
+                SelectEditable(selected);
             },
             isStorable = false,
             isRestorable = false

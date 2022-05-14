@@ -35,6 +35,7 @@ public static class Presets
         foreach (var editable in editables.OfType<AutoColliderModel>())
         {
             editable.AutoCollider.collisionEnabled = collisionEnabled;
+            editable.SetModified();
         }
 
         foreach (var editable in editables.OfType<RigidbodyModel>())

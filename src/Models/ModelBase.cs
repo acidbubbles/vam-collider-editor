@@ -76,7 +76,7 @@ public abstract class ModelBase<T> where T : Component
     public virtual void UpdatePreviewFromConfig() { }
     public abstract void SyncPreview();
 
-    protected void SetModified()
+    public void SetModified()
     {
         Modified = true;
         if (_modifiedJson != null) _modifiedJson.valNoCallback = true;
