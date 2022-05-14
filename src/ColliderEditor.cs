@@ -22,7 +22,7 @@ public class ColliderEditor : MVRScript
 #if (!VAM_GT_1_20)
     private const string _searchDefault = "Search...";
 #endif
-    private const string _collidersSavePath = "Saves\\colliders";
+    private const string _collidersSavePath = "Saves\\PluginData\\ColliderEditor";
 
     private JSONStorableStringChooser _presetsJson;
     private JSONStorableStringChooser _groupsJson;
