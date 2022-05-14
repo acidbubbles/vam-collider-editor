@@ -141,13 +141,6 @@ public class ColliderEditor : MVRScript
             fileBrowserUI.ActivateFileNameField();
         });
 
-        var resetAllUI = CreateButton("Reset All");
-        resetAllUI.button.onClick.AddListener(() =>
-        {
-            foreach (var editable in _editables.All)
-                editable.ResetToInitial();
-        });
-
         var groups = new List<string> { _noSelectionLabel };
         groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
         groups.Add(_allLabel);

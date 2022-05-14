@@ -7,12 +7,14 @@ public static class Presets
     public const string None = "";
     private const string _enableAllCollisions = "Enable All Collisions";
     private const string _disableAllCollisions = "Disable All Collisions";
+    private const string _resetAll = "Reset All";
 
     public static readonly List<string> List = new List<string>
     {
         None,
         _enableAllCollisions,
         _disableAllCollisions,
+        _resetAll
     };
 
     public static void Apply(string presetName, List<IModel> editables)
@@ -24,6 +26,9 @@ public static class Presets
                 break;
             case _disableAllCollisions:
                 ApplyCollisions(editables, false);
+                break;
+            case _resetAll:
+                ResetAll(editables);
                 break;
             default:
                 throw new NotSupportedException($"Preset '{presetName}' is not supported");
@@ -42,5 +47,11 @@ public static class Presets
         {
             editable.Rigidbody.detectCollisions = collisionEnabled;
         }
+    }
+
+    private static void ResetAll(List<IModel> editables)
+    {
+        foreach (var editable in editables)
+            editable.ResetToInitial();
     }
 }
