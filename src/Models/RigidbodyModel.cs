@@ -10,6 +10,12 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
 
     protected override bool OwnsColliders => false;
 
+    public bool detectCollisions
+    {
+        get { return _detectCollisions; }
+        set { Component.detectCollisions = _detectCollisions = value; SetModified(); }
+    }
+
     public string Type => "Rigidbody";
     public List<ColliderModel> Colliders { get; set; } = new List<ColliderModel>();
     public Rigidbody Rigidbody => Component;

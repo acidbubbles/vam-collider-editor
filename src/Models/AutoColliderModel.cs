@@ -28,6 +28,12 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     protected override bool OwnsColliders => true;
 
+    public bool collisionEnabled
+    {
+        get { return _collisionEnabled; }
+        set { Component.collisionEnabled = _collisionEnabled = value; SetModified(); }
+    }
+
     public string Type => "Auto Collider";
     public AutoCollider AutoCollider => Component;
     public AutoColliderGroupModel AutoColliderGroup { get; set; }

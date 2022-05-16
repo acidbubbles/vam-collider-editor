@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -35,17 +36,16 @@ public static class Presets
         }
     }
 
-    private static void ApplyCollisions(List<IModel> editables, bool collisionEnabled)
+    private static void ApplyCollisions(ICollection editables, bool collisionEnabled)
     {
         foreach (var editable in editables.OfType<AutoColliderModel>())
         {
-            editable.AutoCollider.collisionEnabled = collisionEnabled;
-            editable.SetModified();
+            editable.collisionEnabled = collisionEnabled;
         }
 
         foreach (var editable in editables.OfType<RigidbodyModel>())
         {
-            editable.Rigidbody.detectCollisions = collisionEnabled;
+            editable.detectCollisions = collisionEnabled;
         }
     }
 
