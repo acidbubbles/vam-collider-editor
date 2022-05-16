@@ -120,7 +120,8 @@ public class EditablesList
             }
         }
 
-        rigidbodies.RemoveAll(model => model.Colliders.Count == 0);
+        // Some rigidbodies have collisions even though they have no colliders...
+        // rigidbodies.RemoveAll(model => model.Colliders.Count == 0);
 
         // All Editables
 
