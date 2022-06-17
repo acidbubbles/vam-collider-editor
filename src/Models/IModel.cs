@@ -6,6 +6,7 @@ public interface IModel
     Group Group { get; }
     string Id { get; }
     string Label { get; }
+    string QualifiedName { get; }
     bool IsDuplicate { get; }
     bool Shown { get; set; }
     bool Selected { get; set; }

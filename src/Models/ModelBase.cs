@@ -65,11 +65,6 @@ public abstract class ModelBase<T> where T : Component
         }
     }
 
-    public virtual IModel Linked
-    {
-        get { return null; }
-    }
-
     public ModelBase(MVRScript script, T component, string label)
     {
         if (script == null) throw new ArgumentNullException(nameof(script));
@@ -262,6 +257,198 @@ public abstract class ModelBase<T> where T : Component
 
         Modified = false;
         if (_modifiedJson != null) _modifiedJson.valNoCallback = false;
+    }
+
+
+    struct Link
+    {
+        public string a, b;
+
+        public Link(string a, string b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+    };
+
+    private static bool ChangingLink = false;
+
+    public virtual IModel Linked
+    {
+        get
+        {
+            return FindLinked() as IModel;
+        }
+    }
+
+    public string QualifiedName
+    {
+        get
+        {
+            return
+                Component.transform.parent.parent.name + "." +
+                Component.transform.parent.name + "." +
+                Component.name;
+        }
+    }
+
+    public void SetLinked(Action<ModelBase<T>, float> set, float value)
+    {
+        if (ChangingLink)
+            return;
+
+        try
+        {
+            ChangingLink = true;
+            SetLinkedImpl(set, value);
+        }
+        finally
+        {
+            ChangingLink = false;
+        }
+    }
+
+    public void SetLinked(Action<ModelBase<T>, bool> set, bool value)
+    {
+        if (ChangingLink)
+            return;
+
+        try
+        {
+            ChangingLink = true;
+            SetLinkedImpl(set, value);
+        }
+        finally
+        {
+            ChangingLink = false;
+        }
+    }
+
+    private void SetLinkedImpl(Action<ModelBase<T>, float> set, float value)
+    {
+        var linked = FindLinked();
+        if (linked == null)
+        {
+            SuperController.LogError($"no link for {QualifiedName}");
+            return;
+        }
+
+        set(linked, value);
+    }
+
+    private void SetLinkedImpl(Action<ModelBase<T>, bool> set, bool value)
+    {
+        var linked = FindLinked();
+        if (linked == null)
+        {
+            SuperController.LogError($"no link for {QualifiedName}");
+            return;
+        }
+
+        set(linked, value);
+    }
+
+    private ModelBase<T> FindLinked()
+    {
+        var map = new List<Link>();
+
+        for (int i = 0; i <= 17; ++i)
+        {
+            map.Add(new Link(
+                $"AutoColliders.AutoCollidersFaceHardLeft.AutoColliderAutoCollidersFaceHardLeft{i}",
+                $"AutoColliders.AutoCollidersFaceHardRight.AutoColliderAutoCollidersFaceHardRight{i}"));
+        }
+
+        map.Add(new Link(
+            "lowerJaw.lowerJawStandardColliders._ColliderL1bl",
+            "lowerJaw.lowerJawStandardColliders._ColliderL1br"));
+
+        for (int i = 0; i <= 4; ++i)
+        {
+            map.Add(new Link(
+               $"lowerJaw.lowerJawStandardColliders._ColliderL{i}l",
+               $"lowerJaw.lowerJawStandardColliders._ColliderL{i}r"));
+        }
+
+        map.Add(new Link(
+          "lowerJaw.lowerJawStandardColliders._ColliderLipL",
+          "lowerJaw.lowerJawStandardColliders._ColliderLipR"));
+
+        for (int i = 0; i <= 8; ++i)
+        {
+            map.Add(new Link(
+               $"neck.StandardColliders._Collider{i}l",
+               $"neck.StandardColliders._Collider{i}r"));
+        }
+
+        map.Add(new Link(
+          "neck.StandardColliders._ColliderBL",
+          "neck.StandardColliders._ColliderBR"));
+
+
+
+        var name = QualifiedName;
+        SuperController.LogError("FindLinked: " + name);
+
+        var ce = (ColliderEditor)Script;
+
+        ModelBase<T> linked = null;
+
+        linked = FindLinkedIn(name, map, ce.EditablesList.Colliders);
+        if (linked != null)
+            return linked;
+
+        linked = FindLinkedIn(name, map, ce.EditablesList.AutoColliders);
+        if (linked != null)
+            return linked;
+
+        linked = FindLinkedIn(name, map, ce.EditablesList.Rigidbodies);
+        if (linked != null)
+            return linked;
+
+        return null;
+    }
+
+    private ModelBase<T> FindLinkedIn<U>(
+        string name, List<Link> links, List<U> list) where U : IModel
+    {
+        foreach (Link ln in links)
+        {
+            if (ln.a == name)
+            {
+                SuperController.LogError($"ln.a is {name}, checking ln.b {ln.b}");
+                foreach (var m in list)
+                {
+                    if (m.QualifiedName == ln.b)
+                    {
+                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
+                        return m as ModelBase<T>;
+                    }
+                    else
+                    {
+                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
+                    }
+                }
+            }
+            else if (ln.b == name)
+            {
+                SuperController.LogError($"ln.b is {name}, checking ln.a {ln.a}");
+                foreach (var m in list)
+                {
+                    if (m.QualifiedName == ln.a)
+                    {
+                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
+                        return m as ModelBase<T>;
+                    }
+                    else
+                    {
+                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     protected void LoadJsonField(JSONClass jsonClass, string name, Action<bool> setValue)

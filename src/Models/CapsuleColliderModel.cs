@@ -70,64 +70,106 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
     {
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("radius", Collider.radius, value =>
         {
-            Collider.radius = _radius = value;
-            _gpu?.UpdateData();
-            SetModified();
-            SyncPreview();
+            SetRadius(value);
         }, 0f, _initialRadius * 4f, false)).WithDefault(_initialRadius), "Radius"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("height", Collider.height, value =>
         {
-            Collider.height = _height = value;
-            _gpu?.UpdateData();
-            SetModified();
-            SyncPreview();
+            SetHeight(value);
         }, 0f, _initialHeight * 4f, false)).WithDefault(_initialHeight), "Height"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerX", Collider.center.x, value =>
         {
-            var center = _center;
-            center.x = value;
-            Collider.center = _center = center;
-            _gpu?.UpdateData();
-            SetModified();
-            SyncPreview();
+            SetCenterX(value);
         }, MakeMinPosition(Collider.center.x), MakeMaxPosition(Collider.center.x), false)).WithDefault(_initialCenter.x), "Center.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerY", Collider.center.y, value =>
         {
-            var center = _center;
-            center.y = value;
-            Collider.center = _center = center;
-            _gpu?.UpdateData();
-            SetModified();
-            SyncPreview();
+            SetCenterY(value);
         }, MakeMinPosition(Collider.center.y), MakeMaxPosition(Collider.center.y), false)).WithDefault(_initialCenter.y), "Center.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerZ", Collider.center.z, value =>
         {
-            var center = _center;
-            center.z = value;
-            Collider.center = _center = center;
-            _gpu?.UpdateData();
-            SetModified();
-            SyncPreview();
+            SetCenterZ(value);
         }, MakeMinPosition(Collider.center.z), MakeMaxPosition(Collider.center.z), false)).WithDefault(_initialCenter.z), "Center.Z"));
 
         if (_gpu != null)
         {
             RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("gpu.friction", _gpu.friction, value =>
             {
-                _gpu.friction = _gpuFriction = value;
-                SetModified();
+                SetGpuFriction(value);
             }, 0f, Mathf.Ceil(_initialGpuFriction) * 2f, false)).WithDefault(_gpu.friction), "GPU Friction"));
 
             RegisterControl(Script.CreateToggle(RegisterStorable(new JSONStorableBool("gpu.enabled", _gpu.enabled, (bool value) =>
             {
-                _gpu.enabled = _gpuEnabled = value;
-                SetModified();
+                SetGpuEnabled(value);
             }).WithDefault(_initialGpuEnabled)), "GPU Collider Enabled"));
         }
+    }
+
+    private void SetRadius(float value)
+    {
+        Collider.radius = _radius = value;
+        _gpu?.UpdateData();
+        SetModified();
+        SyncPreview();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetRadius(v), value);
+    }
+
+    private void SetHeight(float value)
+    {
+        Collider.height = _height = value;
+        _gpu?.UpdateData();
+        SetModified();
+        SyncPreview();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetHeight(v), value);
+    }
+
+    private void SetCenterX(float value)
+    {
+        var center = _center;
+        center.x = value;
+        Collider.center = _center = center;
+        _gpu?.UpdateData();
+        SetModified();
+        SyncPreview();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetCenterX(v), -value);
+    }
+
+    private void SetCenterY(float value)
+    {
+        var center = _center;
+        center.y = value;
+        Collider.center = _center = center;
+        _gpu?.UpdateData();
+        SetModified();
+        SyncPreview();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetCenterY(v), value);
+    }
+
+    private void SetCenterZ(float value)
+    {
+        var center = _center;
+        center.z = value;
+        Collider.center = _center = center;
+        _gpu?.UpdateData();
+        SetModified();
+        SyncPreview();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetCenterZ(v), value);
+    }
+
+    private void SetGpuFriction(float value)
+    {
+        _gpu.friction = _gpuFriction = value;
+        SetModified();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetGpuFriction(v), value);
+    }
+
+    private void SetGpuEnabled(bool value)
+    {
+        _gpu.enabled = _gpuEnabled = value;
+        SetModified();
+        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetGpuEnabled(v), value);
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
