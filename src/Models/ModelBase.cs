@@ -40,6 +40,18 @@ public abstract class ModelBase<T> where T : Component
 		return val + 0.025f;
 	}
 
+    public JSONStorableParam FindStorable(string name)
+    {
+        foreach (var p in _controlsStorables)
+        {
+            SuperController.LogError(p.name);
+            if (p.name == name)
+                return p;
+        }
+
+        return null;
+    }
+
     public bool Selected
     {
         get { return _selected; }
@@ -51,6 +63,11 @@ public abstract class ModelBase<T> where T : Component
                 _selected = value;
             }
         }
+    }
+
+    public virtual IModel Linked
+    {
+        get { return null; }
     }
 
     public ModelBase(MVRScript script, T component, string label)

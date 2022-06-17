@@ -10,6 +10,7 @@ public interface IModel
     bool Shown { get; set; }
     bool Selected { get; set; }
     bool Modified { get; }
+    IModel Linked { get; }
 
     void UpdatePreviewFromConfig();
     void SyncPreview();

@@ -32,10 +32,15 @@ public class ColliderEditor : MVRScript
     private JSONStorableStringChooser _editablesJson;
 
     private readonly ColliderPreviewConfig _config = new ColliderPreviewConfig();
-    private IModel _selected;
+    private IModel _selected, _selected2;
     private EditablesList _editables;
     private JSONClass _jsonWhenDisabled;
     private bool _restored;
+
+    public EditablesList EditablesList
+    {
+        get { return _editables; }
+    }
 
     public override void Init()
     {
@@ -109,6 +114,8 @@ public class ColliderEditor : MVRScript
             _config.SelectedPreviewsOpacity = alpha;
             if (_selected != null)
                 _selected.UpdatePreviewFromConfig();
+            if (_selected2 != null)
+                _selected2.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
         CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
@@ -286,11 +293,17 @@ public class ColliderEditor : MVRScript
     public void SelectEditable(IModel val)
     {
         if (_selected != null) _selected.Selected = false;
+        if (_selected2 != null) _selected2.Selected = false;
+
         if (val != null)
         {
             _selected = val;
             val.Selected = true;
             _editablesJson.valNoCallback = val.Id;
+
+            _selected2 = _selected.Linked;
+            if (_selected2 != null)
+                _selected2.Selected = true;
         }
         else
         {

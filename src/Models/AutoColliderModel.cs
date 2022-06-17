@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using SimpleJSON;
 using UnityEngine;
@@ -143,6 +144,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.collisionEnabled = _collisionEnabled = value;
                         RefreshAutoCollider();
                         SetModified();
+                        SetLinked("collisionEnabled", (v) => Component.collisionEnabled = v, value);
                     })
                     .WithDefault(_initialCollisionEnabled)
                 ), "Collision Enabled")
@@ -157,6 +159,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.autoLengthBuffer = _autoLengthBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
+                            SetLinked("autoLengthBuffer", (v) => Component.autoLengthBuffer = v, value);
                         }, -0.25f, 0.25f, false)
                         .WithDefault(_initialAutoLengthBuffer)
                     ), "Auto Length Buffer")
@@ -171,6 +174,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.colliderLength = _colliderLength = value;
                             RefreshAutoCollider();
                             SetModified();
+                            SetLinked("colliderLength", (v) => Component.colliderLength = v, value);
                         }, 0f, 0.25f, false)
                         .WithDefault(_initialColliderLength)
                     ), "Length")
@@ -186,6 +190,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.autoRadiusBuffer = _autoRadiusBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
+                            SetLinked("autoRadiusBuffer", (v) => Component.autoRadiusBuffer = v, value);
                         }, -0.025f, 0.025f, false)
                         .WithDefault(_initialAutoRadiusBuffer)
                     ), "Auto Radius Buffer")
@@ -198,6 +203,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.autoRadiusMultiplier = _autoRadiusMultiplier = value;
                             RefreshAutoCollider();
                             SetModified();
+                            SetLinked("autoRadiusMultiplier", (v) => Component.autoRadiusMultiplier = v, value);
                         }, 0.001f, 2f, false)
                         .WithDefault(_initialAutoRadiusMultiplier)
                     ), "Auto Radius Multiplier")
@@ -212,6 +218,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.colliderRadius = _colliderRadius = value;
                             RefreshAutoCollider();
                             SetModified();
+                            SetLinked("colliderRadius", (v) => Component.colliderRadius = v, value);
                         }, 0f, 0.25f, false)
                         .WithDefault(_initialColliderRadius)
                     ), "Radius")
@@ -224,6 +231,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                             Component.hardColliderBuffer = _hardColliderBuffer = value;
                             RefreshAutoCollider();
                             SetModified();
+                            SetLinked("hardColliderBuffer", (v) => Component.hardColliderBuffer = v, value);
                         }, 0f, 0.25f, false)
                         .WithDefault(_initialHardColliderBuffer)
                     ), "Hard Collider Buffer")
@@ -237,6 +245,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.colliderLookOffset = _colliderLookOffset = value;
                         RefreshAutoCollider();
                         SetModified();
+                        SetLinked("colliderLookOffset", (v) => Component.colliderLookOffset = v, value);
                     }, MakeMinOffset(Component.colliderLookOffset), MakeMaxOffset(Component.colliderLookOffset), false)
                     .WithDefault(_initialColliderLookOffset)
                 ), "Look Offset")
@@ -249,6 +258,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.colliderUpOffset = _colliderUpOffset = value;
                         RefreshAutoCollider();
                         SetModified();
+                        SetLinked("colliderUpOffset", (v) => Component.colliderUpOffset = v, value);
                     }, MakeMinOffset(Component.colliderUpOffset), MakeMaxOffset(Component.colliderUpOffset), false)
                     .WithDefault(_initialColliderUpOffset)
                 ), "Up Offset")
@@ -261,10 +271,148 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
                         Component.colliderRightOffset = _colliderRightOffset = value;
                         RefreshAutoCollider();
                         SetModified();
+                        SetLinked("colliderRightOffset", (v) => Component.colliderRightOffset = v, -value);
                     }, MakeMinOffset(Component.colliderRightOffset), MakeMaxOffset(Component.colliderRightOffset), false)
                     .WithDefault(_initialColliderRightOffset)
                 ), "Right Offset")
         );
+    }
+
+    struct Link
+    {
+        public string a, b;
+
+        public Link(string a, string b)
+        {
+            this.a = a;
+            this.b = b;
+        }
+    };
+
+    private static bool ChangingLink = false;
+
+    public override IModel Linked
+    {
+        get
+        {
+            return FindLinked(AutoCollider.name);
+        }
+    }
+
+    public void SetLinked(string storable, Action<float> set, float value)
+    {
+        if (ChangingLink)
+            return;
+
+        try
+        {
+            ChangingLink = true;
+            SetLinkedImpl(storable, set, value);
+        }
+        finally
+        {
+            ChangingLink = false;
+        }
+    }
+
+    public void SetLinked(string storable, Action<bool> set, bool value)
+    {
+        if (ChangingLink)
+            return;
+
+        try
+        {
+            ChangingLink = true;
+            SetLinkedImpl(storable, set, value);
+        }
+        finally
+        {
+            ChangingLink = false;
+        }
+    }
+
+    private void SetLinkedImpl(string storable, Action<float> set, float value)
+    {
+        var linked = Linked as AutoColliderModel;
+        if (linked == null)
+        {
+            SuperController.LogError($"no link for {Component.name}");
+            return;
+        }
+
+        var param = linked.FindStorable(storable);
+        if (param == null)
+        {
+            set(value);
+            linked.RefreshAutoCollider();
+            linked.SetModified();
+        }
+        else
+        {
+            var fparam = param as JSONStorableFloat;
+            if (fparam != null)
+                fparam.val = value;
+        }
+    }
+
+    private void SetLinkedImpl(string storable, Action<bool> set, bool value)
+    {
+        var linked = Linked as AutoColliderModel;
+        if (linked == null)
+        {
+            SuperController.LogError($"no link for {Component.name}");
+            return;
+        }
+
+        var param = linked.FindStorable(storable);
+        if (param == null)
+        {
+            set(value);
+            linked.RefreshAutoCollider();
+            linked.SetModified();
+        }
+        else
+        {
+            var bparam = param as JSONStorableBool;
+            if (bparam != null)
+                bparam.val = value;
+        }
+    }
+
+    private AutoColliderModel FindLinked(string name)
+    {
+        var map = new List<Link>();
+
+        for (int i = 0; i <= 17; ++i)
+        {
+            map.Add(new Link(
+                $"AutoColliderAutoCollidersFaceHardLeft{i}",
+                $"AutoColliderAutoCollidersFaceHardRight{i}"));
+        }
+
+        var ce = (ColliderEditor)Script;
+
+        foreach (Link ln in map)
+        {
+            if (ln.a == name)
+            {
+                foreach (var ac in ce.EditablesList.AutoColliders)
+                {
+                    if (ac.Component.name == ln.b)
+                        return ac;
+                }
+            }
+            else if (ln.b == name)
+            {
+                foreach (var ac in ce.EditablesList.AutoColliders)
+                {
+                    if (ac.Component.name == ln.a)
+                        return ac;
+                }
+            }
+        }
+
+        return null;
     }
 
     public void RefreshAutoCollider()
