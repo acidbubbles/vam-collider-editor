@@ -13,20 +13,73 @@ public class Links
         }
     };
 
-    static private List<Link> list = null;
 
-    static public List<Link> GetList()
+    protected List<Link> links_ = new List<Link>();
+    protected Dictionary<string, string> mapA_ = new Dictionary<string, string>();
+    protected Dictionary<string, string> mapB_ = new Dictionary<string, string>();
+
+    protected void Add(string a, string b)
     {
-        if (list == null)
-        {
-            list = new List<Link>();
-            Add();
-        }
-
-        return list;
+        links_.Add(new Link(a, b));
     }
 
-    static private void Add()
+    public string Find(string name)
+    {
+        string s;
+
+        if (mapA_.TryGetValue(name, out s))
+            return s;
+
+        if (mapB_.TryGetValue(name, out s))
+            return s;
+
+        return null;
+    }
+
+    private void CreateDictionaries()
+    {
+        foreach (var link in links_)
+        {
+            mapA_.Add(link.a, link.b);
+            mapA_.Add(link.b, link.a);
+        }
+    }
+
+
+
+    private static Links maleLinks_ = null;
+    private static Links femaleLinks_ = null;
+
+    public static Links Get(Atom atom)
+    {
+        var c = atom?.GetComponentInChildren<DAZCharacter>();
+
+        if (c != null && c.isMale)
+        {
+            if (maleLinks_ == null)
+            {
+                maleLinks_ = new MaleLinks();
+                maleLinks_.CreateDictionaries();
+            }
+
+            return maleLinks_;
+        }
+        else
+        {
+            if (femaleLinks_ == null)
+            {
+                femaleLinks_ = new FemaleLinks();
+                femaleLinks_.CreateDictionaries();
+            }
+
+            return femaleLinks_;
+        }
+    }
+}
+
+public class FemaleLinks : Links
+{
+    public FemaleLinks()
     {
         AddHead();
         AddArms();
@@ -41,12 +94,7 @@ public class Links
         AddFeet();
     }
 
-    static private void Add(string a, string b)
-    {
-        list.Add(new Link(a, b));
-    }
-
-    static private void AddHead()
+    private void AddHead()
     {
         // face hard
         for (int i = 1; i <= 17; ++i)
@@ -86,7 +134,7 @@ public class Links
           "neck.StandardColliders._ColliderBR");
     }
 
-    static private void AddArms()
+    private void AddArms()
     {
         // arms
         Add(
@@ -114,7 +162,7 @@ public class Links
         }
     }
 
-    static private void AddHands()
+    private void AddHands()
     {
         for (int i = 1; i <= 3; ++i)
         {
@@ -200,7 +248,7 @@ public class Links
             "rThumb2.rThumb3._Collider");
     }
 
-    static private void AddChest()
+    private void AddChest()
     {
         Add(
             "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (1)",
@@ -222,7 +270,7 @@ public class Links
         }
     }
 
-    static private void AddBreasts()
+    private void AddBreasts()
     {
         Add(
             "lPectoral.FemaleAutoColliderslNipple.AutoColliderFemaleAutoColliderslNipple1",
@@ -244,7 +292,7 @@ public class Links
             "chest.rPectoral._Collider (1)");
     }
 
-    static private void AddAbdomen()
+    private void AddAbdomen()
     {
         Add(
             "abdomen2.FemaleAutoCollidersabdomen2_.AutoColliderFemaleAutoCollidersabdomen2_7",
@@ -270,7 +318,7 @@ public class Links
             "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen24");
     }
 
-    static private void AddHips()
+    private void AddHips()
     {
         for (int i = 1; i <= 8; ++i)
         {
@@ -299,7 +347,7 @@ public class Links
             "hip.pelvis.HardColliderR");
     }
 
-    static private void AddGlutes()
+    private void AddGlutes()
     {
         Add(
             "LGlute.FemaleAutoCollidersLGluteAlt.AutoColliderFemaleAutoCollidersLGlute1",
@@ -317,7 +365,7 @@ public class Links
             "pelvis.RGlute.HardCollider");
     }
 
-    static private void AddG()
+    private void AddG()
     {
         Add(
             "hip.pelvis._JointAl",
@@ -335,7 +383,7 @@ public class Links
         }
     }
 
-    static private void AddLegs()
+    private void AddLegs()
     {
         for (int i = 1; i <= 16; ++i)
         {
@@ -361,7 +409,7 @@ public class Links
             "pelvis.rThigh.HardCollider");
     }
 
-    static private void AddFeet()
+    private void AddFeet()
     {
         Add(
             "lToe.lBigToe._Collider",
@@ -384,5 +432,14 @@ public class Links
         Add(
             "lFoot.lToe._Collider",
             "rFoot.rToe._Collider");
+    }
+}
+
+
+public class MaleLinks : Links
+{
+    public MaleLinks()
+    {
+        // todo
     }
 }

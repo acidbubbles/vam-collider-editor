@@ -9,6 +9,8 @@ public abstract class ModelBase<T> where T : Component
     private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
+    private ModelBase<T> _link = null;
+    private bool _linkLookedUp = false;
 
     protected readonly MVRScript Script;
 
@@ -329,14 +331,13 @@ public abstract class ModelBase<T> where T : Component
 
     private ModelBase<T> FindLinked()
     {
-        var linked = DoFindLinked();
+        if (!_linkLookedUp)
+        {
+            _linkLookedUp = true;
+            _link = DoFindLinked();
+        }
 
-        if (linked != null)
-            SuperController.LogError("found link " + QualifiedName + " <-> " + linked.QualifiedName);
-        else
-            SuperController.LogError($"no link for {QualifiedName}");
-
-        return linked;
+        return _link;
     }
 
     private ModelBase<T> DoFindLinked()
@@ -365,42 +366,16 @@ public abstract class ModelBase<T> where T : Component
     private ModelBase<T> FindLinkedIn<U>(
         string name, List<U> list) where U : IModel
     {
-        var links = Links.GetList();
+        var links = Links.Get(Script.containingAtom);
 
-        foreach (Links.Link ln in links)
+        var linkedName = links.Find(name);
+        if (linkedName == null)
+            return null;
+
+        foreach (var m in list)
         {
-            if (ln.a == name)
-            {
-               // SuperController.LogError($"ln.a is {name}, checking ln.b {ln.b}");
-                foreach (var m in list)
-                {
-                    if (m.QualifiedName == ln.b)
-                    {
-                       // SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
-                        return m as ModelBase<T>;
-                    }
-                    else
-                    {
-                       // SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
-                    }
-                }
-            }
-            else if (ln.b == name)
-            {
-                //SuperController.LogError($"ln.b is {name}, checking ln.a {ln.a}");
-                foreach (var m in list)
-                {
-                    if (m.QualifiedName == ln.a)
-                    {
-                      //  SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
-                        return m as ModelBase<T>;
-                    }
-                    else
-                    {
-                      //  SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
-                    }
-                }
-            }
+            if (m.QualifiedName == linkedName)
+                return m as ModelBase<T>;
         }
 
         return null;
