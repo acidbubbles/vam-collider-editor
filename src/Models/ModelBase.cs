@@ -11,6 +11,7 @@ public abstract class ModelBase<T> where T : Component
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
     private ModelBase<T> _link = null;
     private bool _linkLookedUp = false;
+    private static bool _changingLink = false;  // avoids recursion
 
     protected readonly MVRScript Script;
 
@@ -262,8 +263,6 @@ public abstract class ModelBase<T> where T : Component
     }
 
 
-    private static bool ChangingLink = false;
-
     public virtual IModel Linked
     {
         get
@@ -285,33 +284,39 @@ public abstract class ModelBase<T> where T : Component
 
     public void SetLinked(Action<ModelBase<T>, float> set, float value)
     {
-        if (ChangingLink)
+        if (!(Script as ColliderEditor).Config.LinkColliders)
+            return;
+
+        if (_changingLink)
             return;
 
         try
         {
-            ChangingLink = true;
+            _changingLink = true;
             SetLinkedImpl(set, value);
         }
         finally
         {
-            ChangingLink = false;
+            _changingLink = false;
         }
     }
 
     public void SetLinked(Action<ModelBase<T>, bool> set, bool value)
     {
-        if (ChangingLink)
+        if (!(Script as ColliderEditor).Config.LinkColliders)
+            return;
+
+        if (_changingLink)
             return;
 
         try
         {
-            ChangingLink = true;
+            _changingLink = true;
             SetLinkedImpl(set, value);
         }
         finally
         {
-            ChangingLink = false;
+            _changingLink = false;
         }
     }
 

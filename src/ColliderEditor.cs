@@ -42,6 +42,11 @@ public class ColliderEditor : MVRScript
         get { return _editables; }
     }
 
+    public ColliderPreviewConfig Config
+    {
+        get { return _config; }
+    }
+
     public override void Init()
     {
         try
@@ -95,6 +100,17 @@ public class ColliderEditor : MVRScript
         RegisterBool(xRayPreviews);
         var xRayPreviewsToggle = CreateToggle(xRayPreviews);
         xRayPreviewsToggle.label = "Use XRay Previews";
+
+
+        var linkColliders = new JSONStorableBool("linkColliders", ColliderPreviewConfig.DefaultLinkColliders, value =>
+        {
+            _config.LinkColliders = value;
+            SelectEditable(_selected);
+        });
+
+        RegisterBool(linkColliders);
+        var linkCollidersToggle = CreateToggle(linkColliders);
+        linkCollidersToggle.label = "Link Symmetrical Colliders";
 
         JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
         {
@@ -302,6 +318,7 @@ public class ColliderEditor : MVRScript
             _selected2.Selected = false;
             _selected2.Shown = false;
             _selected2.UpdatePreviewFromConfig();
+            _selected2 = null;
         }
 
         if (val != null)
@@ -313,12 +330,15 @@ public class ColliderEditor : MVRScript
 
             _editablesJson.valNoCallback = val.Id;
 
-            _selected2 = _selected.Linked;
-            if (_selected2 != null)
+            if (_config.LinkColliders)
             {
-                _selected2.Selected = true;
-                _selected2.Shown = true;
-                _selected2.UpdatePreviewFromConfig();
+                _selected2 = _selected.Linked;
+                if (_selected2 != null)
+                {
+                    _selected2.Selected = true;
+                    _selected2.Shown = true;
+                    _selected2.UpdatePreviewFromConfig();
+                }
             }
         }
         else

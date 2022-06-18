@@ -6,9 +6,11 @@ public class ColliderPreviewConfig
     public const bool DefaultXRayPreviews = true;
     public const float DefaultPreviewsOpacity = 0.2f;
     public const float DefaultSelectedPreviewOpacity = 0.7f;
+    public const bool DefaultLinkColliders = false;
 
     public bool PreviewsEnabled { get; set; } = DefaultPreviewsEnabled;
     public bool XRayPreviews { get; set; } = DefaultXRayPreviews;
+    public bool LinkColliders { get; set; } = DefaultLinkColliders;
     public float PreviewsOpacity {get;set;} = DefaultPreviewsOpacity.ExponentialScale(ExponentialScaleMiddle, 1f);
     public float SelectedPreviewsOpacity {get;set;} = DefaultSelectedPreviewOpacity.ExponentialScale(ExponentialScaleMiddle, 1f);
 }
