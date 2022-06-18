@@ -132,6 +132,34 @@ public class FemaleLinks : Links
         Add(
           "neck.StandardColliders._ColliderBL",
           "neck.StandardColliders._ColliderBR");
+
+        // tongue
+        Add(
+            "tongue03.StandardCollidersTongue03._Collider2",
+            "tongue03.StandardCollidersTongue03._Collider3");
+
+        Add(
+            "tongue04.StandardCollidersTongue04._Collider2",
+            "tongue04.StandardCollidersTongue04._Collider3");
+
+        Add(
+            "tongue04.StandardCollidersTongue04._Collider4",
+            "tongue04.StandardCollidersTongue04._Collider5");
+
+        Add(
+            "tongue05.StandardCollidersTongue05._Collider2",
+            "tongue05.StandardCollidersTongue05._Collider3");
+
+        Add(
+            "tongue05.StandardCollidersTongue05._Collider4",
+            "tongue05.StandardCollidersTongue05._Collider5");
+
+        Add(
+            "tongueTip.StandardCollidersTongueTip._Collider2",
+            "tongueTip.StandardCollidersTongueTip._Collider3");
+        Add(
+            "tongueTip.StandardCollidersTongueTip._Collider4",
+            "tongueTip.StandardCollidersTongueTip._Collider5");
     }
 
     private void AddArms()
