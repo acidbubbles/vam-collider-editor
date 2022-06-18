@@ -293,7 +293,13 @@ public class ColliderEditor : MVRScript
     public void SelectEditable(IModel val)
     {
         if (_selected != null) _selected.Selected = false;
-        if (_selected2 != null) _selected2.Selected = false;
+
+        if (_selected2 != null)
+        {
+            _selected2.Selected = false;
+            _selected2.Shown = false;
+            _selected2.UpdatePreviewFromConfig();
+        }
 
         if (val != null)
         {
@@ -303,7 +309,11 @@ public class ColliderEditor : MVRScript
 
             _selected2 = _selected.Linked;
             if (_selected2 != null)
+            {
                 _selected2.Selected = true;
+                _selected2.Shown = true;
+                _selected2.UpdatePreviewFromConfig();
+            }
         }
         else
         {
@@ -367,6 +377,18 @@ public class ColliderEditor : MVRScript
                 e.Shown = true;
                 e.UpdatePreviewFromConfig();
             }
+
+            if (_selected != null)
+            {
+                _selected.Shown = true;
+                _selected.UpdatePreviewFromConfig();
+            }
+
+            if (_selected2 != null)
+            {
+                _selected2.Shown = true;
+                _selected2.UpdatePreviewFromConfig();
+            }
         }
         catch (Exception e)
         {
@@ -379,8 +401,11 @@ public class ColliderEditor : MVRScript
         var previous = _editablesJson.choices.Where(x => _editables.ByUuid.ContainsKey(x)).Select(x => _editables.ByUuid[x]);
         foreach (var e in previous)
         {
-            e.Shown = false;
-            e.UpdatePreviewFromConfig();
+            if (e != _selected && e != _selected2)
+            {
+                e.Shown = false;
+                e.UpdatePreviewFromConfig();
+            }
         }
     }
 

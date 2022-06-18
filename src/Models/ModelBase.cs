@@ -260,17 +260,6 @@ public abstract class ModelBase<T> where T : Component
     }
 
 
-    struct Link
-    {
-        public string a, b;
-
-        public Link(string a, string b)
-        {
-            this.a = a;
-            this.b = b;
-        }
-    };
-
     private static bool ChangingLink = false;
 
     public virtual IModel Linked
@@ -350,59 +339,23 @@ public abstract class ModelBase<T> where T : Component
 
     private ModelBase<T> FindLinked()
     {
-        var map = new List<Link>();
-
-        for (int i = 0; i <= 17; ++i)
-        {
-            map.Add(new Link(
-                $"AutoColliders.AutoCollidersFaceHardLeft.AutoColliderAutoCollidersFaceHardLeft{i}",
-                $"AutoColliders.AutoCollidersFaceHardRight.AutoColliderAutoCollidersFaceHardRight{i}"));
-        }
-
-        map.Add(new Link(
-            "lowerJaw.lowerJawStandardColliders._ColliderL1bl",
-            "lowerJaw.lowerJawStandardColliders._ColliderL1br"));
-
-        for (int i = 0; i <= 4; ++i)
-        {
-            map.Add(new Link(
-               $"lowerJaw.lowerJawStandardColliders._ColliderL{i}l",
-               $"lowerJaw.lowerJawStandardColliders._ColliderL{i}r"));
-        }
-
-        map.Add(new Link(
-          "lowerJaw.lowerJawStandardColliders._ColliderLipL",
-          "lowerJaw.lowerJawStandardColliders._ColliderLipR"));
-
-        for (int i = 0; i <= 8; ++i)
-        {
-            map.Add(new Link(
-               $"neck.StandardColliders._Collider{i}l",
-               $"neck.StandardColliders._Collider{i}r"));
-        }
-
-        map.Add(new Link(
-          "neck.StandardColliders._ColliderBL",
-          "neck.StandardColliders._ColliderBR"));
-
-
-
         var name = QualifiedName;
+
         SuperController.LogError("FindLinked: " + name);
 
         var ce = (ColliderEditor)Script;
 
         ModelBase<T> linked = null;
 
-        linked = FindLinkedIn(name, map, ce.EditablesList.Colliders);
+        linked = FindLinkedIn(name, ce.EditablesList.Colliders);
         if (linked != null)
             return linked;
 
-        linked = FindLinkedIn(name, map, ce.EditablesList.AutoColliders);
+        linked = FindLinkedIn(name, ce.EditablesList.AutoColliders);
         if (linked != null)
             return linked;
 
-        linked = FindLinkedIn(name, map, ce.EditablesList.Rigidbodies);
+        linked = FindLinkedIn(name, ce.EditablesList.Rigidbodies);
         if (linked != null)
             return linked;
 
@@ -410,9 +363,11 @@ public abstract class ModelBase<T> where T : Component
     }
 
     private ModelBase<T> FindLinkedIn<U>(
-        string name, List<Link> links, List<U> list) where U : IModel
+        string name, List<U> list) where U : IModel
     {
-        foreach (Link ln in links)
+        var links = Links.GetList();
+
+        foreach (Links.Link ln in links)
         {
             if (ln.a == name)
             {

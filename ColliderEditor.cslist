@@ -18,6 +18,7 @@ src\Filters.cs
 src\FloatExtensions.cs
 src\Group.cs
 src\JSONStorableExtensions.cs
+src\Links.cs
 src\MaterialHelper.cs
 src\MigrationHelper.cs
 src\NameHelper.cs
