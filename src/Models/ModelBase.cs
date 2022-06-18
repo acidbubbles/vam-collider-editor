@@ -339,9 +339,17 @@ public abstract class ModelBase<T> where T : Component
 
     private ModelBase<T> FindLinked()
     {
-        var name = QualifiedName;
+        var linked = DoFindLinked();
 
-        SuperController.LogError("FindLinked: " + name);
+        if (linked != null)
+            SuperController.LogError("found link " + QualifiedName + " <-> " + linked.QualifiedName);
+
+        return linked;
+    }
+
+    private ModelBase<T> DoFindLinked()
+    {
+        var name = QualifiedName;
 
         var ce = (ColliderEditor)Script;
 
@@ -371,33 +379,33 @@ public abstract class ModelBase<T> where T : Component
         {
             if (ln.a == name)
             {
-                SuperController.LogError($"ln.a is {name}, checking ln.b {ln.b}");
+               // SuperController.LogError($"ln.a is {name}, checking ln.b {ln.b}");
                 foreach (var m in list)
                 {
                     if (m.QualifiedName == ln.b)
                     {
-                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
+                       // SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
                         return m as ModelBase<T>;
                     }
                     else
                     {
-                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
+                       // SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
                     }
                 }
             }
             else if (ln.b == name)
             {
-                SuperController.LogError($"ln.b is {name}, checking ln.a {ln.a}");
+                //SuperController.LogError($"ln.b is {name}, checking ln.a {ln.a}");
                 foreach (var m in list)
                 {
                     if (m.QualifiedName == ln.a)
                     {
-                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
+                      //  SuperController.LogError($"m.QualifiedName {m.QualifiedName} matches");
                         return m as ModelBase<T>;
                     }
                     else
                     {
-                        SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
+                      //  SuperController.LogError($"m.QualifiedName {m.QualifiedName} doesn't match");
                     }
                 }
             }

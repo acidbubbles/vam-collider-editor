@@ -292,7 +292,10 @@ public class ColliderEditor : MVRScript
 
     public void SelectEditable(IModel val)
     {
-        if (_selected != null) _selected.Selected = false;
+        if (_selected != null)
+        {
+            _selected.Selected = false;
+        }
 
         if (_selected2 != null)
         {
@@ -304,7 +307,10 @@ public class ColliderEditor : MVRScript
         if (val != null)
         {
             _selected = val;
-            val.Selected = true;
+            _selected.Selected = true;
+            _selected.Shown = true;
+            _selected.UpdatePreviewFromConfig();
+
             _editablesJson.valNoCallback = val.Id;
 
             _selected2 = _selected.Linked;
