@@ -311,6 +311,9 @@ public class ColliderEditor : MVRScript
         if (_selected != null)
         {
             _selected.Selected = false;
+            _selected.Shown = _filteredEditables.Contains(_selected);
+            _selected.UpdatePreviewFromConfig();
+            _selected = null;
         }
 
         if (_selected2 != null)
@@ -404,17 +407,7 @@ public class ColliderEditor : MVRScript
                 e.UpdatePreviewFromConfig();
             }
 
-            if (_selected != null)
-            {
-                _selected.Shown = true;
-                _selected.UpdatePreviewFromConfig();
-            }
-
-            if (_selected2 != null)
-            {
-                _selected2.Shown = true;
-                _selected2.UpdatePreviewFromConfig();
-            }
+            SelectEditable(_selected);
         }
         catch (Exception e)
         {
@@ -427,12 +420,11 @@ public class ColliderEditor : MVRScript
         var previous = _editablesJson.choices.Where(x => _editables.ByUuid.ContainsKey(x)).Select(x => _editables.ByUuid[x]);
         foreach (var e in previous)
         {
-            if (e != _selected && e != _selected2)
-            {
-                e.Shown = false;
-                e.UpdatePreviewFromConfig();
-            }
+            e.Shown = false;
+            e.UpdatePreviewFromConfig();
         }
+
+        SelectEditable(_selected);
     }
 
     #region Presets
