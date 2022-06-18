@@ -335,21 +335,25 @@ public abstract class ModelBase<T> where T : Component
 
     private ModelBase<T> DoFindLinked()
     {
-        var name = QualifiedName;
+        var links = Links.Get(Script.containingAtom);
+
+        var linkedName = links.Find(QualifiedName);
+        if (linkedName == null)
+            return null;
 
         var ce = (ColliderEditor)Script;
 
-        ModelBase<T> linked = null;
+        ModelBase<T> linked;
 
-        linked = FindLinkedIn(name, ce.EditablesList.Colliders);
+        linked = FindLinkedIn(linkedName, ce.EditablesList.Colliders);
         if (linked != null)
             return linked;
 
-        linked = FindLinkedIn(name, ce.EditablesList.AutoColliders);
+        linked = FindLinkedIn(linkedName, ce.EditablesList.AutoColliders);
         if (linked != null)
             return linked;
 
-        linked = FindLinkedIn(name, ce.EditablesList.Rigidbodies);
+        linked = FindLinkedIn(linkedName, ce.EditablesList.Rigidbodies);
         if (linked != null)
             return linked;
 
@@ -357,14 +361,8 @@ public abstract class ModelBase<T> where T : Component
     }
 
     private ModelBase<T> FindLinkedIn<U>(
-        string name, List<U> list) where U : IModel
+        string linkedName, List<U> list) where U : IModel
     {
-        var links = Links.Get(Script.containingAtom);
-
-        var linkedName = links.Find(name);
-        if (linkedName == null)
-            return null;
-
         foreach (var m in list)
         {
             if (m.QualifiedName == linkedName)
