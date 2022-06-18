@@ -316,7 +316,7 @@ public class ColliderEditor : MVRScript
         if (_selected2 != null)
         {
             _selected2.Selected = false;
-            _selected2.Shown = false;
+            _selected2.Shown = _filteredEditables.Contains(_selected2);
             _selected2.UpdatePreviewFromConfig();
             _selected2 = null;
         }
