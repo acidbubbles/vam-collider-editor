@@ -316,25 +316,15 @@ public abstract class ModelBase<T> where T : Component
     private void SetLinkedImpl(Action<ModelBase<T>, float> set, float value)
     {
         var linked = FindLinked();
-        if (linked == null)
-        {
-            SuperController.LogError($"no link for {QualifiedName}");
-            return;
-        }
-
-        set(linked, value);
+        if (linked != null)
+            set(linked, value);
     }
 
     private void SetLinkedImpl(Action<ModelBase<T>, bool> set, bool value)
     {
         var linked = FindLinked();
-        if (linked == null)
-        {
-            SuperController.LogError($"no link for {QualifiedName}");
-            return;
-        }
-
-        set(linked, value);
+        if (linked != null)
+            set(linked, value);
     }
 
     private ModelBase<T> FindLinked()
@@ -343,6 +333,8 @@ public abstract class ModelBase<T> where T : Component
 
         if (linked != null)
             SuperController.LogError("found link " + QualifiedName + " <-> " + linked.QualifiedName);
+        else
+            SuperController.LogError($"no link for {QualifiedName}");
 
         return linked;
     }

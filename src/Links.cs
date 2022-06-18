@@ -32,6 +32,13 @@ public class Links
         AddArms();
         AddHands();
         AddChest();
+        AddBreasts();
+        AddAbdomen();
+        AddHips();
+        AddGlutes();
+        AddG();
+        AddLegs();
+        AddFeet();
     }
 
     static private void Add(string a, string b)
@@ -213,5 +220,169 @@ public class Links
                 $"chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschestRibL{i}",
                 $"chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschestRibR{i}");
         }
+    }
+
+    static private void AddBreasts()
+    {
+        Add(
+            "lPectoral.FemaleAutoColliderslNipple.AutoColliderFemaleAutoColliderslNipple1",
+            "rPectoral.FemaleAutoCollidersrNipple.AutoColliderFemaleAutoCollidersrNipple1");
+
+        Add(
+            "lPectoral.FemaleAutoColliderslNipple.AutoColliderFemaleAutoColliderslNippleGPU",
+            "rPectoral.FemaleAutoCollidersrNipple.AutoColliderFemaleAutoCollidersrNippleGPU");
+
+        for (int i = 1; i <= 5; ++i)
+        {
+            Add(
+                $"lPectoral.FemaleAutoColliderslPectoral.AutoColliderFemaleAutoColliderslPectoral{i}",
+                $"rPectoral.FemaleAutoCollidersrPectoral.AutoColliderFemaleAutoCollidersrPectoral{i}");
+        }
+
+        Add(
+            "chest.lPectoral._Collider (1)",
+            "chest.rPectoral._Collider (1)");
+    }
+
+    static private void AddAbdomen()
+    {
+        Add(
+            "abdomen2.FemaleAutoCollidersabdomen2_.AutoColliderFemaleAutoCollidersabdomen2_7",
+            "abdomen2.FemaleAutoCollidersabdomen2_.AutoColliderFemaleAutoCollidersabdomen2_8");
+
+        Add(
+            "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen5",
+            "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen6");
+
+        for (int i = 1; i <= 5; ++i)
+        {
+            Add(
+                $"abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen{6+i}",
+                $"abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen{6+i+5}");
+        }
+
+        Add(
+            "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen21",
+            "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen22");
+
+        Add(
+            "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen23",
+            "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen24");
+    }
+
+    static private void AddHips()
+    {
+        for (int i = 1; i <= 8; ++i)
+        {
+            Add(
+                $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisFL{i}",
+                $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisFR{i}");
+        }
+
+        Add(
+            $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisFL1b",
+            $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisFR1b");
+
+        Add(
+            $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisFL1c",
+            $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisFR1c");
+
+        for (int i = 1; i <= 6; ++i)
+        {
+            Add(
+                $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisL{i}",
+                $"pelvis.FemaleAutoColliderspelvis.AutoColliderpelvisR{i}");
+        }
+
+        Add(
+            "hip.pelvis.HardColliderL",
+            "hip.pelvis.HardColliderR");
+    }
+
+    static private void AddGlutes()
+    {
+        Add(
+            "LGlute.FemaleAutoCollidersLGluteAlt.AutoColliderFemaleAutoCollidersLGlute1",
+            "RGlute.FemaleAutoCollidersRGluteAlt.AutoColliderFemaleAutoCollidersRGlute1");
+
+        for (int i = 1; i <= 7; ++i)
+        {
+            Add(
+                $"LGlute.FemaleAutoCollidersLGluteAlt.AutoColliderFemaleAutoCollidersLGlute1 ({i})",
+                $"RGlute.FemaleAutoCollidersRGluteAlt.AutoColliderFemaleAutoCollidersRGlute1 ({i})");
+        }
+
+        Add(
+            "pelvis.LGlute.HardCollider",
+            "pelvis.RGlute.HardCollider");
+    }
+
+    static private void AddG()
+    {
+        Add(
+            "hip.pelvis._JointAl",
+            "hip.pelvis._JointAr");
+
+        Add(
+            "hip.pelvis._JointGl",
+            "hip.pelvis._JointGr");
+
+        for (int i = 1; i <= 4; ++i)
+        {
+            Add(
+                $"pelvis._JointGl.Collider{i}",
+                $"pelvis._JointGr.Collider{i}");
+        }
+    }
+
+    static private void AddLegs()
+    {
+        for (int i = 1; i <= 16; ++i)
+        {
+            Add(
+                $"lShin.FemaleAutoColliderslShin.AutoColliderFemaleAutoColliderslShin{i}",
+                $"rShin.FemaleAutoCollidersrShin.AutoColliderrShin{i}");
+
+        }
+
+        for (int i = 1; i <= 23; ++i)
+        {
+            Add(
+                $"lThigh.FemaleAutoColliderslThigh.AutoColliderFemaleAutoColliderslThigh{i}",
+                $"rThigh.FemaleAutoCollidersrThigh.AutoColliderFemaleAutoCollidersrThigh{i}");
+        }
+
+        Add(
+            "lThigh.lShin.HardCollider",
+            "rThigh.rShin.HardCollider");
+
+        Add(
+            "pelvis.lThigh.HardCollider",
+            "pelvis.rThigh.HardCollider");
+    }
+
+    static private void AddFeet()
+    {
+        Add(
+            "lToe.lBigToe._Collider",
+            "rToe.rBigToe._Collider");
+
+        for (int i = 1; i <= 9; ++i)
+        {
+            Add(
+                $"lShin.lFoot._Collider{i}",
+                $"rShin.rFoot._Collider{i}");
+        }
+
+        for (int i = 1; i <= 4; ++i)
+        {
+            Add(
+                $"lToe.lSmallToe{i}._Collider",
+                $"rToe.rSmallToe{i}._Collider");
+        }
+
+        Add(
+            "lFoot.lToe._Collider",
+            "rFoot.rToe._Collider");
     }
 }
