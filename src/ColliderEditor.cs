@@ -36,6 +36,7 @@ public class ColliderEditor : MVRScript
     private IModel _selected, _selectedMirror;
     private JSONClass _jsonWhenDisabled;
     private bool _restored;
+    private bool _ready;
 
     public EditablesList EditablesList { get; private set; }
 
@@ -59,10 +60,15 @@ public class ColliderEditor : MVRScript
     private IEnumerator DeferredInit()
     {
         yield return new WaitForEndOfFrame();
-        if (_restored) yield break;
+        if (_restored)
+        {
+            _ready = true;
+            yield break;
+        }
         try
         {
             containingAtom.RestoreFromLast(this);
+            _ready = true;
         }
         catch (Exception e)
         {
@@ -229,6 +235,7 @@ public class ColliderEditor : MVRScript
         _editablesJson.setCallbackFunction = id =>
         {
             IModel val;
+            if (!_ready) return;
             if (EditablesList.ByUuid.TryGetValue(id, out val))
                 SelectEditable(val);
             else
@@ -313,6 +320,7 @@ public class ColliderEditor : MVRScript
         }
 
         _editablesJson.valNoCallback = val.Id;
+        EditablesList.PrepareForUI();
 
         Select(ref _selected, val, true);
         if (Config.ForceMirrorCollidersSymmetry && _selected.MirrorModel != null)
@@ -387,8 +395,6 @@ public class ColliderEditor : MVRScript
 
             _editablesJson.choices = _filteredEditables.Select(x => x.Id).ToList();
             _editablesJson.displayChoices = _filteredEditables.Select(x => x.Label).ToList();
-            if (!_editablesJson.choices.Contains(_editablesJson.val) || string.IsNullOrEmpty(_editablesJson.val))
-                _editablesJson.val = _editablesJson.choices.FirstOrDefault() ?? "";
 
             foreach (var e in _filteredEditables)
             {
@@ -396,7 +402,11 @@ public class ColliderEditor : MVRScript
                 e.UpdatePreviewFromConfig();
             }
 
-            SelectEditable(_selected);
+            if (_ready)
+            {
+                if (!_editablesJson.choices.Contains(_editablesJson.val) || string.IsNullOrEmpty(_editablesJson.val))
+                    _editablesJson.val = _editablesJson.choices.FirstOrDefault() ?? "";
+            }
         }
         catch (Exception e)
         {

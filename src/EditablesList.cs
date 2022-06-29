@@ -49,7 +49,6 @@ public class EditablesList
         var autoCollidersRigidBodies = new HashSet<Rigidbody>(autoColliders.SelectMany(x => x.GetRigidbodies()));
         var autoCollidersColliders = new HashSet<Collider>(autoColliders.SelectMany(x => x.GetColliders()).Select(x => x.Collider));
         var autoCollidersMap = autoColliders.ToDictionary(x => x.AutoCollider);
-        MatchMirror<AutoColliderModel, AutoCollider>(autoColliders);
 
         // AutoColliderGroups
 
@@ -65,7 +64,6 @@ public class EditablesList
             .Where(model => { if (!autoColliderGroupDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.AutoColliderGroup.name)))
             .ToList();
-        MatchMirror<AutoColliderGroupModel, AutoColliderGroup>(autoColliderGroups);
 
         // Rigidbodies
 
@@ -80,7 +78,6 @@ public class EditablesList
             .ForEach(model => model.Group = groups.FirstOrDefault(g => g.Test(model.Rigidbody.name)))
             .ToList();
         var rigidbodiesDict = rigidbodies.ToDictionary(x => x.Id);
-        MatchMirror<RigidbodyModel, Rigidbody>(rigidbodies);
 
         // Colliders
 
@@ -93,7 +90,6 @@ public class EditablesList
             .Select(collider => ColliderModel.CreateTyped(script, collider, config))
             .Where(model => { if (!colliderDuplicates.Add(model.Id)) { model.IsDuplicate = true; return false; } else { return true; } })
             .ToList();
-        MatchMirror<ColliderModel, Collider>(colliders);
 
         // Attach colliders to rigidbodies
 
@@ -134,30 +130,6 @@ public class EditablesList
         );
     }
 
-    private static void MatchMirror<TModel, TComponent>(List<TModel> items)
-        where TModel : ModelBase<TComponent>
-        where TComponent : Component
-    {
-        var map = items.ToDictionary(i => i.Id, i => i);
-        foreach (var left in items)
-        {
-            var rightId = Mirrors.Find(left.Id);
-            if (rightId == null)
-            {
-                continue;
-            }
-            TModel right;
-            if (!map.TryGetValue(rightId, out right))
-            {
-                if (left.Id.Contains("Shin")) continue;
-                // SuperController.LogError("NOT MATCHED:\n" + left.Id + "\n" + rightId);
-                continue;
-            }
-            left.Mirror = right;
-            right.Mirror = left;
-        }
-    }
-
     private static bool IsColliderIncluded(Collider collider)
     {
         if (collider.name == "control") return false;
@@ -193,6 +165,7 @@ public class EditablesList
     public readonly List<RigidbodyModel> Rigidbodies;
     public List<IModel> All { get; }
     public Dictionary<string, IModel> ByUuid { get; }
+    private bool _readyForUI;
 
     private EditablesList(List<Group> groups, List<ColliderModel> colliders, List<AutoColliderModel> autoColliders, List<AutoColliderGroupModel> autoColliderGroups, List<RigidbodyModel> rigidbodies)
     {
@@ -210,5 +183,39 @@ public class EditablesList
             .ToList();
 
         ByUuid = All.ToDictionary(x => x.Id, x => x);
+    }
+
+    public void PrepareForUI()
+    {
+        if (_readyForUI) return;
+        _readyForUI = true;
+        MatchMirror<AutoColliderModel, AutoCollider>(AutoColliders);
+        MatchMirror<AutoColliderGroupModel, AutoColliderGroup>(AutoColliderGroups);
+        MatchMirror<ColliderModel, Collider>(Colliders);
+        MatchMirror<RigidbodyModel, Rigidbody>(Rigidbodies);
+    }
+
+    private static void MatchMirror<TModel, TComponent>(List<TModel> items)
+        where TModel : ModelBase<TComponent>
+        where TComponent : Component
+    {
+        var map = items.ToDictionary(i => i.Id, i => i);
+        foreach (var left in items)
+        {
+            var rightId = Mirrors.Find(left.Id);
+            if (rightId == null)
+            {
+                continue;
+            }
+            TModel right;
+            if (!map.TryGetValue(rightId, out right))
+            {
+                if (left.Id.Contains("Shin")) continue;
+                // SuperController.LogError("NOT MATCHED:\n" + left.Id + "\n" + rightId);
+                continue;
+            }
+            left.Mirror = right;
+            right.Mirror = left;
+        }
     }
 }
