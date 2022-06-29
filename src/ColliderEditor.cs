@@ -10,7 +10,7 @@ using System.Collections;
 
 /// <summary>
 /// Collider Editor
-/// By Acidbubbles and ProjectCanyon
+/// By Acidbubbles, ProjectCanyon and via5
 /// Configures and customizes collisions (rigidbodies and colliders)
 /// Source: https://github.com/acidbubbles/vam-collider-editor
 /// </summary>
