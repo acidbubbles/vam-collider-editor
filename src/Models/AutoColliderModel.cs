@@ -297,12 +297,6 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         }
     }
 
-    protected override void SetSelected(bool value)
-    {
-        // TODO: Track colliders to highlight them
-        base.SetSelected(value);
-    }
-
     protected override void DoLoadJson(JSONClass jsonClass)
     {
         LoadJsonField(jsonClass, "collisionEnabled", val => Component.collisionEnabled = _collisionEnabled = val);

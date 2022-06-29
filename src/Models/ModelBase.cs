@@ -6,6 +6,7 @@ using UnityEngine;
 public abstract class ModelBase<T> where T : Component
 {
     private bool _selected;
+    private bool _highlighted;
     private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
@@ -56,6 +57,19 @@ public abstract class ModelBase<T> where T : Component
         }
     }
 
+    public bool Highlighted
+    {
+        get { return _highlighted; }
+        set
+        {
+            if (_highlighted != value)
+            {
+                SetHighlighted(value);
+                _highlighted = value;
+            }
+        }
+    }
+
     public ModelBase(MVRScript script, T component, string label)
     {
         if (script == null) throw new ArgumentNullException(nameof(script));
@@ -68,7 +82,11 @@ public abstract class ModelBase<T> where T : Component
         Label = label;
     }
 
-    protected virtual void SetSelected(bool value)
+    public virtual void SetHighlighted(bool value)
+    {
+    }
+
+    protected void SetSelected(bool value)
     {
         if (value)
             CreateControls();

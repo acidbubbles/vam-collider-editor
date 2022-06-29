@@ -8,6 +8,8 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
     private readonly bool _initialDetectCollisions;
     private bool _detectCollisions;
 
+    private JSONStorableBool _detectCollisionsJSON;
+
     protected override bool OwnsColliders => false;
 
     public bool detectCollisions
@@ -56,15 +58,19 @@ public class RigidbodyModel : ColliderContainerModelBase<Rigidbody>, IModel
             }
         }
 
-        var detectCollisionsJsf = new JSONStorableBool("detectCollisions", Component.detectCollisions, value =>
-        {
-            Component.detectCollisions = _detectCollisions = value;
-            SetModified();
-        });
-        RegisterStorable(detectCollisionsJsf);
-        var detectCollisionsToggle = Script.CreateToggle(detectCollisionsJsf, true);
+        _detectCollisionsJSON = new JSONStorableBool("detectCollisions", Component.detectCollisions, SetDetectCollisions);
+        RegisterStorable(_detectCollisionsJSON);
+        var detectCollisionsToggle = Script.CreateToggle(_detectCollisionsJSON, true);
         detectCollisionsToggle.label = "Detect Collisions";
         RegisterControl(detectCollisionsToggle);
+    }
+
+    private void SetDetectCollisions(bool value)
+    {
+        if (_detectCollisionsJSON != null) _detectCollisionsJSON.valNoCallback = value;
+        Component.detectCollisions = _detectCollisions = value;
+        SetModified();
+        SetMirror<RigidbodyModel>(m => m.SetDetectCollisions(value));
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)

@@ -67,12 +67,6 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
         SetMirror<AutoColliderGroupModel>(m => m.SetAutoRadiusMultiplier(value));
     }
 
-    protected override void SetSelected(bool value)
-    {
-        // TODO: Track colliders to highlight them
-        base.SetSelected(value);
-    }
-
     protected override void DoLoadJson(JSONClass jsonClass)
     {
         LoadJsonField(jsonClass, "autoRadiusMultiplier", val => Component.autoRadiusMultiplier = _autoRadiusMultiplier = val);

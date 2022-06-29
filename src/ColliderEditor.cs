@@ -314,26 +314,28 @@ public class ColliderEditor : MVRScript
 
         _editablesJson.valNoCallback = val.Id;
 
-        Select(ref _selected, val);
+        Select(ref _selected, val, true);
         if (Config.ForceMirrorCollidersSymmetry && _selected.MirrorModel != null)
-            Select(ref _selectedMirror, _selected.MirrorModel);
+            Select(ref _selectedMirror, _selected.MirrorModel, false);
     }
 
     private void Deselect(ref IModel selected)
     {
         if (selected == null) return;
         selected.Selected = false;
+        selected.Highlighted = false;
         selected.Shown = _filteredEditables.Contains(selected);
         selected.UpdatePreviewFromConfig();
         selected = null;
     }
 
     // ReSharper disable once RedundantAssignment
-    private static void Select(ref IModel selected, IModel val)
+    private static void Select(ref IModel selected, IModel val, bool showUI)
     {
         selected = val;
-        selected.Selected = true;
         selected.Shown = true;
+        selected.Highlighted = true;
+        selected.Selected = showUI;
         selected.UpdatePreviewFromConfig();
     }
 

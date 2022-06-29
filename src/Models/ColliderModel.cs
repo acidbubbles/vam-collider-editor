@@ -157,13 +157,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected abstract GameObject DoCreatePreview();
 
-    protected override void SetSelected(bool value)
-    {
-        SetHighlighted(value);
-        base.SetSelected(value);
-    }
-
-    public void SetHighlighted(bool value)
+    public override void SetHighlighted(bool value)
     {
         if (_highlighted == value) return;
 

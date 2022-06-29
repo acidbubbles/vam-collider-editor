@@ -30,11 +30,10 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
     {
     }
 
-    protected override void SetSelected(bool value)
+    public override void SetHighlighted(bool value)
     {
         foreach (var collider in GetColliders())
             collider.SetHighlighted(value);
-        base.SetSelected(value);
     }
 
     public override void SyncPreview()
