@@ -9,8 +9,6 @@ public abstract class ModelBase<T> where T : Component
     private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
-    private ModelBase<T> _opposite;
-    private bool _oppositeLookupComplete;
     private static bool _ignoreSetOpposite;  // avoids recursion
 
     protected readonly MVRScript Script;
@@ -18,6 +16,7 @@ public abstract class ModelBase<T> where T : Component
     public readonly T Component;
     public Group Group { get; set; }
     public ModelBase<T> Mirror { get; set; }
+    public IModel MirrorModel => Mirror as IModel;
     public string Id { get; }
     public string Label { get; }
     public bool IsDuplicate { get; set; }
@@ -250,15 +249,6 @@ public abstract class ModelBase<T> where T : Component
         if (_modifiedJson != null) _modifiedJson.valNoCallback = false;
     }
 
-
-    public virtual IModel Linked
-    {
-        get
-        {
-            return FindOpposite() as IModel;
-        }
-    }
-
     public string QualifiedName
     {
         get
@@ -271,62 +261,25 @@ public abstract class ModelBase<T> where T : Component
         }
     }
 
-    protected void SetOpposite<TValue>(Action<ModelBase<T>, TValue> set, TValue value)
+    protected void SetOpposite<TModel>(Action<TModel> set) where TModel : ModelBase<T>
     {
-        if (!(Script as ColliderEditor).Config.ForceOppositeCollidersSymmetry)
+        if (_ignoreSetOpposite)
             return;
 
-        if (_ignoreSetOpposite)
+        if (!(Script as ColliderEditor).Config.ForceOppositeCollidersSymmetry)
             return;
 
         _ignoreSetOpposite = true;
         try
         {
-            var opposite = FindOpposite();
+            var opposite = Mirror as TModel;
             if (opposite != null)
-                set(opposite, value);
+                set(opposite);
         }
         finally
         {
             _ignoreSetOpposite = false;
         }
-    }
-
-    private ModelBase<T> FindOpposite()
-    {
-        if (_oppositeLookupComplete) return _opposite;
-
-        _oppositeLookupComplete = true;
-        _opposite = DoFindOpposite();
-
-        return _opposite;
-    }
-
-    private ModelBase<T> DoFindOpposite()
-    {
-        var opposites = Opposites.Get(Script.containingAtom);
-
-        var oppositeName = opposites.Find(QualifiedName);
-        if (oppositeName == null)
-            return null;
-
-        var ce = (ColliderEditor)Script;
-
-        return FindOppositeIn(oppositeName, ce.EditablesList.Colliders)
-               ?? FindOppositeIn(oppositeName, ce.EditablesList.AutoColliders)
-               ?? FindOppositeIn(oppositeName, ce.EditablesList.Rigidbodies);
-    }
-
-    // TODO: No need to check on other editable types; move find to child type
-    private static ModelBase<T> FindOppositeIn<U>( string oppositeName, List<U> list) where U : IModel
-    {
-        foreach (var m in list)
-        {
-            if (m.QualifiedName == oppositeName)
-                return m as ModelBase<T>;
-        }
-
-        return null;
     }
 
     protected void LoadJsonField(JSONClass jsonClass, string name, Action<bool> setValue)

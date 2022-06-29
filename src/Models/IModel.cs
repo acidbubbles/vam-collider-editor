@@ -6,12 +6,10 @@ public interface IModel
     Group Group { get; }
     string Id { get; }
     string Label { get; }
-    string QualifiedName { get; }
-    bool IsDuplicate { get; }
     bool Shown { get; set; }
     bool Selected { get; set; }
     bool Modified { get; }
-    IModel Linked { get; }
+    IModel MirrorModel { get; }
 
     void UpdatePreviewFromConfig();
     void SyncPreview();

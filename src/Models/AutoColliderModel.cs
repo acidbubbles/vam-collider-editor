@@ -27,16 +27,16 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     private float _autoRadiusMultiplier;
     private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
 
-    private JSONStorableBool _collisionEnabledParam = null;
-    private JSONStorableFloat _autoLengthBufferParam = null;
-    private JSONStorableFloat _colliderLengthParam = null;
-    private JSONStorableFloat _autoRadiusBufferParam = null;
-    private JSONStorableFloat _autoRadiusMultiplierParam = null;
-    private JSONStorableFloat _colliderRadiusParam = null;
-    private JSONStorableFloat _hardColliderBufferParam = null;
-    private JSONStorableFloat _colliderLookOffsetParam = null;
-    private JSONStorableFloat _colliderUpOffsetParam = null;
-    private JSONStorableFloat _colliderRightOffsetParam = null;
+    private JSONStorableBool _collisionEnabledParam;
+    private JSONStorableFloat _autoLengthBufferParam;
+    private JSONStorableFloat _colliderLengthParam;
+    private JSONStorableFloat _autoRadiusBufferParam;
+    private JSONStorableFloat _autoRadiusMultiplierParam;
+    private JSONStorableFloat _colliderRadiusParam;
+    private JSONStorableFloat _hardColliderBufferParam;
+    private JSONStorableFloat _colliderLookOffsetParam;
+    private JSONStorableFloat _colliderUpOffsetParam;
+    private JSONStorableFloat _colliderRightOffsetParam;
 
     protected override bool OwnsColliders => true;
 
@@ -148,135 +148,45 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
             RegisterControl(goToAutoColliderGroupButton);
         }
 
-        _collisionEnabledParam = new JSONStorableBool("collisionEnabled", Component.collisionEnabled, value =>
-        {
-            SetCollisionEnabled(value);
-        });
-
-        RegisterControl(
-            Script.CreateToggle(
-                RegisterStorable(_collisionEnabledParam
-                    .WithDefault(_initialCollisionEnabled)
-                ), "Collision Enabled")
-        );
+        _collisionEnabledParam = new JSONStorableBool("collisionEnabled", Component.collisionEnabled, SetCollisionEnabled);
+        RegisterControl(Script.CreateToggle(RegisterStorable(_collisionEnabledParam.WithDefault(_initialCollisionEnabled)), "Collision Enabled"));
 
         if (Component.useAutoLength)
         {
-            _autoLengthBufferParam = new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, value =>
-            {
-                SetAutoLengthBuffer(value);
-            }, -0.25f, 0.25f, false);
-
-            RegisterControl(
-                    Script.CreateFloatSlider(RegisterStorable(
-                        _autoLengthBufferParam
-                        .WithDefault(_initialAutoLengthBuffer)
-                    ), "Auto Length Buffer")
-            );
+            _autoLengthBufferParam = new JSONStorableFloat("autoLengthBuffer", Component.autoLengthBuffer, SetAutoLengthBuffer, -0.25f, 0.25f, false);
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_autoLengthBufferParam.WithDefault(_initialAutoLengthBuffer)), "Auto Length Buffer"));
         }
         else
         {
-            _colliderLengthParam = new JSONStorableFloat("colliderLength", Component.colliderLength, value =>
-            {
-                SetColliderLength(value);
-            }, 0f, 0.25f, false);
-
-            RegisterControl(
-                    Script.CreateFloatSlider(RegisterStorable(
-                        _colliderLengthParam
-                        .WithDefault(_initialColliderLength)
-                    ), "Length")
-            );
+            _colliderLengthParam = new JSONStorableFloat("colliderLength", Component.colliderLength, SetColliderLength, 0f, 0.25f, false);
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_colliderLengthParam.WithDefault(_initialColliderLength)), "Length"));
         }
 
         if (Component.useAutoRadius)
         {
-            _autoRadiusBufferParam = new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, value =>
-            {
-                SetAutoRadiusBuffer(value);
-            }, -0.025f, 0.025f, false);
+            _autoRadiusBufferParam = new JSONStorableFloat("autoRadiusBuffer", Component.autoRadiusBuffer, SetAutoRadiusBuffer, -0.025f, 0.025f, false);
+            RegisterControl( Script.CreateFloatSlider(RegisterStorable( _autoRadiusBufferParam .WithDefault(_initialAutoRadiusBuffer) ), "Auto Radius Buffer") );
 
-            RegisterControl(
-                    Script.CreateFloatSlider(RegisterStorable(
-                        _autoRadiusBufferParam
-                        .WithDefault(_initialAutoRadiusBuffer)
-                    ), "Auto Radius Buffer")
-            );
-
-            _autoRadiusMultiplierParam = new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
-            {
-                SetAutoRadiusMultiplier(value);
-            }, 0.001f, 2f, false);
-
-            RegisterControl(
-                    Script.CreateFloatSlider(RegisterStorable(
-                        _autoRadiusMultiplierParam
-                        .WithDefault(_initialAutoRadiusMultiplier)
-                    ), "Auto Radius Multiplier")
-            );
+            _autoRadiusMultiplierParam = new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, SetAutoRadiusMultiplier, 0.001f, 2f, false);
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_autoRadiusMultiplierParam.WithDefault(_initialAutoRadiusMultiplier)), "Auto Radius Multiplier"));
         }
         else
         {
-            _colliderRadiusParam = new JSONStorableFloat("colliderRadius", Component.colliderRadius, value =>
-            {
-                SetColliderRadius(value);
-            }, 0f, 0.25f, false);
+            _colliderRadiusParam = new JSONStorableFloat("colliderRadius", Component.colliderRadius, SetColliderRadius, 0f, 0.25f, false);
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_colliderRadiusParam.WithDefault(_initialColliderRadius)), "Radius"));
 
-            RegisterControl(
-                    Script.CreateFloatSlider(RegisterStorable(
-                        _colliderRadiusParam
-                        .WithDefault(_initialColliderRadius)
-                    ), "Radius")
-            );
-
-            _hardColliderBufferParam = new JSONStorableFloat("hardColliderBuffer", Component.hardColliderBuffer, value =>
-            {
-                SetHardColliderBuffer(value);
-            }, 0f, 0.25f, false);
-
-            RegisterControl(
-                    Script.CreateFloatSlider(RegisterStorable(
-                        _hardColliderBufferParam
-                        .WithDefault(_initialHardColliderBuffer)
-                    ), "Hard Collider Buffer")
-            );
+            _hardColliderBufferParam = new JSONStorableFloat("hardColliderBuffer", Component.hardColliderBuffer, SetHardColliderBuffer, 0f, 0.25f, false);
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_hardColliderBufferParam.WithDefault(_initialHardColliderBuffer)), "Hard Collider Buffer"));
         }
 
-        _colliderLookOffsetParam = new JSONStorableFloat("colliderLookOffset", Component.colliderLookOffset, value =>
-        {
-            SetColliderLookOffset(value);
-        }, MakeMinOffset(Component.colliderLookOffset), MakeMaxOffset(Component.colliderLookOffset), false);
+        _colliderLookOffsetParam = new JSONStorableFloat("colliderLookOffset", Component.colliderLookOffset, SetColliderLookOffset, MakeMinOffset(Component.colliderLookOffset), MakeMaxOffset(Component.colliderLookOffset), false);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_colliderLookOffsetParam.WithDefault(_initialColliderLookOffset)), "Look Offset"));
 
-        RegisterControl(
-                Script.CreateFloatSlider(RegisterStorable(
-                    _colliderLookOffsetParam
-                    .WithDefault(_initialColliderLookOffset)
-                ), "Look Offset")
-        );
+        _colliderUpOffsetParam = new JSONStorableFloat("colliderUpOffset", Component.colliderUpOffset, SetColliderUpOffset, MakeMinOffset(Component.colliderUpOffset), MakeMaxOffset(Component.colliderUpOffset), false);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_colliderUpOffsetParam.WithDefault(_initialColliderUpOffset)), "Up Offset"));
 
-        _colliderUpOffsetParam = new JSONStorableFloat("colliderUpOffset", Component.colliderUpOffset, value =>
-        {
-            SetColliderUpOffset(value);
-        }, MakeMinOffset(Component.colliderUpOffset), MakeMaxOffset(Component.colliderUpOffset), false);
-
-        RegisterControl(
-                Script.CreateFloatSlider(RegisterStorable(
-                    _colliderUpOffsetParam
-                    .WithDefault(_initialColliderUpOffset)
-                ), "Up Offset")
-        );
-
-        _colliderRightOffsetParam = new JSONStorableFloat("colliderRightOffset", Component.colliderRightOffset, value =>
-        {
-            SetColliderRightOffset(value);
-        }, MakeMinOffset(Component.colliderRightOffset), MakeMaxOffset(Component.colliderRightOffset), false);
-
-        RegisterControl(
-                Script.CreateFloatSlider(RegisterStorable(
-                    _colliderRightOffsetParam
-                    .WithDefault(_initialColliderRightOffset)
-                ), "Right Offset")
-        );
+        _colliderRightOffsetParam = new JSONStorableFloat("colliderRightOffset", Component.colliderRightOffset, SetColliderRightOffset, MakeMinOffset(Component.colliderRightOffset), MakeMaxOffset(Component.colliderRightOffset), false);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_colliderRightOffsetParam.WithDefault(_initialColliderRightOffset)), "Right Offset"));
     }
 
     private void SetCollisionEnabled(bool value)
@@ -285,7 +195,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.collisionEnabled = _collisionEnabled = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetCollisionEnabled(value), value);
+        SetOpposite<AutoColliderModel>(m => m.SetCollisionEnabled(value));
     }
 
     private void SetAutoLengthBuffer(float value)
@@ -294,7 +204,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.autoLengthBuffer = _autoLengthBuffer = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetAutoLengthBuffer(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetAutoLengthBuffer(value));
     }
 
     private void SetColliderLength(float value)
@@ -303,7 +213,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderLength = _colliderLength = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetColliderLength(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetColliderLength(value));
     }
 
     private void SetAutoRadiusBuffer(float value)
@@ -312,7 +222,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.autoRadiusBuffer = _autoRadiusBuffer = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetAutoRadiusBuffer(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetAutoRadiusBuffer(value));
     }
 
     private void SetAutoRadiusMultiplier(float value)
@@ -321,7 +231,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.autoRadiusMultiplier = _autoRadiusMultiplier = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetAutoRadiusMultiplier(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetAutoRadiusMultiplier(value));
     }
 
     private void SetColliderRadius(float value)
@@ -330,7 +240,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderRadius = _colliderRadius = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetColliderRadius(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetColliderRadius(value));
     }
 
     private void SetHardColliderBuffer(float value)
@@ -339,7 +249,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.hardColliderBuffer = _hardColliderBuffer = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetHardColliderBuffer(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetHardColliderBuffer(value));
     }
 
     private void SetColliderLookOffset(float value)
@@ -348,7 +258,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderLookOffset = _colliderLookOffset = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetColliderLookOffset(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetColliderLookOffset(value));
     }
 
     private void SetColliderUpOffset(float value)
@@ -357,7 +267,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderUpOffset = _colliderUpOffset = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetColliderUpOffset(v), value);
+        SetOpposite<AutoColliderModel>(m => m.SetColliderUpOffset(value));
     }
 
     private void SetColliderRightOffset(float value)
@@ -366,7 +276,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderRightOffset = _colliderRightOffset = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite((m, v) => (m as AutoColliderModel)?.SetColliderRightOffset(v), -value);
+        SetOpposite<AutoColliderModel>(m => m.SetColliderRightOffset(-value));
     }
 
     public void RefreshAutoCollider()

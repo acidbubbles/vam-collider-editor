@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -138,29 +139,23 @@ public class EditablesList
         where TModel : ModelBase<TComponent>
         where TComponent : Component
     {
-        var excludedNames = new HashSet<string>();
-        var itemsByName = new Dictionary<string, TModel>();
-        foreach (var item in items)
+        var map = items.ToDictionary(i => i.Id, i => i);
+        foreach (var left in items)
         {
-            var name = NameHelper.Simplify(item.Component.name);
-            if (excludedNames.Contains(name)) continue;
-            if (itemsByName.ContainsKey(name))
+            var rightId = Opposites.Find(left.Id);
+            if (rightId == null)
             {
-                excludedNames.Add(name);
-                itemsByName.Remove(name);
                 continue;
             }
-            itemsByName.Add(name, item);
-        }
-        var leftItems = itemsByName.Where(x => x.Key.StartsWith("l"));
-        foreach (var left in leftItems)
-        {
             TModel right;
-            if (itemsByName.TryGetValue("r" + left.Key.Substring(1), out right))
+            if (!map.TryGetValue(rightId, out right))
             {
-                left.Value.Mirror = right;
-                right.Mirror = left.Value;
+                if (left.Id.Contains("Shin")) continue;
+                // SuperController.LogError("NOT MATCHED:\n" + left.Id + "\n" + rightId);
+                continue;
             }
+            left.Mirror = right;
+            right.Mirror = left;
         }
     }
 

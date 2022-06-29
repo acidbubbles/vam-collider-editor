@@ -311,8 +311,8 @@ public class ColliderEditor : MVRScript
         _editablesJson.valNoCallback = val.Id;
 
         Select(ref _selected, val);
-        if (Config.ForceOppositeCollidersSymmetry && _selected.Linked != null)
-            Select(ref _selectedOpposite, _selected.Linked);
+        if (Config.ForceOppositeCollidersSymmetry && _selected.MirrorModel != null)
+            Select(ref _selectedOpposite, _selected.MirrorModel);
     }
 
     private void Deselect(ref IModel selected)
