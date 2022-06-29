@@ -16,13 +16,13 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
     private float _gpuFriction;
     private bool _gpuEnabled;
 
-    private JSONStorableFloat _radiusParam;
-    private JSONStorableFloat _heightParam;
-    private JSONStorableFloat _centerXParam;
-    private JSONStorableFloat _centerYParam;
-    private JSONStorableFloat _centerZParam;
-    private JSONStorableFloat _gpuFrictionParam;
-    private JSONStorableBool _gpuEnabledParam;
+    private JSONStorableFloat _radiusJSON;
+    private JSONStorableFloat _heightJSON;
+    private JSONStorableFloat _centerXJSON;
+    private JSONStorableFloat _centerYJSON;
+    private JSONStorableFloat _centerZJSON;
+    private JSONStorableFloat _gpuFrictionJSON;
+    private JSONStorableBool _gpuEnabledJSON;
 
     public CapsuleColliderModel(MVRScript parent, CapsuleCollider collider, ColliderPreviewConfig config)
         : base(parent, collider, config)
@@ -76,34 +76,34 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     public override void DoCreateControls()
     {
-        _radiusParam = new JSONStorableFloat("radius", Collider.radius, SetRadius, 0f, _initialRadius * 4f, false);
-        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_radiusParam).WithDefault(_initialRadius), "Radius"));
+        _radiusJSON = new JSONStorableFloat("radius", Collider.radius, SetRadius, 0f, _initialRadius * 4f, false).WithDefault(_initialRadius);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_radiusJSON), "Radius"));
 
-        _heightParam = new JSONStorableFloat("height", Collider.height, SetHeight, 0f, _initialHeight * 4f, false);
-        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_heightParam).WithDefault(_initialHeight), "Height"));
+        _heightJSON = new JSONStorableFloat("height", Collider.height, SetHeight, 0f, _initialHeight * 4f, false).WithDefault(_initialHeight);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_heightJSON), "Height"));
 
-        _centerXParam = new JSONStorableFloat("centerX", Collider.center.x, SetCenterX, MakeMinPosition(Collider.center.x), MakeMaxPosition(Collider.center.x), false);
-        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerXParam).WithDefault(_initialCenter.x), "Center.X"));
+        _centerXJSON = new JSONStorableFloat("centerX", Collider.center.x, SetCenterX, MakeMinPosition(Collider.center.x), MakeMaxPosition(Collider.center.x), false).WithDefault(_initialCenter.x);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerXJSON), "Center.X"));
 
-        _centerYParam = new JSONStorableFloat("centerY", Collider.center.y, SetCenterY, MakeMinPosition(Collider.center.y), MakeMaxPosition(Collider.center.y), false);
-        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerYParam).WithDefault(_initialCenter.y), "Center.Y"));
+        _centerYJSON = new JSONStorableFloat("centerY", Collider.center.y, SetCenterY, MakeMinPosition(Collider.center.y), MakeMaxPosition(Collider.center.y), false).WithDefault(_initialCenter.y);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerYJSON), "Center.Y"));
 
-        _centerZParam = new JSONStorableFloat("centerZ", Collider.center.z, SetCenterZ, MakeMinPosition(Collider.center.z), MakeMaxPosition(Collider.center.z), false);
-        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerZParam).WithDefault(_initialCenter.z), "Center.Z"));
+        _centerZJSON = new JSONStorableFloat("centerZ", Collider.center.z, SetCenterZ, MakeMinPosition(Collider.center.z), MakeMaxPosition(Collider.center.z), false).WithDefault(_initialCenter.z);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_centerZJSON), "Center.Z"));
 
         if (_gpu != null)
         {
-            _gpuFrictionParam = new JSONStorableFloat("gpu.friction", _gpu.friction, SetGpuFriction, 0f, Mathf.Ceil(_initialGpuFriction) * 2f, false);
-            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_gpuFrictionParam).WithDefault(_gpu.friction), "GPU Friction"));
+            _gpuFrictionJSON = new JSONStorableFloat("gpu.friction", _gpu.friction, SetGpuFriction, 0f, Mathf.Ceil(_initialGpuFriction) * 2f, false).WithDefault(_gpu.friction);
+            RegisterControl(Script.CreateFloatSlider(RegisterStorable(_gpuFrictionJSON), "GPU Friction"));
 
-            _gpuEnabledParam = new JSONStorableBool("gpu.enabled", _gpu.enabled, SetGpuEnabled);
-            RegisterControl(Script.CreateToggle(RegisterStorable(_gpuEnabledParam.WithDefault(_initialGpuEnabled)), "GPU Collider Enabled"));
+            _gpuEnabledJSON = new JSONStorableBool("gpu.enabled", _gpu.enabled, SetGpuEnabled).WithDefault(_initialGpuEnabled);
+            RegisterControl(Script.CreateToggle(RegisterStorable(_gpuEnabledJSON), "GPU Collider Enabled"));
         }
     }
 
     private void SetRadius(float value)
     {
-        if (_radiusParam != null) _radiusParam.val = value;
+        if (_radiusJSON != null) _radiusJSON.valNoCallback = value;
         Collider.radius = _radius = value;
         _gpu?.UpdateData();
         SetModified();
@@ -113,7 +113,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     private void SetHeight(float value)
     {
-        if (_heightParam != null) _heightParam.val = value;
+        if (_heightJSON != null) _heightJSON.valNoCallback = value;
         Collider.height = _height = value;
         _gpu?.UpdateData();
         SetModified();
@@ -123,7 +123,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     private void SetCenterX(float value)
     {
-        if (_centerXParam != null) _centerXParam.val = value;
+        if (_centerXJSON != null) _centerXJSON.valNoCallback = value;
         var center = _center;
         center.x = value;
         Collider.center = _center = center;
@@ -135,7 +135,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     private void SetCenterY(float value)
     {
-        if (_centerYParam != null) _centerYParam.val = value;
+        if (_centerYJSON != null) _centerYJSON.valNoCallback = value;
         var center = _center;
         center.y = value;
         Collider.center = _center = center;
@@ -147,7 +147,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     private void SetCenterZ(float value)
     {
-        if (_centerZParam != null) _centerZParam.val = value;
+        if (_centerZJSON != null) _centerZJSON.valNoCallback = value;
         var center = _center;
         center.z = value;
         Collider.center = _center = center;
@@ -159,7 +159,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     private void SetGpuFriction(float value)
     {
-        if (_gpuFrictionParam != null) _gpuFrictionParam.val = value;
+        if (_gpuFrictionJSON != null) _gpuFrictionJSON.valNoCallback = value;
         _gpu.friction = _gpuFriction = value;
         SetModified();
         SetMirror<CapsuleColliderModel>(m => m.SetGpuFriction(value));
@@ -167,7 +167,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     private void SetGpuEnabled(bool value)
     {
-        if (_gpuEnabledParam != null) _gpuEnabledParam.val = value;
+        if (_gpuEnabledJSON != null) _gpuEnabledJSON.valNoCallback = value;
         _gpu.enabled = _gpuEnabled = value;
         SetModified();
         SetMirror<CapsuleColliderModel>(m => m.SetGpuEnabled(value));

@@ -8,6 +8,8 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
     private float _autoRadiusMultiplier;
     private readonly List<AutoColliderModel> _autoColliders;
 
+    private JSONStorableFloat _autoRadiusMultiplierJSON;
+
     protected override bool OwnsColliders => true;
 
     public string Type => "Auto Collider Group";
@@ -48,18 +50,21 @@ public class AutoColliderGroupModel : ColliderContainerModelBase<AutoColliderGro
             RegisterControl(goToAutoColliderButton);
         }
 
-        RegisterControl(
-                Script.CreateFloatSlider(RegisterStorable(
-                    new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, value =>
-                    {
-                        Component.autoRadiusMultiplier = _autoRadiusMultiplier = value;
-                        foreach (var autoCollider in _autoColliders)
-                            autoCollider.ReapplyMultiplier();
-                        SetModified();
-                    }, 0.001f, 2f, false)
-                    .WithDefault(_initialAutoRadiusMultiplier)
-                ), "Auto Radius Multiplier")
-        );
+        _autoRadiusMultiplierJSON = new JSONStorableFloat("autoRadiusMultiplier", Component.autoRadiusMultiplier, SetAutoRadiusMultiplier, 0.001f, 2f, false).WithDefault(_initialAutoRadiusMultiplier);
+        RegisterControl(Script.CreateFloatSlider(RegisterStorable(_autoRadiusMultiplierJSON), "Auto Radius Multiplier"));
+    }
+
+    private void SetAutoRadiusMultiplier(float value)
+    {
+        if (_autoRadiusMultiplierJSON != null) _autoRadiusMultiplierJSON.valNoCallback = value;
+        Component.autoRadiusMultiplier = _autoRadiusMultiplier = value;
+        foreach (var autoCollider in _autoColliders)
+        {
+            autoCollider.ReapplyMultiplier();
+            autoCollider.RefreshAutoCollider();
+        }
+        SetModified();
+        SetMirror<AutoColliderGroupModel>(m => m.SetAutoRadiusMultiplier(value));
     }
 
     protected override void SetSelected(bool value)
