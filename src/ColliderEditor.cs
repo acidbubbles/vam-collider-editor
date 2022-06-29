@@ -102,17 +102,6 @@ public class ColliderEditor : MVRScript
         var xRayPreviewsToggle = CreateToggle(_xRayPreviewsJSON);
         xRayPreviewsToggle.label = "Use XRay Previews";
 
-        var forceMirrorCollidersSymmetryJSON = new JSONStorableBool("forceMirrorCollidersSymmetry", ColliderPreviewConfig.DefaultForceMirrorCollidersSymmetry, value =>
-        {
-            Config.ForceMirrorCollidersSymmetry = value;
-            foreach (var editable in EditablesList.All)
-                editable.SyncWithMirror = value;
-            SelectEditable(_selected);
-        });
-        RegisterBool(forceMirrorCollidersSymmetryJSON);
-        var forceMirrorCollidersSymmetryToggle = CreateToggle(forceMirrorCollidersSymmetryJSON);
-        forceMirrorCollidersSymmetryToggle.label = "Force Mirror Colliders Symmetry";
-
         var previewOpacityJSON = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
         {
             if (!insideRestore) _showPreviewsJSON.val = true;
@@ -220,6 +209,17 @@ public class ColliderEditor : MVRScript
         CreateTextInput(_textFilterJson, false);
 #endif
 
+        var syncSymmetryJSON = new JSONStorableBool("autoSyncSymmetry", ColliderPreviewConfig.DefaultSyncSymmetry, value =>
+        {
+            Config.SyncSymmetry = value;
+            foreach (var editable in EditablesList.All)
+                editable.SyncWithMirror = value;
+            SelectEditable(_selected);
+        });
+        RegisterBool(syncSymmetryJSON);
+        var syncSymmetryToggle = CreateToggle(syncSymmetryJSON, true);
+        syncSymmetryToggle.label = "Auto Sync Symmetry";
+
         _editablesJson = new JSONStorableStringChooser(
             "Edit",
             new List<string>(),
@@ -323,7 +323,7 @@ public class ColliderEditor : MVRScript
         EditablesList.PrepareForUI();
 
         Select(ref _selected, val, true);
-        if (Config.ForceMirrorCollidersSymmetry && _selected.MirrorModel != null)
+        if (Config.SyncSymmetry && _selected.MirrorModel != null)
             Select(ref _selectedMirror, _selected.MirrorModel, false);
     }
 
