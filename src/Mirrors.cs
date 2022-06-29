@@ -74,14 +74,14 @@ public static class Mirrors
 
         // Chest
         Add(
-            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (1)",
-            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (2)");
+            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (1).AutoColliderFemaleAutoColliderschest6 (1)",
+            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (2).AutoColliderFemaleAutoColliderschest6 (2)");
         Add(
-            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (3)",
-            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (4)");
+            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (3).AutoColliderFemaleAutoColliderschest6 (3)",
+            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (4).AutoColliderFemaleAutoColliderschest6 (4)");
         Add(
-            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (5)",
-            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (6)");
+            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (5).AutoColliderFemaleAutoColliderschest6 (5)",
+            "chest.FemaleAutoColliderschest.AutoColliderFemaleAutoColliderschest6 (6).AutoColliderFemaleAutoColliderschest6 (6)");
 
         // abdomen
         Add(
@@ -93,8 +93,8 @@ public static class Mirrors
         for (int i = 1; i <= 5; ++i)
         {
             Add(
-                $"abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen{6+i}",
-                $"abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen{6+i+5}");
+                $"abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen{6+i}.AutoColliderFemaleAutoCollidersabdomen{6+i}",
+                $"abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen{6+i+5}.AutoColliderFemaleAutoCollidersabdomen{6+i+5}");
         }
         Add(
             "abdomen.FemaleAutoCollidersabdomen.AutoColliderFemaleAutoCollidersabdomen21.AutoColliderFemaleAutoCollidersabdomen21",
