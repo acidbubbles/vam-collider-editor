@@ -6,6 +6,7 @@ using System.Linq;
 using SimpleJSON;
 using MVR.FileManagementSecure;
 using System.Collections;
+using GPUTools.Physics.Scripts.Behaviours;
 
 
 /// <summary>
@@ -586,6 +587,26 @@ public class ColliderEditor : MVRScript
     private void Update()
     {
         if (EditablesList == null) return;
+
+        SuperController.singleton.ClearMessages();
+        var real = ((DAZCharacterSelector) containingAtom.GetStorableByID("geometry")).auxBreastColliders.Skip(5).FirstOrDefault(c => c.name.Contains("rPectoral"));
+        if (real == null)
+        {
+            SuperController.LogMessage($"No Real");
+        }
+        else
+        {
+            var mine = EditablesList.All.OfType<AutoColliderModel>().FirstOrDefault(x => x.GetColliders().Any(y => y.Collider == real));
+            if (mine == null)
+            {
+                SuperController.LogMessage($"No Mine: {real.Uuid()}");
+            }
+            else
+            {
+                SuperController.LogMessage($"[{Time.frameCount}] Real: {((CapsuleCollider)real).radius:0.000}, Edit: {((CapsuleCollider)mine.GetColliders().First().Collider).radius:0.000}");
+            }
+        }
+
         if (!(Time.time > _nextUpdate)) return;
         try
         {
@@ -624,5 +645,35 @@ public class ColliderEditor : MVRScript
         input.textComponent = textfield.UItext;
         jss.inputField = input;
         return textfield;
+    }
+}
+
+public class BugTest : MVRScript
+{
+    private DAZCharacterSelector _geometry;
+
+    public override void Init()
+    {
+        _geometry = (DAZCharacterSelector) containingAtom.GetStorableByID("geometry");
+        var auxBreastColliders = _geometry.auxBreastColliders.ToList();
+        var rPectoralColliders = auxBreastColliders.Where(c => c.name.Contains("rPectoral"));
+
+        var s = new JSONStorableFloat("Value", 1, 1, 2);
+        s.setCallbackFunction = val =>
+        {
+            foreach(var collider in rPectoralColliders)
+            {
+                var c = collider.GetComponent<CapsuleLineSphereCollider>();
+                c.capsuleCollider.radius = 0.047f * val;
+            }
+        };
+        CreateSlider(s);
+    }
+
+    public void OnDisable()
+    {
+        // cycle hard colliders off/on or on/off, this resets the collider's radius to whatever VAM deems to be default
+        _geometry.useAuxBreastColliders = !_geometry.useAuxBreastColliders;
+        _geometry.useAuxBreastColliders = _geometry.useAuxBreastColliders;
     }
 }
