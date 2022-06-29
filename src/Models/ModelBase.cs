@@ -9,17 +9,17 @@ public abstract class ModelBase<T> where T : Component
     private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
-    private ModelBase<T> _link = null;
-    private bool _linkLookedUp = false;
-    private static bool _changingLink = false;  // avoids recursion
+    private ModelBase<T> _opposite;
+    private bool _oppositeLookupComplete;
+    private static bool _ignoreSetOpposite;  // avoids recursion
 
     protected readonly MVRScript Script;
 
     public readonly T Component;
     public Group Group { get; set; }
     public ModelBase<T> Mirror { get; set; }
-    public string Id { get; set; }
-    public string Label { get; set; }
+    public string Id { get; }
+    public string Label { get; }
     public bool IsDuplicate { get; set; }
     public bool Modified { get; protected set; }
 
@@ -136,7 +136,7 @@ public abstract class ModelBase<T> where T : Component
         {
             _modifiedJson = new JSONStorableBool("This item has been modified", false);
             _modifiedJson.valNoCallback = Modified;
-            _modifiedJson.setCallbackFunction = (bool val) =>
+            _modifiedJson.setCallbackFunction = val =>
             {
                 if (val)
                 {
@@ -255,7 +255,7 @@ public abstract class ModelBase<T> where T : Component
     {
         get
         {
-            return FindLinked() as IModel;
+            return FindOpposite() as IModel;
         }
     }
 
@@ -263,109 +263,66 @@ public abstract class ModelBase<T> where T : Component
     {
         get
         {
+            var componentParent = Component.transform.parent;
             return
-                Component.transform.parent.parent.name + "." +
-                Component.transform.parent.name + "." +
+                componentParent.parent.name + "." +
+                componentParent.name + "." +
                 Component.name;
         }
     }
 
-    public void SetLinked(Action<ModelBase<T>, float> set, float value)
+    protected void SetOpposite<TValue>(Action<ModelBase<T>, TValue> set, TValue value)
     {
-        if (!(Script as ColliderEditor).Config.LinkColliders)
+        if (!(Script as ColliderEditor).Config.ForceOppositeCollidersSymmetry)
             return;
 
-        if (_changingLink)
+        if (_ignoreSetOpposite)
             return;
 
+        _ignoreSetOpposite = true;
         try
         {
-            _changingLink = true;
-            SetLinkedImpl(set, value);
+            var opposite = FindOpposite();
+            if (opposite != null)
+                set(opposite, value);
         }
         finally
         {
-            _changingLink = false;
+            _ignoreSetOpposite = false;
         }
     }
 
-    public void SetLinked(Action<ModelBase<T>, bool> set, bool value)
+    private ModelBase<T> FindOpposite()
     {
-        if (!(Script as ColliderEditor).Config.LinkColliders)
-            return;
+        if (_oppositeLookupComplete) return _opposite;
 
-        if (_changingLink)
-            return;
+        _oppositeLookupComplete = true;
+        _opposite = DoFindOpposite();
 
-        try
-        {
-            _changingLink = true;
-            SetLinkedImpl(set, value);
-        }
-        finally
-        {
-            _changingLink = false;
-        }
+        return _opposite;
     }
 
-    private void SetLinkedImpl(Action<ModelBase<T>, float> set, float value)
+    private ModelBase<T> DoFindOpposite()
     {
-        var linked = FindLinked();
-        if (linked != null)
-            set(linked, value);
-    }
+        var opposites = Opposites.Get(Script.containingAtom);
 
-    private void SetLinkedImpl(Action<ModelBase<T>, bool> set, bool value)
-    {
-        var linked = FindLinked();
-        if (linked != null)
-            set(linked, value);
-    }
-
-    private ModelBase<T> FindLinked()
-    {
-        if (!_linkLookedUp)
-        {
-            _linkLookedUp = true;
-            _link = DoFindLinked();
-        }
-
-        return _link;
-    }
-
-    private ModelBase<T> DoFindLinked()
-    {
-        var links = Links.Get(Script.containingAtom);
-
-        var linkedName = links.Find(QualifiedName);
-        if (linkedName == null)
+        var oppositeName = opposites.Find(QualifiedName);
+        if (oppositeName == null)
             return null;
 
         var ce = (ColliderEditor)Script;
 
-        ModelBase<T> linked;
-
-        linked = FindLinkedIn(linkedName, ce.EditablesList.Colliders);
-        if (linked != null)
-            return linked;
-
-        linked = FindLinkedIn(linkedName, ce.EditablesList.AutoColliders);
-        if (linked != null)
-            return linked;
-
-        linked = FindLinkedIn(linkedName, ce.EditablesList.Rigidbodies);
-        if (linked != null)
-            return linked;
-
-        return null;
+        return FindOppositeIn(oppositeName, ce.EditablesList.Colliders)
+               ?? FindOppositeIn(oppositeName, ce.EditablesList.AutoColliders)
+               ?? FindOppositeIn(oppositeName, ce.EditablesList.Rigidbodies);
     }
 
-    private ModelBase<T> FindLinkedIn<U>(
-        string linkedName, List<U> list) where U : IModel
+    // TODO: No need to check on other editable types; move find to child type
+    private static ModelBase<T> FindOppositeIn<U>( string oppositeName, List<U> list) where U : IModel
     {
         foreach (var m in list)
         {
-            if (m.QualifiedName == linkedName)
+            if (m.QualifiedName == oppositeName)
                 return m as ModelBase<T>;
         }
 

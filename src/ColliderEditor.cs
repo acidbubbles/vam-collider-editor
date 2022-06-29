@@ -31,27 +31,19 @@ public class ColliderEditor : MVRScript
     private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
 
-    private readonly ColliderPreviewConfig _config = new ColliderPreviewConfig();
-    private IModel _selected, _selected2;
-    private EditablesList _editables;
+    private IModel _selected, _selectedOpposite;
     private JSONClass _jsonWhenDisabled;
     private bool _restored;
 
-    public EditablesList EditablesList
-    {
-        get { return _editables; }
-    }
+    public EditablesList EditablesList { get; private set; }
 
-    public ColliderPreviewConfig Config
-    {
-        get { return _config; }
-    }
+    public ColliderPreviewConfig Config { get; } = new ColliderPreviewConfig();
 
     public override void Init()
     {
         try
         {
-            _editables = EditablesList.Build(this, _config);
+            EditablesList = EditablesList.Build(this, Config);
             BuildUI();
             SuperController.singleton.StartCoroutine(DeferredInit());
         }
@@ -79,8 +71,8 @@ public class ColliderEditor : MVRScript
     {
         var showPreviews = new JSONStorableBool("showPreviews", ColliderPreviewConfig.DefaultPreviewsEnabled, value =>
         {
-            _config.PreviewsEnabled = value;
-            foreach (var editable in _editables.All)
+            Config.PreviewsEnabled = value;
+            foreach (var editable in EditablesList.All)
                 editable.UpdatePreviewFromConfig();
         })
         {
@@ -93,8 +85,8 @@ public class ColliderEditor : MVRScript
 
         var xRayPreviews = new JSONStorableBool("xRayPreviews", ColliderPreviewConfig.DefaultXRayPreviews, value =>
         {
-            _config.XRayPreviews = value;
-            foreach (var editable in _editables.All)
+            Config.XRayPreviews = value;
+            foreach (var editable in EditablesList.All)
                 editable.UpdatePreviewFromConfig();
         });
         RegisterBool(xRayPreviews);
@@ -102,22 +94,21 @@ public class ColliderEditor : MVRScript
         xRayPreviewsToggle.label = "Use XRay Previews";
 
 
-        var linkColliders = new JSONStorableBool("linkColliders", ColliderPreviewConfig.DefaultLinkColliders, value =>
+        var forceOppositeCollidersSymmetry = new JSONStorableBool("forceOppositeCollidersSymmetry", ColliderPreviewConfig.DefaultForceOppositeCollidersSymmetry, value =>
         {
-            _config.LinkColliders = value;
+            Config.ForceOppositeCollidersSymmetry = value;
             SelectEditable(_selected);
         });
+        RegisterBool(forceOppositeCollidersSymmetry);
+        var forceOppositeCollidersSymmetryToggle = CreateToggle(forceOppositeCollidersSymmetry);
+        forceOppositeCollidersSymmetryToggle.label = "Force Opposite Colliders Symmetry";
 
-        RegisterBool(linkColliders);
-        var linkCollidersToggle = CreateToggle(linkColliders);
-        linkCollidersToggle.label = "Link Symmetrical Colliders";
-
-        JSONStorableFloat previewOpacity = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
+        var previewOpacity = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
         {
             if (!insideRestore) showPreviews.val = true;
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
-            _config.PreviewsOpacity = alpha;
-            foreach (var editable in _editables.All)
+            Config.PreviewsOpacity = alpha;
+            foreach (var editable in EditablesList.All)
                 editable.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(previewOpacity);
@@ -127,11 +118,11 @@ public class ColliderEditor : MVRScript
         {
             if (!insideRestore) showPreviews.val = true;
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
-            _config.SelectedPreviewsOpacity = alpha;
+            Config.SelectedPreviewsOpacity = alpha;
             if (_selected != null)
                 _selected.UpdatePreviewFromConfig();
-            if (_selected2 != null)
-                _selected2.UpdatePreviewFromConfig();
+            if (_selectedOpposite != null)
+                _selectedOpposite.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
         CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
@@ -165,7 +156,7 @@ public class ColliderEditor : MVRScript
         });
 
         var groups = new List<string> { _noSelectionLabel };
-        groups.AddRange(_editables.Groups.Select(e => e.Name).Distinct());
+        groups.AddRange(EditablesList.Groups.Select(e => e.Name).Distinct());
         groups.Add(_allLabel);
         _groupsJson = new JSONStorableStringChooser("Group", groups, groups[0], "Group")
         {
@@ -176,7 +167,7 @@ public class ColliderEditor : MVRScript
         CreatePopupAuto(_groupsJson, false, 400f);
 
         var types = new List<string> { _noSelectionLabel };
-        types.AddRange(_editables.All.Select(e => e.Type).Distinct());
+        types.AddRange(EditablesList.All.Select(e => e.Type).Distinct());
         types.Add(_allLabel);
         _typesJson = new JSONStorableStringChooser("Type", types, types[0], "Type")
         {
@@ -234,7 +225,7 @@ public class ColliderEditor : MVRScript
         _editablesJson.setCallbackFunction = id =>
         {
             IModel val;
-            if (_editables.ByUuid.TryGetValue(id, out val))
+            if (EditablesList.ByUuid.TryGetValue(id, out val))
                 SelectEditable(val);
             else
                 SelectEditable(null);
@@ -308,46 +299,38 @@ public class ColliderEditor : MVRScript
 
     public void SelectEditable(IModel val)
     {
-        if (_selected != null)
-        {
-            _selected.Selected = false;
-            _selected.Shown = _filteredEditables.Contains(_selected);
-            _selected.UpdatePreviewFromConfig();
-            _selected = null;
-        }
+        Deselect(ref _selected);
+        Deselect(ref _selectedOpposite);
 
-        if (_selected2 != null)
-        {
-            _selected2.Selected = false;
-            _selected2.Shown = _filteredEditables.Contains(_selected2);
-            _selected2.UpdatePreviewFromConfig();
-            _selected2 = null;
-        }
-
-        if (val != null)
-        {
-            _selected = val;
-            _selected.Selected = true;
-            _selected.Shown = true;
-            _selected.UpdatePreviewFromConfig();
-
-            _editablesJson.valNoCallback = val.Id;
-
-            if (_config.LinkColliders)
-            {
-                _selected2 = _selected.Linked;
-                if (_selected2 != null)
-                {
-                    _selected2.Selected = true;
-                    _selected2.Shown = true;
-                    _selected2.UpdatePreviewFromConfig();
-                }
-            }
-        }
-        else
+        if (val == null)
         {
             _editablesJson.valNoCallback = "";
+            return;
         }
+
+        _editablesJson.valNoCallback = val.Id;
+
+        Select(ref _selected, val);
+        if (Config.ForceOppositeCollidersSymmetry && _selected.Linked != null)
+            Select(ref _selectedOpposite, _selected.Linked);
+    }
+
+    private void Deselect(ref IModel selected)
+    {
+        if (selected == null) return;
+        selected.Selected = false;
+        selected.Shown = _filteredEditables.Contains(selected);
+        selected.UpdatePreviewFromConfig();
+        selected = null;
+    }
+
+    // ReSharper disable once RedundantAssignment
+    private static void Select(ref IModel selected, IModel val)
+    {
+        selected = val;
+        selected.Selected = true;
+        selected.Shown = true;
+        selected.UpdatePreviewFromConfig();
     }
 
     private void UpdateFilter()
@@ -356,7 +339,7 @@ public class ColliderEditor : MVRScript
         {
             HideCurrentFilteredEditables();
 
-            IEnumerable<IModel> filtered = _editables.All;
+            IEnumerable<IModel> filtered = EditablesList.All;
 #if (!VAM_GT_1_20)
             var hasSearchQuery = !string.IsNullOrEmpty(_textFilterJson.val) && _textFilterJson.val != _searchDefault;
 
@@ -417,7 +400,7 @@ public class ColliderEditor : MVRScript
 
     private void HideCurrentFilteredEditables()
     {
-        var previous = _editablesJson.choices.Where(x => _editables.ByUuid.ContainsKey(x)).Select(x => _editables.ByUuid[x]);
+        var previous = _editablesJson.choices.Where(x => EditablesList.ByUuid.ContainsKey(x)).Select(x => EditablesList.ByUuid[x]);
         foreach (var e in previous)
         {
             e.Shown = false;
@@ -482,7 +465,7 @@ public class ColliderEditor : MVRScript
                 var migratedEditableId = MigrationHelper.Migrate(editableId);
 
                 IModel editableModel;
-                if (_editables.ByUuid.TryGetValue(migratedEditableId, out editableModel))
+                if (EditablesList.ByUuid.TryGetValue(migratedEditableId, out editableModel))
                 {
                     editableModel.LoadJson(editablesJsonClass[editableId].AsObject);
                 }
@@ -520,7 +503,7 @@ public class ColliderEditor : MVRScript
     private void AppendJson(JSONClass jsonClass)
     {
         var editablesJsonClass = new JSONClass();
-        foreach (var editable in _editables.All)
+        foreach (var editable in EditablesList.All)
         {
             editable.AppendJson(editablesJsonClass);
         }
@@ -533,7 +516,7 @@ public class ColliderEditor : MVRScript
 
     public void OnEnable()
     {
-        if (_editables?.All == null) return;
+        if (EditablesList?.All == null) return;
         try
         {
             if (_jsonWhenDisabled != null)
@@ -550,12 +533,12 @@ public class ColliderEditor : MVRScript
 
     public void OnDisable()
     {
-        if (_editables?.All == null) return;
+        if (EditablesList?.All == null) return;
         try
         {
             _jsonWhenDisabled = new JSONClass();
             AppendJson(_jsonWhenDisabled);
-            foreach (var editable in _editables.All)
+            foreach (var editable in EditablesList.All)
             {
                 editable.DestroyPreview();
                 editable.ResetToInitial();
@@ -569,7 +552,7 @@ public class ColliderEditor : MVRScript
 
     public void OnDestroy()
     {
-        if (_editables?.All == null) return;
+        if (EditablesList?.All == null) return;
         try
         {
             _jsonWhenDisabled = null;
@@ -585,12 +568,12 @@ public class ColliderEditor : MVRScript
 
     private void Update()
     {
-        if (_editables == null) return;
+        if (EditablesList == null) return;
         try
         {
             if (Time.time > _nextUpdate)
             {
-                foreach (var editable in _editables.All)
+                foreach (var editable in EditablesList.All)
                 {
                     if (editable.SyncOverrides())
                         editable.SyncPreview();

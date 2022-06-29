@@ -1,85 +1,75 @@
 ﻿using System.Collections.Generic;
 
-public class Links
+public class Opposites
 {
-    public struct Link
+    protected struct Opposite
     {
-        public string a, b;
+        public readonly string left;
+        public readonly string right;
 
-        public Link(string a, string b)
+        public Opposite(string left, string right)
         {
-            this.a = a;
-            this.b = b;
+            this.left = left;
+            this.right = right;
         }
     };
 
 
-    protected List<Link> links_ = new List<Link>();
-    protected Dictionary<string, string> mapA_ = new Dictionary<string, string>();
-    protected Dictionary<string, string> mapB_ = new Dictionary<string, string>();
+    protected readonly List<Opposite> _opposites = new List<Opposite>();
+    private readonly Dictionary<string, string> _leftToRightMap = new Dictionary<string, string>();
 
     protected void Add(string a, string b)
     {
-        links_.Add(new Link(a, b));
+        _opposites.Add(new Opposite(a, b));
     }
 
     public string Find(string name)
     {
         string s;
-
-        if (mapA_.TryGetValue(name, out s))
-            return s;
-
-        if (mapB_.TryGetValue(name, out s))
-            return s;
-
-        return null;
+        return _leftToRightMap.TryGetValue(name, out s) ? s : null;
     }
 
     private void CreateDictionaries()
     {
-        foreach (var link in links_)
+        foreach (var opposite in _opposites)
         {
-            mapA_.Add(link.a, link.b);
-            mapA_.Add(link.b, link.a);
+            _leftToRightMap.Add(opposite.left, opposite.right);
         }
     }
 
+    private static Opposites _maleOpposites;
+    private static Opposites _femaleOpposites;
 
-
-    private static Links maleLinks_ = null;
-    private static Links femaleLinks_ = null;
-
-    public static Links Get(Atom atom)
+    public static Opposites Get(Atom atom)
     {
         var c = atom?.GetComponentInChildren<DAZCharacter>();
 
         if (c != null && c.isMale)
         {
-            if (maleLinks_ == null)
+            if (_maleOpposites == null)
             {
-                maleLinks_ = new MaleLinks();
-                maleLinks_.CreateDictionaries();
+                _maleOpposites = new MaleOpposites();
+                _maleOpposites.CreateDictionaries();
             }
 
-            return maleLinks_;
+            return _maleOpposites;
         }
         else
         {
-            if (femaleLinks_ == null)
+            if (_femaleOpposites == null)
             {
-                femaleLinks_ = new FemaleLinks();
-                femaleLinks_.CreateDictionaries();
+                _femaleOpposites = new FemaleOpposites();
+                _femaleOpposites.CreateDictionaries();
             }
 
-            return femaleLinks_;
+            return _femaleOpposites;
         }
     }
 }
 
-public class FemaleLinks : Links
+public class FemaleOpposites : Opposites
 {
-    public FemaleLinks()
+    public FemaleOpposites()
     {
         AddHead();
         AddArms();
@@ -464,9 +454,9 @@ public class FemaleLinks : Links
 }
 
 
-public class MaleLinks : Links
+public class MaleOpposites : Opposites
 {
-    public MaleLinks()
+    public MaleOpposites()
     {
         // todo
     }

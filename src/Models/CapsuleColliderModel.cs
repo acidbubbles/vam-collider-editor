@@ -141,7 +141,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetRadius(v), value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetRadius(v), value);
     }
 
     private void SetHeight(float value)
@@ -151,7 +151,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetHeight(v), value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetHeight(v), value);
     }
 
     private void SetCenterX(float value)
@@ -163,7 +163,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetCenterX(v), -value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetCenterX(v), -value);
     }
 
     private void SetCenterY(float value)
@@ -175,7 +175,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetCenterY(v), value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetCenterY(v), value);
     }
 
     private void SetCenterZ(float value)
@@ -187,7 +187,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetCenterZ(v), value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetCenterZ(v), value);
     }
 
     private void SetGpuFriction(float value)
@@ -195,7 +195,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         if (_gpuFrictionParam != null) _gpuFrictionParam.val = value;
         _gpu.friction = _gpuFriction = value;
         SetModified();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetGpuFriction(v), value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetGpuFriction(v), value);
     }
 
     private void SetGpuEnabled(bool value)
@@ -203,7 +203,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         if (_gpuEnabledParam != null) _gpuEnabledParam.val = value;
         _gpu.enabled = _gpuEnabled = value;
         SetModified();
-        SetLinked((m, v) => (m as CapsuleColliderModel)?.SetGpuEnabled(v), value);
+        SetOpposite((m, v) => (m as CapsuleColliderModel)?.SetGpuEnabled(v), value);
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
