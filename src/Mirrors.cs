@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-public static class Opposites
+public static class Mirrors
 {
     private static readonly List<KeyValuePair<string, string>> _map = new List<KeyValuePair<string, string>>();
 
@@ -45,7 +45,7 @@ public static class Opposites
         return matched ? s : null;
     }
 
-    static Opposites()
+    static Mirrors()
     {
         // ReSharper disable StringLiteralTypo
 

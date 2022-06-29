@@ -108,7 +108,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetOpposite<CapsuleColliderModel>(m => m.SetRadius(value));
+        SetMirror<CapsuleColliderModel>(m => m.SetRadius(value));
     }
 
     private void SetHeight(float value)
@@ -118,7 +118,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetOpposite<CapsuleColliderModel>(m => m.SetHeight(value));
+        SetMirror<CapsuleColliderModel>(m => m.SetHeight(value));
     }
 
     private void SetCenterX(float value)
@@ -130,7 +130,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetOpposite<CapsuleColliderModel>(m => m.SetCenterX(-value));
+        SetMirror<CapsuleColliderModel>(m => m.SetCenterX(-value));
     }
 
     private void SetCenterY(float value)
@@ -142,7 +142,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetOpposite<CapsuleColliderModel>(m => m.SetCenterY(value));
+        SetMirror<CapsuleColliderModel>(m => m.SetCenterY(value));
     }
 
     private void SetCenterZ(float value)
@@ -154,7 +154,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         _gpu?.UpdateData();
         SetModified();
         SyncPreview();
-        SetOpposite<CapsuleColliderModel>(m => m.SetCenterZ(value));
+        SetMirror<CapsuleColliderModel>(m => m.SetCenterZ(value));
     }
 
     private void SetGpuFriction(float value)
@@ -162,7 +162,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         if (_gpuFrictionParam != null) _gpuFrictionParam.val = value;
         _gpu.friction = _gpuFriction = value;
         SetModified();
-        SetOpposite<CapsuleColliderModel>(m => m.SetGpuFriction(value));
+        SetMirror<CapsuleColliderModel>(m => m.SetGpuFriction(value));
     }
 
     private void SetGpuEnabled(bool value)
@@ -170,7 +170,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         if (_gpuEnabledParam != null) _gpuEnabledParam.val = value;
         _gpu.enabled = _gpuEnabled = value;
         SetModified();
-        SetOpposite<CapsuleColliderModel>(m => m.SetGpuEnabled(value));
+        SetMirror<CapsuleColliderModel>(m => m.SetGpuEnabled(value));
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)

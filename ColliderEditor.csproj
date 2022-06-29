@@ -70,7 +70,7 @@
     <Compile Include="src\FloatExtensions.cs" />
     <Compile Include="src\Group.cs" />
     <Compile Include="src\JSONStorableExtensions.cs" />
-    <Compile Include="src\Opposites.cs" />
+    <Compile Include="src\Mirrors.cs" />
     <Compile Include="src\MaterialHelper.cs" />
     <Compile Include="src\MigrationHelper.cs" />
     <Compile Include="src\NameHelper.cs" />

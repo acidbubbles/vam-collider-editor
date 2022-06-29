@@ -31,7 +31,7 @@ public class ColliderEditor : MVRScript
     private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
 
-    private IModel _selected, _selectedOpposite;
+    private IModel _selected, _selectedMirror;
     private JSONClass _jsonWhenDisabled;
     private bool _restored;
 
@@ -94,16 +94,16 @@ public class ColliderEditor : MVRScript
         xRayPreviewsToggle.label = "Use XRay Previews";
 
 
-        var forceOppositeCollidersSymmetry = new JSONStorableBool("forceOppositeCollidersSymmetry", ColliderPreviewConfig.DefaultForceOppositeCollidersSymmetry, value =>
+        var forceMirrorCollidersSymmetry = new JSONStorableBool("forceMirrorCollidersSymmetry", ColliderPreviewConfig.DefaultForceMirrorCollidersSymmetry, value =>
         {
-            Config.ForceOppositeCollidersSymmetry = value;
+            Config.ForceMirrorCollidersSymmetry = value;
             foreach (var editable in EditablesList.All)
                 editable.SyncWithMirror = value;
             SelectEditable(_selected);
         });
-        RegisterBool(forceOppositeCollidersSymmetry);
-        var forceOppositeCollidersSymmetryToggle = CreateToggle(forceOppositeCollidersSymmetry);
-        forceOppositeCollidersSymmetryToggle.label = "Force Opposite Colliders Symmetry";
+        RegisterBool(forceMirrorCollidersSymmetry);
+        var forceMirrorCollidersSymmetryToggle = CreateToggle(forceMirrorCollidersSymmetry);
+        forceMirrorCollidersSymmetryToggle.label = "Force Mirror Colliders Symmetry";
 
         var previewOpacity = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
         {
@@ -123,8 +123,8 @@ public class ColliderEditor : MVRScript
             Config.SelectedPreviewsOpacity = alpha;
             if (_selected != null)
                 _selected.UpdatePreviewFromConfig();
-            if (_selectedOpposite != null)
-                _selectedOpposite.UpdatePreviewFromConfig();
+            if (_selectedMirror != null)
+                _selectedMirror.UpdatePreviewFromConfig();
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacity);
         CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
@@ -302,7 +302,7 @@ public class ColliderEditor : MVRScript
     public void SelectEditable(IModel val)
     {
         Deselect(ref _selected);
-        Deselect(ref _selectedOpposite);
+        Deselect(ref _selectedMirror);
 
         if (val == null)
         {
@@ -313,8 +313,8 @@ public class ColliderEditor : MVRScript
         _editablesJson.valNoCallback = val.Id;
 
         Select(ref _selected, val);
-        if (Config.ForceOppositeCollidersSymmetry && _selected.MirrorModel != null)
-            Select(ref _selectedOpposite, _selected.MirrorModel);
+        if (Config.ForceMirrorCollidersSymmetry && _selected.MirrorModel != null)
+            Select(ref _selectedMirror, _selected.MirrorModel);
     }
 
     private void Deselect(ref IModel selected)

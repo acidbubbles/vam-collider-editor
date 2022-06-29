@@ -9,7 +9,7 @@ public abstract class ModelBase<T> where T : Component
     private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
-    private bool _setOppositeInProgress;  // avoids recursion
+    private bool _setMirrorInProgress;  // avoids recursion
 
     protected readonly MVRScript Script;
 
@@ -261,21 +261,21 @@ public abstract class ModelBase<T> where T : Component
         }
     }
 
-    protected void SetOpposite<TModel>(Action<TModel> set) where TModel : ModelBase<T>
+    protected void SetMirror<TModel>(Action<TModel> set) where TModel : ModelBase<T>
     {
-        if (_setOppositeInProgress || !SyncWithMirror)
+        if (_setMirrorInProgress || !SyncWithMirror)
             return;
 
-        _setOppositeInProgress = true;
+        _setMirrorInProgress = true;
         try
         {
-            var opposite = Mirror as TModel;
-            if (opposite != null)
-                set(opposite);
+            var mirror = Mirror as TModel;
+            if (mirror != null)
+                set(mirror);
         }
         finally
         {
-            _setOppositeInProgress = false;
+            _setMirrorInProgress = false;
         }
     }
 

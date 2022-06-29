@@ -195,7 +195,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.collisionEnabled = _collisionEnabled = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetCollisionEnabled(value));
+        SetMirror<AutoColliderModel>(m => m.SetCollisionEnabled(value));
     }
 
     private void SetAutoLengthBuffer(float value)
@@ -204,7 +204,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.autoLengthBuffer = _autoLengthBuffer = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetAutoLengthBuffer(value));
+        SetMirror<AutoColliderModel>(m => m.SetAutoLengthBuffer(value));
     }
 
     private void SetColliderLength(float value)
@@ -213,7 +213,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderLength = _colliderLength = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetColliderLength(value));
+        SetMirror<AutoColliderModel>(m => m.SetColliderLength(value));
     }
 
     private void SetAutoRadiusBuffer(float value)
@@ -222,7 +222,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.autoRadiusBuffer = _autoRadiusBuffer = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetAutoRadiusBuffer(value));
+        SetMirror<AutoColliderModel>(m => m.SetAutoRadiusBuffer(value));
     }
 
     private void SetAutoRadiusMultiplier(float value)
@@ -231,7 +231,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.autoRadiusMultiplier = _autoRadiusMultiplier = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetAutoRadiusMultiplier(value));
+        SetMirror<AutoColliderModel>(m => m.SetAutoRadiusMultiplier(value));
     }
 
     private void SetColliderRadius(float value)
@@ -240,7 +240,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderRadius = _colliderRadius = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetColliderRadius(value));
+        SetMirror<AutoColliderModel>(m => m.SetColliderRadius(value));
     }
 
     private void SetHardColliderBuffer(float value)
@@ -249,7 +249,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.hardColliderBuffer = _hardColliderBuffer = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetHardColliderBuffer(value));
+        SetMirror<AutoColliderModel>(m => m.SetHardColliderBuffer(value));
     }
 
     private void SetColliderLookOffset(float value)
@@ -258,7 +258,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderLookOffset = _colliderLookOffset = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetColliderLookOffset(value));
+        SetMirror<AutoColliderModel>(m => m.SetColliderLookOffset(value));
     }
 
     private void SetColliderUpOffset(float value)
@@ -267,7 +267,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderUpOffset = _colliderUpOffset = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetColliderUpOffset(value));
+        SetMirror<AutoColliderModel>(m => m.SetColliderUpOffset(value));
     }
 
     private void SetColliderRightOffset(float value)
@@ -276,7 +276,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderRightOffset = _colliderRightOffset = value;
         RefreshAutoCollider();
         SetModified();
-        SetOpposite<AutoColliderModel>(m => m.SetColliderRightOffset(-value));
+        SetMirror<AutoColliderModel>(m => m.SetColliderRightOffset(-value));
     }
 
     public void RefreshAutoCollider()

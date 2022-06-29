@@ -142,7 +142,7 @@ public class EditablesList
         var map = items.ToDictionary(i => i.Id, i => i);
         foreach (var left in items)
         {
-            var rightId = Opposites.Find(left.Id);
+            var rightId = Mirrors.Find(left.Id);
             if (rightId == null)
             {
                 continue;
