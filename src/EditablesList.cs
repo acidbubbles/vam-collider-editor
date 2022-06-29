@@ -200,8 +200,13 @@ public class EditablesList
         where TComponent : Component
     {
         var map = items.ToDictionary(i => i.Id, i => i);
+        var skip = new HashSet<TModel>();
         foreach (var left in items)
         {
+            if (skip.Contains(left))
+            {
+                continue;
+            }
             var rightId = Mirrors.Find(left.Id);
             if (rightId == null)
             {
@@ -216,6 +221,7 @@ public class EditablesList
             }
             left.Mirror = right;
             right.Mirror = left;
+            skip.Add(right);
         }
     }
 }
