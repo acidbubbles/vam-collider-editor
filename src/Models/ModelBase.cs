@@ -255,6 +255,8 @@ public abstract class ModelBase<T> where T : Component
 
     public void ResetToInitial()
     {
+        if (!Modified) return;
+
         DoResetToInitial();
 
         if (Selected)
