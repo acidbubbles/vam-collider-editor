@@ -24,6 +24,8 @@ public class ColliderEditor : MVRScript
 #endif
     private const string _collidersSavePath = "Saves\\PluginData\\ColliderEditor";
 
+    private JSONStorableBool _showPreviewsJSON;
+    private JSONStorableBool _xRayPreviewsJSON;
     private JSONStorableStringChooser _presetsJson;
     private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
@@ -46,6 +48,7 @@ public class ColliderEditor : MVRScript
             EditablesList = EditablesList.Build(this, Config);
             BuildUI();
             SuperController.singleton.StartCoroutine(DeferredInit());
+            SuperController.singleton.BroadcastMessage("OnActionsProviderAvailable", this, SendMessageOptions.DontRequireReceiver);
         }
         catch (Exception e)
         {
@@ -69,7 +72,7 @@ public class ColliderEditor : MVRScript
 
     private void BuildUI()
     {
-        var showPreviews = new JSONStorableBool("showPreviews", ColliderPreviewConfig.DefaultPreviewsEnabled, value =>
+        _showPreviewsJSON = new JSONStorableBool("showPreviews", ColliderPreviewConfig.DefaultPreviewsEnabled, value =>
         {
             Config.PreviewsEnabled = value;
             foreach (var editable in EditablesList.All)
@@ -79,46 +82,45 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        RegisterBool(showPreviews);
-        var showPreviewsToggle = CreateToggle(showPreviews);
+        RegisterBool(_showPreviewsJSON);
+        var showPreviewsToggle = CreateToggle(_showPreviewsJSON);
         showPreviewsToggle.label = "Show Previews";
 
-        var xRayPreviews = new JSONStorableBool("xRayPreviews", ColliderPreviewConfig.DefaultXRayPreviews, value =>
+        _xRayPreviewsJSON = new JSONStorableBool("xRayPreviews", ColliderPreviewConfig.DefaultXRayPreviews, value =>
         {
             Config.XRayPreviews = value;
             foreach (var editable in EditablesList.All)
                 editable.UpdatePreviewFromConfig();
         });
-        RegisterBool(xRayPreviews);
-        var xRayPreviewsToggle = CreateToggle(xRayPreviews);
+        RegisterBool(_xRayPreviewsJSON);
+        var xRayPreviewsToggle = CreateToggle(_xRayPreviewsJSON);
         xRayPreviewsToggle.label = "Use XRay Previews";
 
-
-        var forceMirrorCollidersSymmetry = new JSONStorableBool("forceMirrorCollidersSymmetry", ColliderPreviewConfig.DefaultForceMirrorCollidersSymmetry, value =>
+        var forceMirrorCollidersSymmetryJSON = new JSONStorableBool("forceMirrorCollidersSymmetry", ColliderPreviewConfig.DefaultForceMirrorCollidersSymmetry, value =>
         {
             Config.ForceMirrorCollidersSymmetry = value;
             foreach (var editable in EditablesList.All)
                 editable.SyncWithMirror = value;
             SelectEditable(_selected);
         });
-        RegisterBool(forceMirrorCollidersSymmetry);
-        var forceMirrorCollidersSymmetryToggle = CreateToggle(forceMirrorCollidersSymmetry);
+        RegisterBool(forceMirrorCollidersSymmetryJSON);
+        var forceMirrorCollidersSymmetryToggle = CreateToggle(forceMirrorCollidersSymmetryJSON);
         forceMirrorCollidersSymmetryToggle.label = "Force Mirror Colliders Symmetry";
 
-        var previewOpacity = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
+        var previewOpacityJSON = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
         {
-            if (!insideRestore) showPreviews.val = true;
+            if (!insideRestore) _showPreviewsJSON.val = true;
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
             Config.PreviewsOpacity = alpha;
             foreach (var editable in EditablesList.All)
                 editable.UpdatePreviewFromConfig();
         }, 0f, 1f);
-        RegisterFloat(previewOpacity);
-        CreateSlider(previewOpacity).label = "Preview Opacity";
+        RegisterFloat(previewOpacityJSON);
+        CreateSlider(previewOpacityJSON).label = "Preview Opacity";
 
-        JSONStorableFloat selectedPreviewOpacity = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewOpacity, value =>
+        var selectedPreviewOpacityJSON = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewOpacity, value =>
         {
-            if (!insideRestore) showPreviews.val = true;
+            if (!insideRestore) _showPreviewsJSON.val = true;
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
             Config.SelectedPreviewsOpacity = alpha;
             if (_selected != null)
@@ -126,8 +128,8 @@ public class ColliderEditor : MVRScript
             if (_selectedMirror != null)
                 _selectedMirror.UpdatePreviewFromConfig();
         }, 0f, 1f);
-        RegisterFloat(selectedPreviewOpacity);
-        CreateSlider(selectedPreviewOpacity).label = "Selected Preview Opacity";
+        RegisterFloat(selectedPreviewOpacityJSON);
+        CreateSlider(selectedPreviewOpacityJSON).label = "Selected Preview Opacity";
 
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
@@ -554,6 +556,7 @@ public class ColliderEditor : MVRScript
 
     public void OnDestroy()
     {
+        SuperController.singleton.BroadcastMessage("OnActionsProviderDestroyed", this, SendMessageOptions.DontRequireReceiver);
         if (EditablesList?.All == null) return;
         try
         {
@@ -571,18 +574,16 @@ public class ColliderEditor : MVRScript
     private void Update()
     {
         if (EditablesList == null) return;
+        if (!(Time.time > _nextUpdate)) return;
         try
         {
-            if (Time.time > _nextUpdate)
+            foreach (var editable in EditablesList.All)
             {
-                foreach (var editable in EditablesList.All)
-                {
-                    if (editable.SyncOverrides())
-                        editable.SyncPreview();
-                }
-
-                _nextUpdate = Time.time + 1f;
+                if (editable.SyncOverrides())
+                    editable.SyncPreview();
             }
+
+            _nextUpdate = Time.time + 1f;
         }
         catch (Exception e)
         {
@@ -592,6 +593,12 @@ public class ColliderEditor : MVRScript
     }
 
     #endregion
+
+    public void OnBindingsListRequested(List<object> bindings)
+    {
+        bindings.Add(new JSONStorableAction("Toggle_ShowPreviews", () => _showPreviewsJSON.val = !_showPreviewsJSON.val));
+        bindings.Add(new JSONStorableAction("Toggle_XRayPreviews", () => _xRayPreviewsJSON.val = !_xRayPreviewsJSON.val));
+    }
 
     private void LogError(string method, string message) => SuperController.LogError($"{nameof(ColliderEditor)}.{method}: {message}");
 
