@@ -9,7 +9,7 @@ public abstract class ModelBase<T> where T : Component
     private JSONStorableBool _modifiedJson;
     private readonly List<JSONStorableParam> _controlsStorables = new List<JSONStorableParam>();
     private readonly List<UIDynamic> _controlDynamics = new List<UIDynamic>();
-    private static bool _ignoreSetOpposite;  // avoids recursion
+    private bool _setOppositeInProgress;  // avoids recursion
 
     protected readonly MVRScript Script;
 
@@ -17,6 +17,7 @@ public abstract class ModelBase<T> where T : Component
     public Group Group { get; set; }
     public ModelBase<T> Mirror { get; set; }
     public IModel MirrorModel => Mirror as IModel;
+    public bool SyncWithMirror { get; set; }
     public string Id { get; }
     public string Label { get; }
     public bool IsDuplicate { get; set; }
@@ -75,7 +76,6 @@ public abstract class ModelBase<T> where T : Component
             DestroyControls();
     }
 
-    public virtual void UpdatePreviewFromConfig() { }
     public abstract void SyncPreview();
 
     public void SetModified()
@@ -263,13 +263,10 @@ public abstract class ModelBase<T> where T : Component
 
     protected void SetOpposite<TModel>(Action<TModel> set) where TModel : ModelBase<T>
     {
-        if (_ignoreSetOpposite)
+        if (_setOppositeInProgress || !SyncWithMirror)
             return;
 
-        if (!(Script as ColliderEditor).Config.ForceOppositeCollidersSymmetry)
-            return;
-
-        _ignoreSetOpposite = true;
+        _setOppositeInProgress = true;
         try
         {
             var opposite = Mirror as TModel;
@@ -278,7 +275,7 @@ public abstract class ModelBase<T> where T : Component
         }
         finally
         {
-            _ignoreSetOpposite = false;
+            _setOppositeInProgress = false;
         }
     }
 

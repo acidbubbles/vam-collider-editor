@@ -10,6 +10,7 @@ public interface IModel
     bool Selected { get; set; }
     bool Modified { get; }
     IModel MirrorModel { get; }
+    bool SyncWithMirror { get; set; }
 
     void UpdatePreviewFromConfig();
     void SyncPreview();

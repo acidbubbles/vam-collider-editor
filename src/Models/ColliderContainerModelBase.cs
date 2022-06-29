@@ -44,7 +44,7 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
             colliderModel.SyncPreview();
     }
 
-    public override void UpdatePreviewFromConfig()
+    public virtual void UpdatePreviewFromConfig()
     {
         if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())

@@ -97,6 +97,8 @@ public class ColliderEditor : MVRScript
         var forceOppositeCollidersSymmetry = new JSONStorableBool("forceOppositeCollidersSymmetry", ColliderPreviewConfig.DefaultForceOppositeCollidersSymmetry, value =>
         {
             Config.ForceOppositeCollidersSymmetry = value;
+            foreach (var editable in EditablesList.All)
+                editable.SyncWithMirror = value;
             SelectEditable(_selected);
         });
         RegisterBool(forceOppositeCollidersSymmetry);

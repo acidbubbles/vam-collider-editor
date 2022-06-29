@@ -47,7 +47,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     public abstract bool SyncOverrides();
 
-    public override void UpdatePreviewFromConfig()
+    public virtual void UpdatePreviewFromConfig()
     {
         if (_config.PreviewsEnabled && Shown)
         {
