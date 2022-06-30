@@ -4,25 +4,25 @@ using UnityEngine;
 
 public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IModel
 {
-    private readonly bool _initialCollisionEnabled;
+    private bool _initialCollisionEnabled;
     private bool _collisionEnabled;
-    private readonly float _initialColliderLength;
+    private float _initialColliderLength;
     private float _colliderLength;
-    private readonly float _initialColliderRadius;
+    private float _initialColliderRadius;
     private float _colliderRadius;
-    private readonly float _initialHardColliderBuffer;
+    private float _initialHardColliderBuffer;
     private float _hardColliderBuffer;
-    private readonly float _initialColliderLookOffset;
+    private float _initialColliderLookOffset;
     private float _colliderLookOffset;
-    private readonly float _initialColliderUpOffset;
+    private float _initialColliderUpOffset;
     private float _colliderUpOffset;
-    private readonly float _initialColliderRightOffset;
+    private float _initialColliderRightOffset;
     private float _colliderRightOffset;
-    private readonly float _initialAutoLengthBuffer;
+    private float _initialAutoLengthBuffer;
     private float _autoLengthBuffer;
-    private readonly float _initialAutoRadiusBuffer;
+    private float _initialAutoRadiusBuffer;
     private float _autoRadiusBuffer;
-    private readonly float _initialAutoRadiusMultiplier;
+    private float _initialAutoRadiusMultiplier;
     private float _autoRadiusMultiplier;
     private readonly List<ColliderModel> _ownedColliders = new List<ColliderModel>();
 
@@ -52,18 +52,23 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
     public AutoColliderModel(MVRScript script, AutoCollider autoCollider, ColliderPreviewConfig config)
         : base(script, autoCollider, $"[au] {NameHelper.Simplify(autoCollider.name)}")
     {
-        _initialCollisionEnabled = _collisionEnabled = autoCollider.collisionEnabled;
-        _initialColliderLength = _colliderLength = autoCollider.colliderLength;
-        _initialColliderRadius = _colliderRadius = autoCollider.colliderRadius;
-        _initialHardColliderBuffer = _hardColliderBuffer = autoCollider.hardColliderBuffer;
-        _initialColliderLookOffset = _colliderLookOffset = autoCollider.colliderLookOffset;
-        _initialColliderUpOffset = _colliderUpOffset = autoCollider.colliderUpOffset;
-        _initialColliderRightOffset = _colliderRightOffset = autoCollider.colliderRightOffset;
-        _initialAutoLengthBuffer = _autoLengthBuffer = autoCollider.autoLengthBuffer;
-        _initialAutoRadiusBuffer = _autoRadiusBuffer = autoCollider.autoRadiusBuffer;
-        _initialAutoRadiusMultiplier = _autoRadiusMultiplier = autoCollider.autoRadiusMultiplier;
+        StoreInitialValues();
         if (Component.hardCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, autoCollider.hardCollider, config));
         if (Component.jointCollider != null) _ownedColliders.Add(ColliderModel.CreateTyped(script, Component.jointCollider, config));
+    }
+
+    private void StoreInitialValues()
+    {
+        _initialCollisionEnabled = _collisionEnabled = AutoCollider.collisionEnabled;
+        _initialColliderLength = _colliderLength = AutoCollider.colliderLength;
+        _initialColliderRadius = _colliderRadius = AutoCollider.colliderRadius;
+        _initialHardColliderBuffer = _hardColliderBuffer = AutoCollider.hardColliderBuffer;
+        _initialColliderLookOffset = _colliderLookOffset = AutoCollider.colliderLookOffset;
+        _initialColliderUpOffset = _colliderUpOffset = AutoCollider.colliderUpOffset;
+        _initialColliderRightOffset = _colliderRightOffset = AutoCollider.colliderRightOffset;
+        _initialAutoLengthBuffer = _autoLengthBuffer = AutoCollider.autoLengthBuffer;
+        _initialAutoRadiusBuffer = _autoRadiusBuffer = AutoCollider.autoRadiusBuffer;
+        _initialAutoRadiusMultiplier = _autoRadiusMultiplier = AutoCollider.autoRadiusMultiplier;
     }
 
     public bool SyncOverrides()
@@ -289,12 +294,9 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
 
     public void ReapplyMultiplier()
     {
-        if (Modified)
-        {
-            if (Component.autoRadiusMultiplier != _autoRadiusMultiplier)
-                Component.autoRadiusMultiplier = _autoRadiusMultiplier;
-            return;
-        }
+        if (!Modified) return;
+        if (Component.autoRadiusMultiplier != _autoRadiusMultiplier)
+            Component.autoRadiusMultiplier = _autoRadiusMultiplier;
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
@@ -377,6 +379,11 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         Component.colliderLookOffset = _colliderLookOffset = _initialColliderLookOffset;
         Component.colliderUpOffset = _colliderUpOffset = _initialColliderUpOffset;
         Component.colliderRightOffset = _colliderRightOffset = _initialColliderRightOffset;
+
+        // Restore initial values
+        Component.AutoColliderSizeSet(true);
+
+        StoreInitialValues();
 
         RefreshAutoCollider();
     }
