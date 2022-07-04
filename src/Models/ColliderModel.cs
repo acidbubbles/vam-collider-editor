@@ -14,23 +14,19 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
         Collider = collider;
     }
 
-    public override void CreatePreview()
+    public override GameObject CreatePreview()
     {
-        if (Preview != null) return;
+        var preview = DoCreatePreview();
 
-        Preview = DoCreatePreview();
-
-        Preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial(Id.GetHashCode());
-        foreach (var c in Preview.GetComponents<Collider>())
+        preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial(Id.GetHashCode());
+        foreach (var c in preview.GetComponents<Collider>())
         {
             c.enabled = false;
             Object.Destroy(c);
         }
 
-        Preview.transform.SetParent(Collider.transform, false);
-
-        SyncPreview();
-        RefreshHighlighted();
+        preview.transform.SetParent(Collider.transform, false);
+        return preview;
     }
 }
 
@@ -43,15 +39,19 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public Collider Collider { get; set; }
     public RigidbodyModel RigidbodyModel { get; set; }
     public GameObject Preview { get; protected set; }
+    public GameObject XRayPreview { get; protected set; }
     public bool Shown { get; set; }
 
     public abstract bool SyncOverrides();
 
-    public virtual void UpdatePreviewFromConfig()
+    public virtual void UpdatePreviewsFromConfig()
     {
         if (_config.PreviewsEnabled && Shown)
         {
-            CreatePreview();
+            if(Preview == null)
+            {
+                Preview = CreatePreview();
+            }
 
             var previewRenderer = Preview.GetComponent<Renderer>();
             var material = previewRenderer.material;
@@ -71,14 +71,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
                 previewRenderer.enabled = true;
             }
 
-            if (_config.XRayPreviews && material.shader.name != "Battlehub/RTGizmos/Handles")
-            {
-                material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
-                material.SetFloat("_Offset", 1f);
-                material.SetFloat("_MinAlpha", 1f);
-                previewRenderer.material = material;
-            }
-            else if (!_config.XRayPreviews & material.shader.name != "Standard")
+            if (material.shader.name != "Standard")
             {
                 material.shader = Shader.Find("Standard");
                 material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
@@ -90,10 +83,57 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
                 material.renderQueue = 3000;
                 previewRenderer.material = material;
             }
+
+            UpdateXRayPreviewFromConfig();
+
+            SyncPreviews();
+            RefreshHighlighted(Preview);
+            RefreshHighlighted(XRayPreview);
         }
         else
         {
-            DestroyPreview();
+            DestroyPreviews();
+        }
+    }
+
+    public void UpdateXRayPreviewFromConfig()
+    {
+        if (_config.XRayPreviews)
+        {
+            if(XRayPreview == null)
+            {
+                XRayPreview = CreatePreview();
+            }
+
+            var previewRenderer = XRayPreview.GetComponent<Renderer>();
+            var material = previewRenderer.material;
+
+            if (!_highlighted)
+            {
+                var color = previewRenderer.material.color;
+                color.a = _config.PreviewsOpacity;
+                previewRenderer.material.color = color;
+            }
+            else
+            {
+                var color = previewRenderer.material.color;
+                color.a = _config.SelectedPreviewsOpacity;
+                previewRenderer.material.color = color;
+                previewRenderer.enabled = false;
+                previewRenderer.enabled = true;
+            }
+
+            if (material.shader.name != "Battlehub/RTGizmos/Handles")
+            {
+                material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
+                material.SetFloat("_Offset", 1f);
+                material.SetFloat("_MinAlpha", 1f);
+                previewRenderer.material = material;
+            }
+        }
+        else
+        {
+            DestroyXRayPreview();
         }
     }
 
@@ -144,7 +184,13 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     public abstract void DoCreateControls();
 
-    public virtual void DestroyPreview()
+    public virtual void DestroyPreviews()
+    {
+        DestroyPreview();
+        DestroyXRayPreview();
+    }
+
+    private void DestroyPreview()
     {
         if (Preview != null)
         {
@@ -153,7 +199,16 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         }
     }
 
-    public abstract void CreatePreview();
+    private void DestroyXRayPreview()
+    {
+        if (XRayPreview != null)
+        {
+            Object.Destroy(XRayPreview);
+            XRayPreview = null;
+        }
+    }
+
+    public abstract GameObject CreatePreview();
 
     protected abstract GameObject DoCreatePreview();
 
@@ -162,14 +217,15 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         if (_highlighted == value) return;
 
         _highlighted = value;
-        RefreshHighlighted();
+        RefreshHighlighted(Preview);
+        RefreshHighlighted(XRayPreview);
     }
 
-    protected void RefreshHighlighted()
+    protected void RefreshHighlighted(GameObject preview)
     {
-        if (Preview != null)
+        if (preview != null)
         {
-            var previewRenderer = Preview.GetComponent<Renderer>();
+            var previewRenderer = preview.GetComponent<Renderer>();
             var color = previewRenderer.material.color;
             color.a = _highlighted ? _config.SelectedPreviewsOpacity : _config.PreviewsOpacity;
             previewRenderer.material.color = color;
@@ -179,12 +235,12 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public override void LoadJson(JSONClass jsonClass)
     {
         base.LoadJson(jsonClass);
-        SyncPreview();
+        SyncPreviews();
     }
 
     protected override void DoResetToInitial()
     {
-        SyncPreview();
+        SyncPreviews();
     }
 
     public override string ToString() => Id;

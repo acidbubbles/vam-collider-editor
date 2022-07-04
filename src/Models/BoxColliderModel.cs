@@ -34,12 +34,18 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-    public override void SyncPreview()
+    public override void SyncPreviews()
     {
-        if (Preview == null) return;
+        SyncPreview(Preview);
+        SyncPreview(XRayPreview);
+    }
 
-        Preview.transform.localScale = Collider.size;
-        Preview.transform.localPosition = Collider.center;
+    private void SyncPreview(GameObject preview)
+    {
+        if (preview == null) return;
+
+        preview.transform.localScale = Collider.size;
+        preview.transform.localPosition = Collider.center;
     }
 
     protected override void DoLoadJson(JSONClass jsonClass)
@@ -78,7 +84,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.x = value;
             Collider.size = _size = size;
             SetModified();
-            SyncPreview();
+            SyncPreviews();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.x), "Size.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("sizeY", Collider.size.y, value =>
@@ -87,7 +93,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.y = value;
             Collider.size = _size = size;
             SetModified();
-            SyncPreview();
+            SyncPreviews();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.y), "Size.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("sizeZ", Collider.size.z, value =>
@@ -96,7 +102,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             size.z = value;
             Collider.size = _size = size;
             SetModified();
-            SyncPreview();
+            SyncPreviews();
         }, -0.25f, 0.25f, false)).WithDefault(_initialSize.z), "Size.Z"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerX", Collider.center.x, value =>
@@ -105,7 +111,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.x = value;
             Collider.center = _center = center;
             SetModified();
-            SyncPreview();
+            SyncPreviews();
         }, MakeMinPosition(Collider.center.x), MakeMaxPosition(Collider.center.x), false)).WithDefault(_initialCenter.x), "Center.X"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerY", Collider.center.y, value =>
@@ -114,7 +120,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.y = value;
             Collider.center = _center = center;
             SetModified();
-            SyncPreview();
+            SyncPreviews();
         }, MakeMinPosition(Collider.center.y), MakeMaxPosition(Collider.center.y), false)).WithDefault(_initialCenter.y), "Center.Y"));
 
         RegisterControl(Script.CreateFloatSlider(RegisterStorable(new JSONStorableFloat("centerZ", Collider.center.z, value =>
@@ -123,7 +129,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
             center.z = value;
             Collider.center = _center = center;
             SetModified();
-            SyncPreview();
+            SyncPreviews();
         }, MakeMinPosition(Collider.center.z), MakeMaxPosition(Collider.center.z), false)).WithDefault(_initialCenter.z), "Center.Z"));
     }
 }

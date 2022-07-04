@@ -289,7 +289,7 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         AutoCollider.resizeTrigger = AutoCollider.ResizeTrigger.Always;
         AutoCollider.AutoColliderSizeSet(true);
         AutoCollider.resizeTrigger = previousResizeTrigger;
-        SyncPreview();
+        SyncPreviews();
     }
 
     public void ReapplyMultiplier()

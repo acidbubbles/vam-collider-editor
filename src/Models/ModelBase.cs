@@ -94,7 +94,7 @@ public abstract class ModelBase<T> where T : Component
             DestroyControls();
     }
 
-    public abstract void SyncPreview();
+    public abstract void SyncPreviews();
 
     public void SetModified()
     {
