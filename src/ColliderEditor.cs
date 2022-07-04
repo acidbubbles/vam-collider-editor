@@ -260,7 +260,14 @@ public class ColliderEditor : MVRScript
             btn.GetComponent<UIDynamicButton>().label = "<";
             btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
             {
-                popup.popup.SetPreviousValue();
+                if(popup.popup.currentValue == popup.popup.popupValues.First())
+                {
+                    popup.popup.currentValue = popup.popup.popupValues.Last();
+                }
+                else
+                {
+                    popup.popup.SetPreviousValue();
+                }
             });
             var prevBtnRect = btn.GetComponent<RectTransform>();
             prevBtnRect.pivot = new Vector2(0, 0);
@@ -279,7 +286,14 @@ public class ColliderEditor : MVRScript
             btn.GetComponent<UIDynamicButton>().label = ">";
             btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
             {
-                popup.popup.SetNextValue();
+                if(popup.popup.currentValue == popup.popup.popupValues.Last())
+                {
+                    popup.popup.currentValue = popup.popup.popupValues.First();
+                }
+                else
+                {
+                    popup.popup.SetNextValue();
+                }
             });
             var prevBtnRect = btn.GetComponent<RectTransform>();
             prevBtnRect.pivot = new Vector2(0, 0);
