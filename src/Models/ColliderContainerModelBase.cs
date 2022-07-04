@@ -36,24 +36,24 @@ public abstract class ColliderContainerModelBase<T> : ModelBase<T> where T : Com
             collider.SetHighlighted(value);
     }
 
-    public override void SyncPreview()
+    public override void SyncPreviews()
     {
         if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
-            colliderModel.SyncPreview();
+            colliderModel.SyncPreviews();
     }
 
-    public virtual void UpdatePreviewFromConfig()
+    public virtual void UpdatePreviewsFromConfig()
     {
         if (!OwnsColliders) return;
         foreach (var colliderModel in GetColliders())
-            colliderModel.UpdatePreviewFromConfig();
+            colliderModel.UpdatePreviewsFromConfig();
     }
 
-    public void DestroyPreview()
+    public void DestroyPreviews()
     {
         foreach (var colliderModel in GetColliders())
-            colliderModel.DestroyPreview();
+            colliderModel.DestroyPreviews();
     }
 
     public abstract IEnumerable<ColliderModel> GetColliders();

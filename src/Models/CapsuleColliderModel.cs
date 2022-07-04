@@ -107,7 +107,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.radius = _radius = value;
         _gpu?.UpdateData();
         SetModified();
-        SyncPreview();
+        SyncPreviews();
         SetMirror<CapsuleColliderModel>(m => m.SetRadius(value));
     }
 
@@ -117,7 +117,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.height = _height = value;
         _gpu?.UpdateData();
         SetModified();
-        SyncPreview();
+        SyncPreviews();
         SetMirror<CapsuleColliderModel>(m => m.SetHeight(value));
     }
 
@@ -129,7 +129,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.center = _center = center;
         _gpu?.UpdateData();
         SetModified();
-        SyncPreview();
+        SyncPreviews();
         SetMirror<CapsuleColliderModel>(m => m.SetCenterX(-value));
     }
 
@@ -141,7 +141,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.center = _center = center;
         _gpu?.UpdateData();
         SetModified();
-        SyncPreview();
+        SyncPreviews();
         SetMirror<CapsuleColliderModel>(m => m.SetCenterY(value));
     }
 
@@ -153,7 +153,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
         Collider.center = _center = center;
         _gpu?.UpdateData();
         SetModified();
-        SyncPreview();
+        SyncPreviews();
         SetMirror<CapsuleColliderModel>(m => m.SetCenterZ(value));
     }
 
@@ -218,17 +218,23 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Capsule);
 
-    public override void SyncPreview()
+    public override void SyncPreviews()
     {
-        if (Preview == null) return;
+        SyncPreview(Preview);
+        SyncPreview(XRayPreview);
+    }
+
+    private void SyncPreview(GameObject preview)
+    {
+        if (preview == null) return;
 
         float size = Collider.radius * 2;
         float height = Collider.height / 2;
-        Preview.transform.localScale = new Vector3(size, height, size);
+        preview.transform.localScale = new Vector3(size, height, size);
         if (Collider.direction == 0)
-            Preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.forward);
+            preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.forward);
         else if (Collider.direction == 2)
-            Preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.right);
-        Preview.transform.localPosition = Collider.center;
+            preview.transform.localRotation = Quaternion.AngleAxis(90, Vector3.right);
+        preview.transform.localPosition = Collider.center;
     }
 }

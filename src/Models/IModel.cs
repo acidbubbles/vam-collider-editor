@@ -13,9 +13,9 @@ public interface IModel
     IModel MirrorModel { get; }
     bool SyncWithMirror { get; set; }
 
-    void UpdatePreviewFromConfig();
-    void SyncPreview();
-    void DestroyPreview();
+    void UpdatePreviewsFromConfig();
+    void SyncPreviews();
+    void DestroyPreviews();
     void ResetToInitial();
     bool SyncOverrides();
 

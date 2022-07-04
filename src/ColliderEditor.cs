@@ -92,7 +92,7 @@ public class ColliderEditor : MVRScript
         {
             Config.PreviewsEnabled = value;
             foreach (var editable in EditablesList.All)
-                editable.UpdatePreviewFromConfig();
+                editable.UpdatePreviewsFromConfig();
         })
         {
             isStorable = false,
@@ -106,7 +106,7 @@ public class ColliderEditor : MVRScript
         {
             Config.XRayPreviews = value;
             foreach (var editable in EditablesList.All)
-                editable.UpdatePreviewFromConfig();
+                editable.UpdatePreviewsFromConfig();
         });
         RegisterBool(_xRayPreviewsJSON);
         var xRayPreviewsToggle = CreateToggle(_xRayPreviewsJSON);
@@ -118,7 +118,7 @@ public class ColliderEditor : MVRScript
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
             Config.PreviewsOpacity = alpha;
             foreach (var editable in EditablesList.All)
-                editable.UpdatePreviewFromConfig();
+                editable.UpdatePreviewsFromConfig();
         }, 0f, 1f);
         RegisterFloat(previewOpacityJSON);
         CreateSlider(previewOpacityJSON).label = "Preview Opacity";
@@ -129,9 +129,9 @@ public class ColliderEditor : MVRScript
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
             Config.SelectedPreviewsOpacity = alpha;
             if (_selected != null)
-                _selected.UpdatePreviewFromConfig();
+                _selected.UpdatePreviewsFromConfig();
             if (_selectedMirror != null)
-                _selectedMirror.UpdatePreviewFromConfig();
+                _selectedMirror.UpdatePreviewsFromConfig();
         }, 0f, 1f);
         RegisterFloat(selectedPreviewOpacityJSON);
         CreateSlider(selectedPreviewOpacityJSON).label = "Selected Preview Opacity";
@@ -350,7 +350,7 @@ public class ColliderEditor : MVRScript
         selected.Selected = false;
         selected.Highlighted = false;
         selected.Shown = _filteredEditables.Contains(selected);
-        selected.UpdatePreviewFromConfig();
+        selected.UpdatePreviewsFromConfig();
         selected = null;
     }
 
@@ -361,7 +361,7 @@ public class ColliderEditor : MVRScript
         selected.Shown = true;
         selected.Highlighted = true;
         selected.Selected = showUI;
-        selected.UpdatePreviewFromConfig();
+        selected.UpdatePreviewsFromConfig();
     }
 
     private void UpdateFilter()
@@ -416,7 +416,7 @@ public class ColliderEditor : MVRScript
             foreach (var e in _filteredEditables)
             {
                 e.Shown = true;
-                e.UpdatePreviewFromConfig();
+                e.UpdatePreviewsFromConfig();
             }
 
             if (_ready)
@@ -437,7 +437,7 @@ public class ColliderEditor : MVRScript
         foreach (var e in previous)
         {
             e.Shown = false;
-            e.UpdatePreviewFromConfig();
+            e.UpdatePreviewsFromConfig();
         }
 
         SelectEditable(_selected);
@@ -573,7 +573,7 @@ public class ColliderEditor : MVRScript
             AppendJson(_jsonWhenDisabled);
             foreach (var editable in EditablesList.All)
             {
-                editable.DestroyPreview();
+                editable.DestroyPreviews();
                 editable.ResetToInitial();
             }
         }
@@ -612,7 +612,7 @@ public class ColliderEditor : MVRScript
             foreach (var editable in EditablesList.All)
             {
                 if (editable.SyncOverrides())
-                    editable.SyncPreview();
+                    editable.SyncPreviews();
             }
 
             _nextUpdate = Time.time + 1f;
