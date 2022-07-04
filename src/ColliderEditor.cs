@@ -249,26 +249,17 @@ public class ColliderEditor : MVRScript
     {
 #if (VAM_GT_1_20)
         var popup = CreateFilterablePopup(jssc, rightSide);
+        var uiPopup = popup.popup;
 
-        popup.popup.labelText.alignment = TextAnchor.UpperCenter;
-        popup.popup.labelText.GetComponent<RectTransform>().anchorMax = new Vector2(0, 0.89f);
+        uiPopup.labelText.alignment = TextAnchor.UpperCenter;
+        uiPopup.labelText.GetComponent<RectTransform>().anchorMax = new Vector2(0, 0.89f);
 
         {
             var btn = Instantiate(manager.configurableButtonPrefab);
             btn.SetParent(popup.transform, false);
             Destroy(btn.GetComponent<LayoutElement>());
             btn.GetComponent<UIDynamicButton>().label = "<";
-            btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
-            {
-                if(popup.popup.currentValue == popup.popup.popupValues.First())
-                {
-                    popup.popup.currentValue = popup.popup.popupValues.Last();
-                }
-                else
-                {
-                    popup.popup.SetPreviousValue();
-                }
-            });
+            btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() => uiPopup.SelectPrevious());
             var prevBtnRect = btn.GetComponent<RectTransform>();
             prevBtnRect.pivot = new Vector2(0, 0);
             prevBtnRect.anchoredPosition = new Vector2(10f, 0);
@@ -284,17 +275,7 @@ public class ColliderEditor : MVRScript
             btn.SetParent(popup.transform, false);
             Destroy(btn.GetComponent<LayoutElement>());
             btn.GetComponent<UIDynamicButton>().label = ">";
-            btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
-            {
-                if(popup.popup.currentValue == popup.popup.popupValues.Last())
-                {
-                    popup.popup.currentValue = popup.popup.popupValues.First();
-                }
-                else
-                {
-                    popup.popup.SetNextValue();
-                }
-            });
+            btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() => uiPopup.SelectNext());
             var prevBtnRect = btn.GetComponent<RectTransform>();
             prevBtnRect.pivot = new Vector2(0, 0);
             prevBtnRect.anchoredPosition = new Vector2(10f, 0);
@@ -312,8 +293,8 @@ public class ColliderEditor : MVRScript
 
         if(upwards)
         {
-            popup.popup.popupPanel.offsetMin += new Vector2(0, popup.popupPanelHeight + 60);
-            popup.popup.popupPanel.offsetMax += new Vector2(0, popup.popupPanelHeight + 60);
+            uiPopup.popupPanel.offsetMin += new Vector2(0, popup.popupPanelHeight + 60);
+            uiPopup.popupPanel.offsetMax += new Vector2(0, popup.popupPanelHeight + 60);
         }
 
         return popup;

@@ -76,6 +76,7 @@
     <Compile Include="src\NameHelper.cs" />
     <Compile Include="src\NaturalStringComparer.cs" />
     <Compile Include="src\Presets.cs" />
+    <Compile Include="src\UIPopupExtensions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
