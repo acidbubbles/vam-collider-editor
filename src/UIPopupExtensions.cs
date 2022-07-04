@@ -8,7 +8,7 @@ public static class UIPopupExtensions
     {
         if (uiPopup.currentValue == uiPopup.popupValues.First())
         {
-            uiPopup.currentValue = LastVisibleValue(uiPopup);
+            uiPopup.currentValue = uiPopup.LastVisibleValue();
         }
         else
         {
@@ -18,7 +18,7 @@ public static class UIPopupExtensions
 
     public static void SelectNext(this UIPopup uiPopup)
     {
-        if (uiPopup.currentValue == LastVisibleValue(uiPopup))
+        if (uiPopup.currentValue == uiPopup.LastVisibleValue())
         {
             uiPopup.currentValue = uiPopup.popupValues.First();
         }
