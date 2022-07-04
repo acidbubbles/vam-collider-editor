@@ -374,7 +374,7 @@ public class ColliderEditor : MVRScript
 
             if (_filterJson.val == Filters.ModifiedOnly)
                 filtered = filtered.Where(e => e.Modified);
-            else if (_filterJson.val == Filters.ModifiedOnly)
+            else if (_filterJson.val == Filters.NotModifiedOnly)
                 filtered = filtered.Where(e => !e.Modified);
 
 #if (!VAM_GT_1_20)
