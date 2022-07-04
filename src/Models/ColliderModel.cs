@@ -87,8 +87,8 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
             UpdateXRayPreviewFromConfig();
 
             SyncPreviews();
-            RefreshHighlighted(Preview);
-            RefreshHighlighted(XRayPreview);
+            RefreshHighlightedPreview();
+            RefreshHighlightedXRayPreview();
         }
         else
         {
@@ -111,13 +111,13 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
             if (!_highlighted)
             {
                 var color = previewRenderer.material.color;
-                color.a = _config.PreviewsOpacity;
+                color.a = _config.RelativeXRayOpacity * _config.PreviewsOpacity;
                 previewRenderer.material.color = color;
             }
             else
             {
                 var color = previewRenderer.material.color;
-                color.a = _config.SelectedPreviewsOpacity;
+                color.a = _config.RelativeXRayOpacity * _config.SelectedPreviewsOpacity;
                 previewRenderer.material.color = color;
                 previewRenderer.enabled = false;
                 previewRenderer.enabled = true;
@@ -217,17 +217,29 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
         if (_highlighted == value) return;
 
         _highlighted = value;
-        RefreshHighlighted(Preview);
-        RefreshHighlighted(XRayPreview);
+        RefreshHighlightedPreview();
+        RefreshHighlightedXRayPreview();
     }
 
-    protected void RefreshHighlighted(GameObject preview)
+    protected void RefreshHighlightedPreview()
     {
-        if (preview != null)
+        if (Preview != null)
         {
-            var previewRenderer = preview.GetComponent<Renderer>();
+            var previewRenderer = Preview.GetComponent<Renderer>();
             var color = previewRenderer.material.color;
             color.a = _highlighted ? _config.SelectedPreviewsOpacity : _config.PreviewsOpacity;
+            previewRenderer.material.color = color;
+        }
+    }
+
+    protected void RefreshHighlightedXRayPreview()
+    {
+        if (XRayPreview != null)
+        {
+            var previewRenderer = XRayPreview.GetComponent<Renderer>();
+            var color = previewRenderer.material.color;
+            var alpha = _highlighted ? _config.SelectedPreviewsOpacity : _config.PreviewsOpacity;
+            color.a = _config.RelativeXRayOpacity * alpha;
             previewRenderer.material.color = color;
         }
     }
