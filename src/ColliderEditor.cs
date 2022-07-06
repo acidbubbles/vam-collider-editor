@@ -37,6 +37,7 @@ public class ColliderEditor : MVRScript
     private JSONClass _jsonWhenDisabled;
     private bool _restored;
     private bool _ready;
+    private bool _uiOpenPrevFrame;
 
     public EditablesList EditablesList { get; private set; }
 
@@ -260,6 +261,7 @@ public class ColliderEditor : MVRScript
             btn.GetComponent<UIDynamicButton>().label = "<";
             btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
             {
+                popup.popup.visible = false;
                 popup.popup.SetPreviousValue();
             });
             var prevBtnRect = btn.GetComponent<RectTransform>();
@@ -279,6 +281,7 @@ public class ColliderEditor : MVRScript
             btn.GetComponent<UIDynamicButton>().label = ">";
             btn.GetComponent<UIDynamicButton>().button.onClick.AddListener(() =>
             {
+                popup.popup.visible = false;
                 popup.popup.SetNextValue();
             });
             var prevBtnRect = btn.GetComponent<RectTransform>();
@@ -596,12 +599,34 @@ public class ColliderEditor : MVRScript
             }
 
             _nextUpdate = Time.time + 1f;
+
+            CheckUIClosed();
         }
         catch (Exception e)
         {
             LogError(nameof(Update), $"{containingAtom.name}'s Collider Editor will be disabled.\r\n{e}");
             enabled = false;
         }
+    }
+
+    private void CheckUIClosed()
+    {
+        bool uiOpen = UITransform.gameObject.activeInHierarchy;
+        if(!uiOpen && _uiOpenPrevFrame)
+        {
+            ActionsOnUIClosed();
+        }
+
+        _uiOpenPrevFrame = uiOpen;
+    }
+
+    private void ActionsOnUIClosed()
+    {
+        _groupsJson.popup.visible = false;
+        _typesJson.popup.visible = false;
+        _filterJson.popup.visible = false;
+        _presetsJson.popup.visible = false;
+        _editablesJson.popup.visible = false;
     }
 
     #endregion
