@@ -173,7 +173,8 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        CreatePopupAuto(_groupsJson, false, 400f);
+        var groupsPopup = CreatePopupAuto(_groupsJson, false, 400f);
+        groupsPopup.popup.onOpenPopupHandlers += () => OnBlur(_groupsJson);
 
         var types = new List<string> { _noSelectionLabel };
         types.AddRange(EditablesList.All.Select(e => e.Type).Distinct());
@@ -184,7 +185,8 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        CreatePopupAuto(_typesJson, false, 360f);
+        var typesPopup = CreatePopupAuto(_typesJson, false, 360f);
+        typesPopup.popup.onOpenPopupHandlers += () => OnBlur(_typesJson);
 
         _filterJson = new JSONStorableStringChooser("Filter", Filters.List, Filters.None, "Filter")
         {
@@ -192,7 +194,8 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        CreatePopupAuto(_filterJson, false, 400, true);
+        var filterPopup = CreatePopupAuto(_filterJson, false, 400, true);
+        filterPopup.popup.onOpenPopupHandlers += () => OnBlur(_filterJson);
 
         _presetsJson = new JSONStorableStringChooser("Apply", Presets.List, Presets.None, "Apply to...")
         {
@@ -207,7 +210,8 @@ public class ColliderEditor : MVRScript
             isStorable = false,
             isRestorable = false
         };
-        CreatePopupAuto(_presetsJson, false, 500, true);
+        var presetPopup = CreatePopupAuto(_presetsJson, false, 500, true);
+        presetPopup.popup.onOpenPopupHandlers += () => OnBlur(_presetsJson);
 
 #if (!VAM_GT_1_20)
         _textFilterJson = new JSONStorableString("Search", _searchDefault)
@@ -242,6 +246,7 @@ public class ColliderEditor : MVRScript
         };
         var editablesList = CreatePopupAuto(_editablesJson, true);
         editablesList.popupPanelHeight = 1000f;
+        editablesList.popup.onOpenPopupHandlers += () => OnBlur(_editablesJson);
         _editablesJson.setCallbackFunction = id =>
         {
             IModel val;
@@ -621,11 +626,16 @@ public class ColliderEditor : MVRScript
 
     private void OnBlur()
     {
-        _groupsJson.popup.visible = false;
-        _typesJson.popup.visible = false;
-        _filterJson.popup.visible = false;
-        _presetsJson.popup.visible = false;
-        _editablesJson.popup.visible = false;
+        OnBlur(null);
+    }
+
+    private void OnBlur(JSONStorableStringChooser except)
+    {
+        if (except != _groupsJson) _groupsJson.popup.visible = false;
+        if (except != _typesJson) _typesJson.popup.visible = false;
+        if (except != _filterJson) _filterJson.popup.visible = false;
+        if (except != _presetsJson) _presetsJson.popup.visible = false;
+        if (except != _editablesJson) _editablesJson.popup.visible = false;
     }
 
     #endregion
