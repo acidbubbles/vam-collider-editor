@@ -24,3 +24,4 @@ src\MigrationHelper.cs
 src\NameHelper.cs
 src\NaturalStringComparer.cs
 src\Presets.cs
+src\UIListener.cs

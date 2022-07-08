@@ -7,7 +7,6 @@ using SimpleJSON;
 using MVR.FileManagementSecure;
 using System.Collections;
 
-
 /// <summary>
 /// Collider Editor
 /// By Acidbubbles, ProjectCanyon and via5
@@ -33,11 +32,11 @@ public class ColliderEditor : MVRScript
     private JSONStorableString _textFilterJson;
     private JSONStorableStringChooser _editablesJson;
 
+    private UIListener _uiListener;
     private IModel _selected, _selectedMirror;
     private JSONClass _jsonWhenDisabled;
     private bool _restored;
     private bool _ready;
-    private bool _uiOpenPrevFrame;
 
     public EditablesList EditablesList { get; private set; }
 
@@ -56,6 +55,16 @@ public class ColliderEditor : MVRScript
         {
             SuperController.LogError($"{nameof(ColliderEditor)}.{nameof(Init)}: {e}");
         }
+    }
+
+    public override void InitUI()
+    {
+        base.InitUI();
+        if (UITransform == null || _uiListener != null) return;
+        _uiListener = UITransform.gameObject.AddComponent<UIListener>();
+        if (_uiListener == null) return;
+        _uiListener.onDisabled.AddListener(OnBlur);
+        _uiListener.onClick.AddListener(OnBlur);
     }
 
     private IEnumerator DeferredInit()
@@ -573,6 +582,9 @@ public class ColliderEditor : MVRScript
     {
         SuperController.singleton.BroadcastMessage("OnActionsProviderDestroyed", this, SendMessageOptions.DontRequireReceiver);
         if (EditablesList?.All == null) return;
+        if (_uiListener != null)
+            DestroyImmediate(_uiListener);
+
         try
         {
             _jsonWhenDisabled = null;
@@ -599,8 +611,6 @@ public class ColliderEditor : MVRScript
             }
 
             _nextUpdate = Time.time + 1f;
-
-            CheckUIClosed();
         }
         catch (Exception e)
         {
@@ -609,18 +619,7 @@ public class ColliderEditor : MVRScript
         }
     }
 
-    private void CheckUIClosed()
-    {
-        bool uiOpen = UITransform.gameObject.activeInHierarchy;
-        if(!uiOpen && _uiOpenPrevFrame)
-        {
-            ActionsOnUIClosed();
-        }
-
-        _uiOpenPrevFrame = uiOpen;
-    }
-
-    private void ActionsOnUIClosed()
+    private void OnBlur()
     {
         _groupsJson.popup.visible = false;
         _typesJson.popup.visible = false;

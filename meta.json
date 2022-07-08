@@ -33,7 +33,9 @@
       "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\MaterialHelper.cs",
       "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\MigrationHelper.cs",
       "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\NameHelper.cs",
-      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\NaturalStringComparer.cs"
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\NaturalStringComparer.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\Presets.cs",
+      "Custom\\Scripts\\AcidBubbles\\ColliderEditor\\src\\UIListener.cs"
    ], 
    "dependencies" : { 
    }
