@@ -220,7 +220,7 @@ public class CapsuleColliderModel : ColliderModel<CapsuleCollider>
 
     public override void SyncPreviews()
     {
-        SyncPreview(Preview);
+        SyncPreview(ProtrusionPreview);
         SyncPreview(XRayPreview);
     }
 

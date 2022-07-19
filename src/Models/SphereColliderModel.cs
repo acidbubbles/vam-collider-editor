@@ -113,7 +113,7 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
 
     public override void SyncPreviews()
     {
-        SyncPreview(Preview);
+        SyncPreview(ProtrusionPreview);
         SyncPreview(XRayPreview);
     }
 

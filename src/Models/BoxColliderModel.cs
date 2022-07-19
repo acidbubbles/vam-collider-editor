@@ -36,7 +36,7 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
 
     public override void SyncPreviews()
     {
-        SyncPreview(Preview);
+        SyncPreview(ProtrusionPreview);
         SyncPreview(XRayPreview);
     }
 

@@ -24,7 +24,6 @@ public class ColliderEditor : MVRScript
     private const string _collidersSavePath = "Saves\\PluginData\\ColliderEditor";
 
     private JSONStorableBool _showPreviewsJSON;
-    private JSONStorableBool _xRayPreviewsJSON;
     private JSONStorableStringChooser _presetsJson;
     private JSONStorableStringChooser _groupsJson;
     private JSONStorableStringChooser _typesJson;
@@ -101,40 +100,6 @@ public class ColliderEditor : MVRScript
         RegisterBool(_showPreviewsJSON);
         var showPreviewsToggle = CreateToggle(_showPreviewsJSON);
         showPreviewsToggle.label = "Show Previews";
-
-        _xRayPreviewsJSON = new JSONStorableBool("xRayPreviews", ColliderPreviewConfig.DefaultXRayPreviews, value =>
-        {
-            Config.XRayPreviews = value;
-            foreach (var editable in EditablesList.All)
-                editable.UpdatePreviewsFromConfig();
-        });
-        RegisterBool(_xRayPreviewsJSON);
-        var xRayPreviewsToggle = CreateToggle(_xRayPreviewsJSON);
-        xRayPreviewsToggle.label = "Use XRay Previews";
-
-        var previewOpacityJSON = new JSONStorableFloat("previewOpacity", ColliderPreviewConfig.DefaultPreviewsOpacity, value =>
-        {
-            if (!insideRestore) _showPreviewsJSON.val = true;
-            var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
-            Config.PreviewsOpacity = alpha;
-            foreach (var editable in EditablesList.All)
-                editable.UpdatePreviewsFromConfig();
-        }, 0f, 1f);
-        RegisterFloat(previewOpacityJSON);
-        CreateSlider(previewOpacityJSON).label = "Preview Opacity";
-
-        var selectedPreviewOpacityJSON = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewOpacity, value =>
-        {
-            if (!insideRestore) _showPreviewsJSON.val = true;
-            var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
-            Config.SelectedPreviewsOpacity = alpha;
-            if (_selected != null)
-                _selected.UpdatePreviewsFromConfig();
-            if (_selectedMirror != null)
-                _selectedMirror.UpdatePreviewsFromConfig();
-        }, 0f, 1f);
-        RegisterFloat(selectedPreviewOpacityJSON);
-        CreateSlider(selectedPreviewOpacityJSON).label = "Selected Preview Opacity";
 
         var loadPresetUI = CreateButton("Load Preset");
         loadPresetUI.button.onClick.AddListener(() =>
@@ -222,6 +187,76 @@ public class ColliderEditor : MVRScript
         };
         CreateTextInput(_textFilterJson, false);
 #endif
+
+                var previewXRayOpacityJSON = new JSONStorableFloat("previewOpacityXRay", ColliderPreviewConfig.DefaultPreviewXRayOpacity, value =>
+        {
+            if (!insideRestore) _showPreviewsJSON.val = true;
+            var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
+            Config.PreviewsXRayOpacity = alpha;
+            foreach (var editable in EditablesList.All)
+                editable.UpdatePreviewsFromConfig();
+        }, 0f, 1f);
+        RegisterFloat(previewXRayOpacityJSON);
+        CreateSlider(previewXRayOpacityJSON).label = "Preview Opacity (XRay)";
+
+        var previewProtrusionsOpacityJSON = new JSONStorableFloat("previewOpacityProtrusions", ColliderPreviewConfig.DefaultPreviewProtrusionsOpacity, value =>
+        {
+            if (!insideRestore) _showPreviewsJSON.val = true;
+            var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
+            Config.PreviewsProtrusionsOpacity = alpha;
+            foreach (var editable in EditablesList.All)
+                editable.UpdatePreviewsFromConfig();
+        }, 0f, 1f);
+        RegisterFloat(previewProtrusionsOpacityJSON);
+        CreateSlider(previewProtrusionsOpacityJSON).label = "Preview Opacity (Protrusions)";
+
+        /*
+        var previewXRayRenderQueueJSON = new JSONStorableFloat("previewRenderQueueXRay", 3001, (float value) =>
+        {
+            if (!insideRestore) _showPreviewsJSON.val = true;
+            Config.PreviewsXRayRenderQueue = (int)value;
+            foreach (var editable in EditablesList.All)
+                editable.UpdatePreviewsFromConfig();
+        }, 0, 5000);
+        RegisterFloat(previewXRayRenderQueueJSON);
+        CreateSlider(previewXRayRenderQueueJSON).label = "Preview RenderQueue (XRay)";
+
+        var previewProtrusionsRenderQueueJSON = new JSONStorableFloat("previewRenderQueueProtrusions", 3002, (float value) =>
+        {
+            if (!insideRestore) _showPreviewsJSON.val = true;
+            Config.PreviewsProtrusionsRenderQueue = (int)value;
+            foreach (var editable in EditablesList.All)
+                editable.UpdatePreviewsFromConfig();
+        }, 0f, 5000);
+        RegisterFloat(previewProtrusionsRenderQueueJSON);
+        CreateSlider(previewProtrusionsRenderQueueJSON).label = "Preview RenderQueue (Protrusions)";
+        */
+
+        var selectedPreviewXRayOpacityJSON = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewsXRayOpacity, value =>
+        {
+            if (!insideRestore) _showPreviewsJSON.val = true;
+            var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
+            Config.SelectedPreviewsXRayOpacity = alpha;
+            if (_selected != null)
+                _selected.UpdatePreviewsFromConfig();
+            if (_selectedMirror != null)
+                _selectedMirror.UpdatePreviewsFromConfig();
+        }, 0f, 1f);
+        RegisterFloat(selectedPreviewXRayOpacityJSON);
+        CreateSlider(selectedPreviewXRayOpacityJSON).label = "Selected Preview Opacity (XRay)";
+
+        var selectedPreviewProtrusionsOpacityJSON = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewsProtrusionsOpacity, value =>
+        {
+            if (!insideRestore) _showPreviewsJSON.val = true;
+            var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
+            Config.SelectedPreviewsProtrusionsOpacity = alpha;
+            if (_selected != null)
+                _selected.UpdatePreviewsFromConfig();
+            if (_selectedMirror != null)
+                _selectedMirror.UpdatePreviewsFromConfig();
+        }, 0f, 1f);
+        RegisterFloat(selectedPreviewProtrusionsOpacityJSON);
+        CreateSlider(selectedPreviewProtrusionsOpacityJSON).label = "Selected Preview Opacity (Protrusions)";
 
         var syncSymmetryJSON = new JSONStorableBool("autoSyncSymmetry", ColliderPreviewConfig.DefaultSyncSymmetry, value =>
         {
@@ -643,7 +678,6 @@ public class ColliderEditor : MVRScript
     public void OnBindingsListRequested(List<object> bindings)
     {
         bindings.Add(new JSONStorableAction("Toggle_ShowPreviews", () => _showPreviewsJSON.val = !_showPreviewsJSON.val));
-        bindings.Add(new JSONStorableAction("Toggle_XRayPreviews", () => _xRayPreviewsJSON.val = !_xRayPreviewsJSON.val));
     }
 
     private void LogError(string method, string message) => SuperController.LogError($"{nameof(ColliderEditor)}.{method}: {message}");
