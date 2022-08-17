@@ -1,5 +1,6 @@
 using GPUTools.Physics.Scripts.Behaviours;
 using SimpleJSON;
+using System.Linq;
 using UnityEngine;
 
 public class SphereColliderModel : ColliderModel<SphereCollider>
@@ -109,12 +110,14 @@ public class SphereColliderModel : ColliderModel<SphereCollider>
         }
     }
 
-    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Sphere);
+    protected override GameObject[] DoCreatePreview() => new GameObject[] {
+        GameObject.CreatePrimitive(PrimitiveType.Sphere)
+    };
 
     public override void SyncPreviews()
     {
-        SyncPreview(ProtrusionPreview);
-        SyncPreview(XRayPreview);
+        SyncPreview(ProtrusionPreview?.FirstOrDefault());
+        SyncPreview(XRayPreview?.FirstOrDefault());
     }
 
     private void SyncPreview(GameObject preview)

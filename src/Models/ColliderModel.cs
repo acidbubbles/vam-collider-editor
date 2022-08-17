@@ -14,18 +14,22 @@ public abstract class ColliderModel<T> : ColliderModel where T : Collider
         Collider = collider;
     }
 
-    public override GameObject CreatePreview()
+    public override GameObject[] CreatePreview()
     {
         var preview = DoCreatePreview();
 
-        preview.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial(Id.GetHashCode());
-        foreach (var c in preview.GetComponents<Collider>())
+        foreach (var gameObject in preview)
         {
-            c.enabled = false;
-            Object.Destroy(c);
+            gameObject.GetComponent<Renderer>().material = MaterialHelper.GetNextMaterial(Id.GetHashCode());
+            foreach (var c in gameObject.GetComponents<Collider>())
+            {
+                c.enabled = false;
+                Object.Destroy(c);
+            }
+
+            gameObject.transform.SetParent(Collider.transform, false);
         }
 
-        preview.transform.SetParent(Collider.transform, false);
         return preview;
     }
 }
@@ -38,8 +42,8 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     public string Type => "Collider";
     public Collider Collider { get; set; }
     public RigidbodyModel RigidbodyModel { get; set; }
-    public GameObject ProtrusionPreview { get; protected set; }
-    public GameObject XRayPreview { get; protected set; }
+    public GameObject[] ProtrusionPreview { get; protected set; }
+    public GameObject[] XRayPreview { get; protected set; }
     public bool Shown { get; set; }
 
     public abstract bool SyncOverrides();
@@ -70,30 +74,25 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
                 XRayPreview = CreatePreview();
             }
 
-            var previewRenderer = XRayPreview.GetComponent<Renderer>();
-            var material = previewRenderer.material;
-
-            if (!_highlighted)
+            foreach (var gameObject in XRayPreview)
             {
-                var color = previewRenderer.material.color;
-                color.a = _config.PreviewsXRayOpacity;
-                material.color = color;
-            }
-            else
-            {
+                var previewRenderer = gameObject.GetComponent<Renderer>();
+                var material = previewRenderer.material;
                 var color = material.color;
-                color.a = _config.SelectedPreviewsXRayOpacity;
+                color.a = _highlighted
+                    ?  _config.SelectedPreviewsXRayOpacity
+                    : _config.PreviewsXRayOpacity;
                 material.color = color;
-            }
 
-            if (material.shader.name != "Battlehub/RTGizmos/Handles")
-            {
-                material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
-                material.SetFloat("_Offset", 1f);
-                material.SetFloat("_MinAlpha", 1f);
-            }
+                if (material.shader.name != "Battlehub/RTGizmos/Handles")
+                {
+                    material.shader = Shader.Find("Battlehub/RTGizmos/Handles");
+                    material.SetFloat("_Offset", 1f);
+                    material.SetFloat("_MinAlpha", 1f);
+                }
 
-            material.renderQueue = _config.PreviewsXRayRenderQueue;
+                material.renderQueue = _config.PreviewsXRayRenderQueue;
+            }
         }
         else
         {
@@ -110,34 +109,29 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
                 ProtrusionPreview = CreatePreview();
             }
 
-            var previewRenderer = ProtrusionPreview.GetComponent<Renderer>();
-            var material = previewRenderer.material;
-
-            if (!_highlighted)
+            foreach (var gameObject in ProtrusionPreview)
             {
-                var color = previewRenderer.material.color;
-                color.a = _config.PreviewsProtrusionsOpacity;
-                material.color = color;
-            }
-            else
-            {
+                var previewRenderer = gameObject.GetComponent<Renderer>();
+                var material = previewRenderer.material;
                 var color = material.color;
-                color.a = _config.SelectedPreviewsProtrusionsOpacity;
+                color.a = _highlighted
+                    ?  _config.SelectedPreviewsProtrusionsOpacity
+                    : _config.PreviewsProtrusionsOpacity;
                 material.color = color;
-            }
 
-            if (material.shader.name != "Standard")
-            {
-                material.shader = Shader.Find("Standard");
-                material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                material.SetInt("_ZWrite", 0);
-                material.DisableKeyword("_ALPHATEST_ON");
-                material.EnableKeyword("_ALPHABLEND_ON");
-                material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            }
+                if (material.shader.name != "Standard")
+                {
+                    material.shader = Shader.Find("Standard");
+                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    material.SetInt("_ZWrite", 0);
+                    material.DisableKeyword("_ALPHATEST_ON");
+                    material.EnableKeyword("_ALPHABLEND_ON");
+                    material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                }
 
-            material.renderQueue = _config.PreviewsProtrusionsRenderQueue;
+                material.renderQueue = _config.PreviewsProtrusionsRenderQueue;
+            }
         }
         else
         {
@@ -201,20 +195,28 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
     private void DestroyPreviewProtrusion()
     {
         if (ProtrusionPreview == null) return;
-        Object.Destroy(ProtrusionPreview);
+
+        foreach(var gameObject in ProtrusionPreview)
+        {
+            Object.Destroy(gameObject);
+        }
         ProtrusionPreview = null;
     }
 
     private void DestroyPreviewXRay()
     {
         if (XRayPreview == null) return;
-        Object.Destroy(XRayPreview);
+
+        foreach(var gameObject in XRayPreview)
+        {
+            Object.Destroy(gameObject);
+        }
         XRayPreview = null;
     }
 
-    public abstract GameObject CreatePreview();
+    public abstract GameObject[] CreatePreview();
 
-    protected abstract GameObject DoCreatePreview();
+    protected abstract GameObject[] DoCreatePreview();
 
     public override void SetHighlighted(bool value)
     {
@@ -227,9 +229,11 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected void RefreshHighlightedProtrusionPreview()
     {
-        if (ProtrusionPreview != null)
+        if (ProtrusionPreview == null) return;
+
+        foreach (var gameObject in ProtrusionPreview)
         {
-            var previewRenderer = ProtrusionPreview.GetComponent<Renderer>();
+            var previewRenderer = gameObject.GetComponent<Renderer>();
             var color = previewRenderer.material.color;
             color.a = _highlighted ? _config.SelectedPreviewsProtrusionsOpacity : _config.PreviewsProtrusionsOpacity;
             previewRenderer.material.color = color;
@@ -238,9 +242,11 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     protected void RefreshHighlightedXRayPreview()
     {
-        if (XRayPreview != null)
+        if (XRayPreview == null) return;
+
+        foreach (var gameObject in XRayPreview)
         {
-            var previewRenderer = XRayPreview.GetComponent<Renderer>();
+            var previewRenderer = gameObject.GetComponent<Renderer>();
             var color = previewRenderer.material.color;
             color.a = _highlighted ? _config.SelectedPreviewsXRayOpacity : _config.PreviewsXRayOpacity;
             previewRenderer.material.color = color;

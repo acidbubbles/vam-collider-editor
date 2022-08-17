@@ -1,4 +1,5 @@
 using SimpleJSON;
+using System.Linq;
 using UnityEngine;
 
 public class BoxColliderModel : ColliderModel<BoxCollider>
@@ -32,12 +33,14 @@ public class BoxColliderModel : ColliderModel<BoxCollider>
         return changed;
     }
 
-    protected override GameObject DoCreatePreview() => GameObject.CreatePrimitive(PrimitiveType.Cube);
+    protected override GameObject[] DoCreatePreview() => new GameObject[] {
+        GameObject.CreatePrimitive(PrimitiveType.Cube)
+    };
 
     public override void SyncPreviews()
     {
-        SyncPreview(ProtrusionPreview);
-        SyncPreview(XRayPreview);
+        SyncPreview(ProtrusionPreview?.FirstOrDefault());
+        SyncPreview(XRayPreview?.FirstOrDefault());
     }
 
     private void SyncPreview(GameObject preview)
