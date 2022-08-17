@@ -67,7 +67,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     public void UpdateXRayPreviewFromConfig()
     {
-        if (_config.PreviewsXRayOpacity > 0 && !_highlighted || _config.SelectedPreviewsXRayOpacity > 0 && _highlighted)
+        if ((_config.PreviewsXRayOpacity > 0 && !_highlighted) || (_config.SelectedPreviewsXRayOpacity > 0 && _highlighted))
         {
             if(XRayPreview == null)
             {
@@ -102,7 +102,7 @@ public abstract class ColliderModel : ModelBase<Collider>, IModel
 
     private void UpdatePreviewProtrusionsFromConfig()
     {
-        if (_config.PreviewsXRayOpacity > 0 && !_highlighted || _config.SelectedPreviewsXRayOpacity > 0 && _highlighted)
+        if ((_config.PreviewsProtrusionsOpacity > 0 && !_highlighted) || (_config.SelectedPreviewsProtrusionsOpacity > 0 && _highlighted))
         {
             if (ProtrusionPreview == null)
             {
