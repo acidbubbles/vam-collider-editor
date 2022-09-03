@@ -245,7 +245,7 @@ public class ColliderEditor : MVRScript
         RegisterFloat(selectedPreviewXRayOpacityJSON);
         CreateSlider(selectedPreviewXRayOpacityJSON).label = "Selected Preview Opacity (XRay)";
 
-        var selectedPreviewProtrusionsOpacityJSON = new JSONStorableFloat("selectedPreviewOpacity", ColliderPreviewConfig.DefaultSelectedPreviewsProtrusionsOpacity, value =>
+        var selectedPreviewProtrusionsOpacityJSON = new JSONStorableFloat("selectedPreviewOpacityProtrusions", ColliderPreviewConfig.DefaultSelectedPreviewsProtrusionsOpacity, value =>
         {
             if (!insideRestore) _showPreviewsJSON.val = true;
             var alpha = value.ExponentialScale(ColliderPreviewConfig.ExponentialScaleMiddle, 1f);
