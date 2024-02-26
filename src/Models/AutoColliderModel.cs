@@ -325,6 +325,8 @@ public class AutoColliderModel : ColliderContainerModelBase<AutoCollider>, IMode
         LoadJsonField(jsonClass, "colliderLookOffset", val => Component.colliderLookOffset = _colliderLookOffset = val);
         LoadJsonField(jsonClass, "colliderUpOffset", val => Component.colliderUpOffset = _colliderUpOffset = val);
         LoadJsonField(jsonClass, "colliderRightOffset", val => Component.colliderRightOffset = _colliderRightOffset = val);
+
+        RefreshAutoCollider();
     }
 
     protected override JSONClass DoGetJson()
